@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Sitemap: https://statementflow.app/sitemap.xml
+Host: https://statementflow.app
