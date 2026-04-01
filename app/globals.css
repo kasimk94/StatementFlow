@@ -18,6 +18,12 @@ body {
   overflow-x: hidden; /* prevent horizontal scroll from any overflowing animated elements */
 }
 
+/* Transaction row entrance animation */
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
 /* Visually hidden — accessible to screen readers and crawlers, invisible to sighted users */
 .visually-hidden {
   position: absolute;

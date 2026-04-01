@@ -57,6 +57,26 @@ const CAT_TIPS = {
 function catHex(name)   { return (CAT_CONFIG[name] ?? CAT_CONFIG[UNKNOWN_CAT]).hex; }
 function catBadge(name) { return (CAT_CONFIG[name] ?? CAT_CONFIG[UNKNOWN_CAT]).badge; }
 
+// ─── Count-up animation hook ──────────────────────────────────────────────────
+function useCountUp(target, duration, triggered) {
+  const [value, setValue] = useState(0);
+  const rafRef = useRef(null);
+  useEffect(() => {
+    if (!triggered) { setValue(0); return; }
+    const startTime = performance.now();
+    function tick(now) {
+      const t     = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(target * eased);
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+      else        setValue(target);
+    }
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration, triggered]);
+  return value;
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function CategoryBadge({ name }) {
@@ -68,10 +88,19 @@ function CategoryBadge({ name }) {
 }
 
 // Vibrant gradient stat card
-function StatCard({ label, value, sub, gradient, icon, loaded, delay }) {
+function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarget, countTriggered, countFormat }) {
+  const _counted = useCountUp(
+    countTarget ?? 0,
+    1500,
+    countTarget !== undefined ? (countTriggered ?? false) : false,
+  );
+  const displayValue = countTarget !== undefined
+    ? (countFormat ? countFormat(_counted) : Math.round(_counted).toString())
+    : value;
+
   return (
     <div
-      className="relative rounded-2xl p-6 flex items-center gap-4 overflow-hidden"
+      className="relative rounded-2xl p-5 flex items-center gap-3 overflow-hidden"
       style={{
         background: gradient,
         borderRadius: 16,
@@ -90,7 +119,7 @@ function StatCard({ label, value, sub, gradient, icon, loaded, delay }) {
       </div>
       <div className="relative min-w-0 flex-1">
         <p className="text-xs font-bold text-white/60 uppercase tracking-widest">{label}</p>
-        <p className="font-extrabold text-white mt-1 truncate leading-none" style={{ fontSize: "2rem" }}>{value}</p>
+        <p className="font-extrabold text-white mt-1 leading-none" style={{ fontSize: "1.6rem", whiteSpace: "nowrap" }}>{displayValue}</p>
         {sub && <p className="text-sm text-white/60 mt-1.5">{sub}</p>}
       </div>
     </div>
@@ -147,7 +176,7 @@ function BarTooltip({ active, payload, label }) {
 const PAGE_SIZE = 15;
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-export default function Dashboard({ transactions }) {
+export default function Dashboard({ transactions, demoMode = false }) {
   const [search, setSearch]                   = useState("");
   const [sortKey, setSortKey]                 = useState("date");
   const [sortDir, setSortDir]                 = useState("desc");
@@ -158,23 +187,53 @@ export default function Dashboard({ transactions }) {
   const [downloadError, setDownloadError]     = useState(null);
   const [copied, setCopied]                   = useState(false);
   const [excludeTransfers, setExcludeTransfers] = useState(true);
+  const [demoToast, setDemoToast]             = useState(false);
 
   // Animation states
-  const [loaded,      setLoaded]      = useState(false);
-  const [barsVisible, setBarsVisible] = useState(false);
+  const [loaded,          setLoaded]          = useState(false);
+  const [barsVisible,     setBarsVisible]     = useState(false);
+  const [rowsHiding,      setRowsHiding]      = useState(false);
+  const [rowFadeKey,      setRowFadeKey]      = useState(0);
+  const [demoTriggered,   setDemoTriggered]   = useState(false);
+  const [chartsTriggered, setChartsTriggered] = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    if (!demoMode) window.scrollTo(0, 0);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (demoMode) return; // handled by IntersectionObserver below
     // Stagger: cards animate first, then bars
     const t1 = setTimeout(() => setLoaded(true),      80);
     const t2 = setTimeout(() => setBarsVisible(true), 500);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+  }, [demoMode]);
 
-  const loadedAt = useRef(new Date());
+  // IntersectionObserver — scroll-triggered animations for demo mode
+  const demoRef   = useRef(null);
+  const chartsRef = useRef(null);
+  useEffect(() => {
+    if (!demoMode) return;
+    const obs = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        if (entry.target === demoRef.current) {
+          setLoaded(true);
+          setDemoTriggered(true);
+        }
+        if (entry.target === chartsRef.current) {
+          setBarsVisible(true);
+          setChartsTriggered(true);
+        }
+      }
+    }, { threshold: 0.15 });
+    if (demoRef.current)   obs.observe(demoRef.current);
+    if (chartsRef.current) obs.observe(chartsRef.current);
+    return () => obs.disconnect();
+  }, [demoMode]);
+
+  const loadedAt        = useRef(new Date());
+  const rowHideTimerRef = useRef(null);
 
   // ── Date range ──
   const dateRange = useMemo(() => {
@@ -223,8 +282,25 @@ export default function Dashboard({ transactions }) {
     return { income, expenses, net: income - expenses, incomeCount, expenseCount };
   }, [transactions, excludeTransfers]);
 
+  // ── Demo toast helper ──
+  const showDemoToast = useCallback(() => {
+    setDemoToast(true);
+    setTimeout(() => setDemoToast(false), 3000);
+  }, []);
+
+  // ── Row fade-out → fade-in animation ──
+  const triggerRowAnim = useCallback(() => {
+    setRowsHiding(true);
+    if (rowHideTimerRef.current) clearTimeout(rowHideTimerRef.current);
+    rowHideTimerRef.current = setTimeout(() => {
+      setRowFadeKey((k) => k + 1);
+      setRowsHiding(false);
+    }, 150);
+  }, []);
+
   // ── Download Excel ──
   const handleDownload = useCallback(async () => {
+    if (demoMode) { showDemoToast(); return; }
     setDownloading(true);
     setDownloadError(null);
     try {
@@ -249,10 +325,11 @@ export default function Dashboard({ transactions }) {
     } finally {
       setDownloading(false);
     }
-  }, [transactions]);
+  }, [transactions, demoMode, showDemoToast]);
 
   // ── Export CSV ──
   const handleCSV = useCallback(() => {
+    if (demoMode) { showDemoToast(); return; }
     const header = "Date,Description,Category,Amount\n";
     const rows   = transactions
       .map((t) => [
@@ -269,7 +346,7 @@ export default function Dashboard({ transactions }) {
     a.download = "statement.csv";
     a.click();
     URL.revokeObjectURL(url);
-  }, [transactions]);
+  }, [transactions, demoMode, showDemoToast]);
 
   // ── Share / copy summary ──
   const handleShare = useCallback(async () => {
@@ -370,7 +447,7 @@ export default function Dashboard({ transactions }) {
     return <span className="ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>;
   }
 
-  function setFilter(cat) { setFilterCat(cat); setPage(1); }
+  function setFilter(cat) { triggerRowAnim(); setFilterCat(cat); setPage(1); }
 
   const loadedTime = loadedAt.current.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
@@ -386,71 +463,25 @@ export default function Dashboard({ transactions }) {
   return (
     <div className="space-y-6">
 
-      {/* ── EXPORT BAR ── */}
-      <div
-        className="bg-white rounded-2xl border border-slate-100 shadow-sm px-6 py-5 flex items-center justify-between gap-6 flex-wrap"
-        style={{ ...sectionStyle(0), borderRadius: 16 }}
-      >
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">Export Your Results</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Download your full statement report</p>
+      {/* ── DEMO TOAST ── */}
+      {demoToast && (
+        <div
+          style={{
+            position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
+            zIndex: 9999, background: "#1e293b", color: "#fff",
+            padding: "12px 24px", borderRadius: 12, fontSize: "0.9rem", fontWeight: 600,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+            display: "flex", alignItems: "center", gap: 10,
+            animation: "fadeSlideUp 0.3s ease forwards",
+          }}
+        >
+          <span style={{ fontSize: "1.1rem" }}>🔒</span>
+          Upload your own statement to export your data!
         </div>
-
-        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
-          {/* Download Excel */}
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex items-center gap-2.5 text-base font-bold text-white rounded-2xl px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5"
-            style={{
-              background:   "linear-gradient(135deg, #00b894 0%, #00907a 100%)",
-              boxShadow:    "0 8px 24px rgba(0,184,148,0.35)",
-              borderRadius: 14,
-            }}
-            onMouseEnter={(e) => { if (!downloading) e.currentTarget.style.boxShadow = "0 14px 36px rgba(0,184,148,0.55)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,184,148,0.35)"; }}
-          >
-            {downloading ? (
-              <>
-                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                Generating…
-              </>
-            ) : (
-              <><span className="text-xl">📊</span>Download Excel</>
-            )}
-          </button>
-
-          {/* Download CSV */}
-          <button
-            onClick={handleCSV}
-            className="flex items-center gap-2.5 text-base font-bold text-white rounded-2xl px-6 py-3 transition-all hover:-translate-y-0.5"
-            style={{
-              background:   "linear-gradient(135deg, #0984e3 0%, #0652b4 100%)",
-              boxShadow:    "0 8px 24px rgba(9,132,227,0.35)",
-              borderRadius: 14,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 14px 36px rgba(9,132,227,0.55)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(9,132,227,0.35)"; }}
-          >
-            <span className="text-xl">📄</span>Download CSV
-          </button>
-        </div>
-
-        {downloadError && (
-          <div className="w-full flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            {downloadError}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* ── STAT CARDS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div ref={demoRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           label="Total Money In"
           value={fmt(income)}
@@ -459,6 +490,9 @@ export default function Dashboard({ transactions }) {
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
           loaded={loaded}
           delay={100}
+          countTarget={demoMode ? income : undefined}
+          countTriggered={demoTriggered}
+          countFormat={(v) => fmt(v)}
         />
         <StatCard
           label="Total Money Out"
@@ -468,6 +502,9 @@ export default function Dashboard({ transactions }) {
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
           loaded={loaded}
           delay={200}
+          countTarget={demoMode ? expenses : undefined}
+          countTriggered={demoTriggered}
+          countFormat={(v) => fmt(v)}
         />
         <StatCard
           label="Net Balance"
@@ -479,6 +516,21 @@ export default function Dashboard({ transactions }) {
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
           loaded={loaded}
           delay={300}
+          countTarget={demoMode ? Math.abs(net) : undefined}
+          countTriggered={demoTriggered}
+          countFormat={(v) => fmt(net >= 0 ? v : -v)}
+        />
+        <StatCard
+          label="Transactions"
+          value={`${transactions.length}`}
+          sub={`${incomeCount} in · ${expenseCount} out`}
+          gradient="linear-gradient(135deg, #fd79a8 0%, #e84393 100%)"
+          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
+          loaded={loaded}
+          delay={400}
+          countTarget={demoMode ? transactions.length : undefined}
+          countTriggered={demoTriggered}
+          countFormat={(v) => Math.round(v).toString()}
         />
       </div>
 
@@ -523,7 +575,7 @@ export default function Dashboard({ transactions }) {
       )}
 
       {/* ── CHARTS ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
+      <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
 
         {/* Donut chart */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6" style={{ borderRadius: 16 }}>
@@ -534,18 +586,20 @@ export default function Dashboard({ transactions }) {
           ) : (
             <div className="flex flex-col lg:flex-row gap-4 items-start">
               {/* Chart */}
-              <div className="w-full lg:w-48 shrink-0">
-                <ResponsiveContainer width="100%" height={200}>
+              <div className="w-full lg:w-56 shrink-0">
+                <ResponsiveContainer width="100%" height={230}>
                   <PieChart>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={58}
-                      outerRadius={88}
+                      innerRadius={65}
+                      outerRadius={100}
                       paddingAngle={2}
                       dataKey="value"
                       strokeWidth={0}
+                      isAnimationActive={true}
+                      animationDuration={900}
                     >
                       {pieData.map((entry, i) => (
                         <Cell key={i} fill={entry.fill} />
@@ -603,8 +657,8 @@ export default function Dashboard({ transactions }) {
                   tickFormatter={(v) => v.length > 14 ? v.slice(0, 14) + "…" : v}
                 />
                 <ReTooltip content={<BarTooltip />} cursor={{ fill: "#f8fafc" }} />
-                <Bar dataKey="expense" name="Expense" fill="#e17055" radius={[0, 6, 6, 0]} maxBarSize={16} />
-                <Bar dataKey="income"  name="Income"  fill="#00b894" radius={[0, 6, 6, 0]} maxBarSize={16} />
+                <Bar dataKey="expense" name="Expense" fill="#e17055" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
+                <Bar dataKey="income"  name="Income"  fill="#00b894" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -735,14 +789,14 @@ export default function Dashboard({ transactions }) {
                 type="text"
                 placeholder="Search transactions…"
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                onChange={(e) => { const v = e.target.value; triggerRowAnim(); setSearch(v); setPage(1); }}
                 className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-44 sm:w-52 bg-slate-50"
               />
             </div>
             {/* Category filter */}
             <select
               value={filterCat}
-              onChange={(e) => { setFilterCat(e.target.value); setPage(1); }}
+              onChange={(e) => { const v = e.target.value; triggerRowAnim(); setFilterCat(v); setPage(1); }}
               className="text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-700"
             >
               {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -750,7 +804,7 @@ export default function Dashboard({ transactions }) {
             {/* Type filter */}
             <select
               value={filterType}
-              onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+              onChange={(e) => { const v = e.target.value; triggerRowAnim(); setFilterType(v); setPage(1); }}
               className="text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-700"
             >
               <option value="All">All types</option>
@@ -780,7 +834,7 @@ export default function Dashboard({ transactions }) {
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ opacity: rowsHiding ? 0 : 1, transition: "opacity 0.15s ease" }}>
               {paginated.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-5 py-14 text-center text-slate-400">
@@ -800,9 +854,13 @@ export default function Dashboard({ transactions }) {
                   const hex       = catHex(t.category || UNKNOWN_CAT);
                   return (
                     <tr
-                      key={i}
+                      key={`${rowFadeKey}-${i}`}
                       className={`${rowBg} hover:bg-blue-50/40 transition-colors`}
-                      style={{ borderBottom: "1px solid #f1f5f9" }}
+                      style={{
+                        borderBottom: "1px solid #f1f5f9",
+                        animation: `rowFadeIn 0.3s ease forwards ${Math.min(i, 14) * 30}ms`,
+                        opacity: 0,
+                      }}
                     >
                       {/* Date cell with coloured left border */}
                       <td
@@ -886,6 +944,69 @@ export default function Dashboard({ transactions }) {
                 Next →
               </button>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── EXPORT BAR ── */}
+      <div
+        className="bg-white rounded-2xl border border-slate-100 shadow-sm px-6 py-5 flex items-center justify-between gap-6 flex-wrap"
+        style={{ ...sectionStyle(600), borderRadius: 16 }}
+      >
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">Export Your Results</h2>
+          <p className="text-sm text-slate-500 mt-0.5">Download your full statement report</p>
+        </div>
+
+        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
+          {/* Download Excel */}
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2.5 text-base font-bold text-white rounded-2xl px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5"
+            style={{
+              background:   "linear-gradient(135deg, #00b894 0%, #00907a 100%)",
+              boxShadow:    "0 8px 24px rgba(0,184,148,0.35)",
+              borderRadius: 14,
+            }}
+            onMouseEnter={(e) => { if (!downloading) e.currentTarget.style.boxShadow = "0 14px 36px rgba(0,184,148,0.55)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,184,148,0.35)"; }}
+          >
+            {downloading ? (
+              <>
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Generating…
+              </>
+            ) : (
+              <><span className="text-xl">📊</span>Download Excel</>
+            )}
+          </button>
+
+          {/* Download CSV */}
+          <button
+            onClick={handleCSV}
+            className="flex items-center gap-2.5 text-base font-bold text-white rounded-2xl px-6 py-3 transition-all hover:-translate-y-0.5"
+            style={{
+              background:   "linear-gradient(135deg, #0984e3 0%, #0652b4 100%)",
+              boxShadow:    "0 8px 24px rgba(9,132,227,0.35)",
+              borderRadius: 14,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 14px 36px rgba(9,132,227,0.55)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(9,132,227,0.35)"; }}
+          >
+            <span className="text-xl">📄</span>Download CSV
+          </button>
+        </div>
+
+        {downloadError && (
+          <div className="w-full flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {downloadError}
           </div>
         )}
       </div>

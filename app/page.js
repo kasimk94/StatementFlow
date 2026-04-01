@@ -4,6 +4,41 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import UploadZone from "../components/UploadZone";
 import Dashboard from "../components/Dashboard";
+import Navbar from "../components/Navbar";
+
+// ── Demo transactions (debits are negative, credits positive) ─────────────────
+const DEMO_TRANSACTIONS = [
+  { date: "25 Mar 2026", description: "Salary - Employer Ltd",  category: "Income",           amount:  2850.00 },
+  { date: "10 Mar 2026", description: "Freelance Payment",      category: "Income",           amount:   450.00 },
+  { date: "01 Mar 2026", description: "HMRC Tax Refund",        category: "Income",           amount:   120.00 },
+  { date: "28 Mar 2026", description: "HSBC Mortgage",          category: "Bills & Finance",  amount:  -950.00 },
+  { date: "27 Mar 2026", description: "British Gas",            category: "Bills & Finance",  amount:   -85.00 },
+  { date: "26 Mar 2026", description: "Sky",                    category: "Bills & Finance",  amount:   -45.00 },
+  { date: "25 Mar 2026", description: "Vodafone",               category: "Bills & Finance",  amount:   -35.00 },
+  { date: "24 Mar 2026", description: "Tesco Express",          category: "Groceries",        amount:   -67.43 },
+  { date: "23 Mar 2026", description: "Waitrose",               category: "Groceries",        amount:   -78.20 },
+  { date: "22 Mar 2026", description: "Tesco Express",          category: "Groceries",        amount:   -45.10 },
+  { date: "21 Mar 2026", description: "Amazon",                 category: "Shopping",         amount:   -89.99 },
+  { date: "20 Mar 2026", description: "ASOS",                   category: "Shopping",         amount:   -43.00 },
+  { date: "19 Mar 2026", description: "JD Sports",              category: "Shopping",         amount:   -65.00 },
+  { date: "18 Mar 2026", description: "Amazon",                 category: "Shopping",         amount:   -23.99 },
+  { date: "17 Mar 2026", description: "Deliveroo",              category: "Eating Out",       amount:   -28.50 },
+  { date: "16 Mar 2026", description: "Costa Coffee",           category: "Eating Out",       amount:    -5.85 },
+  { date: "15 Mar 2026", description: "Greggs",                 category: "Eating Out",       amount:    -4.20 },
+  { date: "14 Mar 2026", description: "Deliveroo",              category: "Eating Out",       amount:   -22.00 },
+  { date: "13 Mar 2026", description: "Costa Coffee",           category: "Eating Out",       amount:    -4.50 },
+  { date: "12 Mar 2026", description: "TfL",                    category: "Transport",        amount:    -3.50 },
+  { date: "11 Mar 2026", description: "TfL",                    category: "Transport",        amount:    -2.80 },
+  { date: "10 Mar 2026", description: "Uber",                   category: "Transport",        amount:   -14.20 },
+  { date: "09 Mar 2026", description: "TfL",                    category: "Transport",        amount:    -3.50 },
+  { date: "08 Mar 2026", description: "Netflix",                category: "Entertainment",    amount:   -10.99 },
+  { date: "07 Mar 2026", description: "Spotify",                category: "Entertainment",    amount:    -9.99 },
+  { date: "06 Mar 2026", description: "Tesco Express",          category: "Groceries",        amount:   -34.50 },
+  { date: "05 Mar 2026", description: "Amazon",                 category: "Shopping",         amount:   -34.99 },
+  { date: "04 Mar 2026", description: "Greggs",                 category: "Eating Out",       amount:    -3.80 },
+  { date: "03 Mar 2026", description: "TfL",                    category: "Transport",        amount:    -2.80 },
+  { date: "02 Mar 2026", description: "Costa Coffee",           category: "Eating Out",       amount:    -4.95 },
+];
 
 // ── Pricing feature row ───────────────────────────────────────────────────────
 function PricingFeature({ text, included, light }) {
@@ -70,8 +105,6 @@ export default function Home() {
   const [billing, setBilling]           = useState("monthly");
   const [billingFade, setBillingFade]   = useState(true);
   const [hoveredOption, setHoveredOption] = useState(null);
-  const [navHidden, setNavHidden]       = useState(false);
-  const lastScrollY = useRef(0);
 
 
   const PRO_MONTHLY = 7.99;
@@ -106,22 +139,6 @@ export default function Home() {
     window.history.scrollRestoration = "manual";
   }, []);
 
-  // ── Navbar hide/show on scroll direction ────────────────────────────────────
-  useEffect(() => {
-    function handleScroll() {
-      const currentY = window.scrollY;
-      if (currentY <= 0) {
-        setNavHidden(false);
-      } else if (currentY > lastScrollY.current + 4) {
-        setNavHidden(true);
-      } else if (currentY < lastScrollY.current - 4) {
-        setNavHidden(false);
-      }
-      lastScrollY.current = currentY;
-    }
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -268,44 +285,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
 
-      {/* ── HEADER ── */}
-      <header
-        className="bg-white border-b border-slate-100 sticky top-0 z-50 shadow-sm"
-        style={{
-          transform:  navHidden ? "translateY(-100%)" : "translateY(0)",
-          transition: "transform 0.3s ease",
-        }}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-4 grid grid-cols-3 items-center">
-          {/* Logo — left column */}
-          <Link
-            href="/"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="flex items-center gap-2.5"
-            style={{ textDecoration: "none", cursor: "pointer" }}
-          >
-            <LogoIcon size={32} />
-            <span className="text-lg font-bold text-slate-900">StatementFlow</span>
-          </Link>
-
-          {/* Nav — centre column, perfectly centred */}
-          <nav className="hidden md:flex items-center justify-center gap-8">
-            <a href="#how-it-works" title="See how StatementFlow works" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap nav-underline">How it works</a>
-            <a href="#pricing" title="View StatementFlow pricing plans" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap nav-underline">Pricing</a>
-            <a href="#features" title="StatementFlow features" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap nav-underline">Features</a>
-          </nav>
-
-          {/* CTA — right column, right-aligned */}
-          <div className="flex justify-end">
-            <button
-              onClick={scrollToUpload}
-              className="bg-slate-900 hover:bg-slate-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
-            >
-              Try Free
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar onScrollToUpload={scrollToUpload} />
 
       {/* ── HERO ── */}
       <section id="hero" className="pt-28 pb-20 px-6 text-center" style={{ background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)" }}>
@@ -412,138 +392,72 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Dashboard preview */}
-        <div className="mt-24 max-w-5xl mx-auto pb-10 scroll-animate" style={{ transitionDelay: "0.5s" }}>
+        {/* ── DEMO DASHBOARD ── */}
+        <div className="mt-24 pb-10 px-6 scroll-animate" style={{ transitionDelay: "0.5s" }}>
           <div className="text-center mb-10">
             <p className="text-blue-600 font-bold text-xs uppercase tracking-widest mb-3">Live Preview</p>
             <h2 className="text-3xl font-extrabold text-slate-900 mb-2">See exactly what you'll get</h2>
             <p className="text-slate-500 text-base">Here's a real example of your dashboard after uploading a statement</p>
           </div>
-          <div className="rounded-3xl border-2 border-slate-300 shadow-2xl shadow-slate-400/30 overflow-hidden relative mock-shine">
-            {/* Browser chrome */}
-            <div className="bg-gradient-to-b from-slate-200 to-slate-100 border-b-2 border-slate-300 px-4 py-3.5 flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-400 shadow-inner" />
-              <span className="w-3 h-3 rounded-full bg-yellow-400 shadow-inner" />
-              <span className="w-3 h-3 rounded-full bg-green-400 shadow-inner" />
-              <div className="ml-4 flex-1 bg-white/80 rounded-md px-3 py-1 text-xs text-slate-400 max-w-xs flex items-center gap-1.5">
-                <svg className="w-3 h-3 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-                statementflow.app/dashboard
-              </div>
+
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            {/* Demo banner */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10,
+              background: "#fffbeb", borderTop: "1px solid #fde68a", borderLeft: "1px solid #fde68a", borderRight: "1px solid #fde68a",
+              padding: "11px 20px", borderRadius: "16px 16px 0 0",
+            }}>
+              <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#92400e", display: "flex", alignItems: "center", gap: 7 }}>
+                <span>👀</span> This is a live demo with sample data
+              </span>
+              <button
+                onClick={scrollToUpload}
+                style={{
+                  fontSize: "0.82rem", fontWeight: 700, color: "#92400e",
+                  background: "#fde68a", border: "none", borderRadius: 8,
+                  padding: "6px 14px", cursor: "pointer", transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "#fcd34d"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "#fde68a"; }}
+              >
+                Try with your own statement →
+              </button>
             </div>
 
-            {/* Mock dashboard */}
-            <div className="bg-slate-50 p-5">
-              {/* Stat cards */}
-              <div className="grid grid-cols-4 gap-3 mb-4">
-                {[
-                  { label: "Total Income",   value: "£3,847.50", sub: "2 credits",  color: "text-emerald-700", bg: "bg-emerald-50",  border: "border-emerald-200", dot: "bg-emerald-500" },
-                  { label: "Total Expenses", value: "£2,319.84", sub: "41 debits",  color: "text-red-700",     bg: "bg-red-50",      border: "border-red-200",     dot: "bg-red-500"     },
-                  { label: "Net Balance",    value: "£1,527.66", sub: "Positive",   color: "text-blue-700",    bg: "bg-blue-50",     border: "border-blue-200",    dot: "bg-blue-500"    },
-                  { label: "Transactions",   value: "43",        sub: "This month", color: "text-purple-700",  bg: "bg-purple-50",   border: "border-purple-200",  dot: "bg-purple-500"  },
-                ].map(card => (
-                  <div key={card.label} className={`${card.bg} border ${card.border} rounded-xl p-3.5`}>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${card.dot}`} />
-                      <p className="text-xs text-slate-500 font-medium uppercase tracking-wide leading-none">{card.label}</p>
-                    </div>
-                    <p className={`text-lg font-bold ${card.color}`}>{card.value}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{card.sub}</p>
-                  </div>
-                ))}
+            {/* Dashboard card */}
+            <div style={{
+              position: "relative",
+              background: "#f8fafc",
+              border: "1px solid #fde68a",
+              borderTop: "none",
+              borderRadius: "0 0 20px 20px",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.10)",
+              padding: "28px 28px 32px",
+            }}>
+              {/* DEMO badge */}
+              <div
+                title="Sample data — upload your PDF to see your real results"
+                style={{
+                  position: "absolute", top: 18, right: 22, zIndex: 10,
+                  background: "#fdcb6e", color: "#1a1a2e",
+                  fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.05em",
+                  padding: "4px 10px", borderRadius: 20,
+                  boxShadow: "0 2px 8px rgba(253,203,110,0.45)",
+                  display: "flex", alignItems: "center", gap: 4,
+                  cursor: "default", userSelect: "none",
+                }}
+              >
+                ✨ DEMO
               </div>
 
-              {/* Charts row */}
-              {/* Chart cards — CSS grid stretches both to identical height automatically */}
-              <div className="grid grid-cols-2 gap-3 mb-3" style={{ alignItems: "stretch" }}>
-
-                {/* Spending Breakdown */}
-                <div className="bg-white rounded-xl border border-slate-200 flex flex-col overflow-hidden" style={{ padding: 16, minHeight: 190 }}>
-                  {/* Header */}
-                  <div style={{ height: 38 }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", lineHeight: "16px", marginBottom: 2 }}>Spending Breakdown</p>
-                    <p style={{ fontSize: 10, color: "#94a3b8", lineHeight: "14px" }}>Expenses by category</p>
-                  </div>
-                  {/* Content: donut left, legend right */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
-                    {/* Donut — 110×110, 16px from left edge (card padding handles that) */}
-                    <div style={{ position: "relative", width: 110, height: 110, flexShrink: 0 }}>
-                      <div style={{ width: 110, height: 110, borderRadius: "50%", background: "conic-gradient(#22c55e 0% 28%, #3b82f6 28% 50%, #f97316 50% 65%, #f59e0b 65% 78%, #8b5cf6 78% 100%)" }} />
-                      <div style={{ position: "absolute", inset: 18, backgroundColor: "white", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#1e293b" }}>5</span>
-                      </div>
-                    </div>
-                    {/* Legend — flex-1 so it fills remaining width, rows space-between */}
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 5 }}>
-                      {[["#22c55e","Groceries","£648"],["#3b82f6","Shopping","£510"],["#f97316","Fast Food","£347"],["#f59e0b","Eating Out","£290"],["#8b5cf6","Transport","£180"]].map(([c,l,v]) => (
-                        <div key={l} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 22 }}>
-                          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: 2, backgroundColor: c, flexShrink: 0 }} />
-                            <span style={{ fontSize: 11, color: "#475569" }}>{l}</span>
-                          </span>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: "#1e293b" }}>{v}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Top Merchants */}
-                <div className="bg-white rounded-xl border border-slate-200 flex flex-col" style={{ padding: 14 }}>
-                  {/* Header — identical fixed height */}
-                  <div style={{ height: 38 }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", lineHeight: "16px", marginBottom: 2 }}>Top Merchants</p>
-                    <p style={{ fontSize: 10, color: "#94a3b8", lineHeight: "14px" }}>By total spend</p>
-                  </div>
-                  {/* 5 rows, each exactly 32px tall — aligns with legend rows */}
-                  <div className="flex-1 flex flex-col justify-center">
-                    {[["Tesco Express","£648",90],["Amazon.co.uk","£382",53],["Costa Coffee","£198",27],["Uber / Bolt","£156",22],["Netflix","£47",7]].map(([name,val,w]) => (
-                      <div key={name} className="flex items-center" style={{ height: 32, gap: 8 }}>
-                        <span style={{ fontSize: 11, color: "#64748b", width: 80, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
-                        <div className="flex-1 rounded-full" style={{ height: 5, backgroundColor: "#f1f5f9" }}>
-                          <div className="rounded-full" style={{ height: 5, width: `${w}%`, backgroundColor: "#3b82f6" }} />
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", width: 36, textAlign: "right", flexShrink: 0 }}>{val}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Transactions table */}
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-700">Transactions</span>
-                  <div className="flex gap-2">
-                    <span className="text-xs bg-white border border-slate-200 text-slate-500 px-2 py-1 rounded-lg">Search…</span>
-                    <span className="text-xs bg-white border border-slate-200 text-slate-500 px-2 py-1 rounded-lg">All categories ▾</span>
-                  </div>
-                </div>
-                {[
-                  ["15 Mar 2024","TESCO STORES 6614","Groceries","-£67.43",false],
-                  ["14 Mar 2024","SALARY - ACME LTD","Income","+£1,923.75",true],
-                  ["13 Mar 2024","AMAZON MARKETPLACE","Shopping","-£34.99",false],
-                  ["12 Mar 2024","COSTA COFFEE 1842","Fast Food","-£5.85",false],
-                ].map(([date,desc,cat,amt,isIncome]) => (
-                  <div key={desc} className={`px-4 py-2.5 grid text-xs border-b border-slate-50 last:border-0 ${isIncome ? "bg-emerald-50/40" : ""}`} style={{ gridTemplateColumns: "90px 1fr 90px 80px" }}>
-                    <span className="text-slate-400 font-mono">{date}</span>
-                    <span className="font-medium text-slate-700 truncate pr-2">{desc}</span>
-                    <span>
-                      <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${isIncome ? "bg-emerald-100 text-emerald-700" : "bg-blue-50 text-blue-700"}`}>{cat}</span>
-                    </span>
-                    <span className={`text-right font-semibold ${isIncome ? "text-emerald-600" : "text-red-600"}`}>{amt}</span>
-                  </div>
-                ))}
-              </div>
+              <Dashboard transactions={DEMO_TRANSACTIONS} demoMode={true} />
             </div>
           </div>
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="pt-14 pb-16 px-6 bg-white">
+      <section id="how-it-works" className="pt-14 pb-4 px-6 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 scroll-animate">
             <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
@@ -866,6 +780,38 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── SECURITY ── */}
+      <section id="security" className="py-20 px-6 bg-white border-t border-slate-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12 scroll-animate">
+            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Privacy &amp; Security</p>
+            <h2 className="text-4xl font-extrabold text-slate-900">Your data is safe with us</h2>
+            <p className="text-lg text-slate-500 mt-4 max-w-xl mx-auto">
+              StatementFlow is built with a zero-storage architecture. Your PDF never touches a database — ever.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
+              { emoji: "🔒", title: "Zero Storage",        desc: "Your PDF is processed entirely in-memory. Nothing is written to disk, stored in a database, or retained after processing.",  accent: "#6c5ce7", iconBg: "#f0eeff" },
+              { emoji: "🗑️", title: "Instantly Discarded", desc: "As soon as your transactions are extracted, your file and all associated data are discarded immediately from memory.",           accent: "#00b894", iconBg: "#e6fff9" },
+              { emoji: "🛡️", title: "Never Shared",        desc: "We never see, log, or share your financial information. No analytics tools or third parties receive your statement data.",     accent: "#0984e3", iconBg: "#e8f4ff" },
+            ].map(({ emoji, title, desc, accent, iconBg }, idx) => (
+              <div
+                key={title}
+                style={{ transitionDelay: `${idx * 0.15}s`, borderLeft: `4px solid ${accent}` }}
+                className="anim-scale rounded-2xl p-6 bg-white border border-slate-200 shadow-sm"
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4" style={{ backgroundColor: iconBg }}>
+                  {emoji}
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
+                <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── UPLOAD SECTION ── */}
       <section ref={uploadRef} id="get-started" className="py-24 px-6 bg-white">
         <div className="max-w-2xl mx-auto text-center">
@@ -924,7 +870,7 @@ export default function Home() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" aria-label="Frequently Asked Questions" className="py-24 px-6 bg-slate-50">
+      <section id="faq" aria-label="Frequently Asked Questions" className="pt-24 pb-16 px-6 bg-slate-50">
         <div className="max-w-2xl mx-auto">
 
           {/* Title — slide up */}
