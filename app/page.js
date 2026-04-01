@@ -90,6 +90,7 @@ function LogoIcon({ size = 32 }) {
 
 export default function Home() {
   const [transactions, setTransactions] = useState(null);
+  const [parseResult, setParseResult]   = useState(null);
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState(null);
 
@@ -227,6 +228,7 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Conversion failed");
       setTransactions(data.transactions);
+      setParseResult({ confidence: data.confidence, bank: data.bank, debug: data.debug ?? null });
       window.scrollTo(0, 0);
     } catch (err) {
       setError(err.message);
@@ -252,7 +254,7 @@ export default function Home() {
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <Link
               href="/"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              onClick={(e) => { e.preventDefault(); handleReset(); window.scrollTo(0, 0); }}
               className="flex items-center gap-2.5"
               style={{ textDecoration: "none", cursor: "pointer" }}
             >
@@ -275,7 +277,12 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-slate-900">Your Statement</h2>
             <p className="text-slate-500 text-sm mt-1">{transactions.length} transactions found</p>
           </div>
-          <Dashboard transactions={transactions} />
+          <Dashboard
+            transactions={transactions}
+            confidence={parseResult?.confidence}
+            bank={parseResult?.bank}
+            debug={parseResult?.debug}
+          />
         </main>
       </div>
     );

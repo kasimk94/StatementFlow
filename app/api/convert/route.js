@@ -58,7 +58,10 @@ const MERCHANT_MAP = {
   'TEXACO': 'Texaco Fuel',
   // Finance & Transfers
   'PAYPAL': 'PayPal', 'MONZO': 'Monzo Transfer', 'STARLING': 'Starling Transfer',
-  'REVOLUT': 'Revolut', 'WISE': 'Wise Transfer',
+  'REVOLUT': 'Revolut Transfer', 'WISE': 'Wise Transfer',
+  'CHASE': 'Chase Transfer', 'JPMORGAN': 'Chase UK',
+  'TIDE': 'Tide', 'METTLE': 'Mettle', 'MONESE': 'Monese Transfer',
+  'FIRST DIRECT': 'First Direct',
   // Health
   'BOOTS': 'Boots', 'SUPERDRUG': 'Superdrug',
   'HOLLAND AND BARRETT': 'Holland & Barrett', 'HOLLAND BARRETT': 'Holland & Barrett',
@@ -220,21 +223,45 @@ function parseDateTs(dateStr) {
 }
 
 // ---------------------------------------------------------------------------
-// Bank detection
+// Bank detection – returns null for unknown (triggers AI tier)
 // ---------------------------------------------------------------------------
 
+const BANK_KEYWORDS = {
+  // ── Traditional banks ──────────────────────────────────────────────────────
+  barclays:            ["barclays bank", "barclaycard", "barclays.co.uk", "barclays"],
+  // first_direct before hsbc — "first direct" must not fall through to hsbc
+  first_direct:        ["first direct", "firstdirect", "1st direct"],
+  hsbc:                ["hsbc bank", "hsbc uk", "hsbc.co.uk", "hsbc"],
+  lloyds:              ["lloyds bank", "lloydtsb", "lloyds.com", "lloyds"],
+  // royal_bank_scotland before natwest — "rbs" / "royal bank of scotland" are RBS, not NatWest
+  royal_bank_scotland: ["royal bank of scotland", "rbs", "natwest group"],
+  natwest:             ["national westminster", "natwest", "nat west"],
+  santander:           ["santander uk", "santander"],
+  // bank_of_scotland before halifax — same Lloyds group but distinct brand
+  bank_of_scotland:    ["bank of scotland", "bankofscotland"],
+  halifax:             ["halifax"],
+  nationwide:          ["nationwide building society", "nationwide"],
+  tsb:                 ["tsb bank", "tsb"],
+  metro:               ["metro bank"],
+  virgin:              ["virgin money", "virgin bank"],
+  // ── Digital / challenger banks ─────────────────────────────────────────────
+  monzo:               ["monzo bank", "monzo.com", "monzo"],
+  starling:            ["starling bank", "starling"],
+  revolut:             ["revolut ltd", "revolut bank", "revolut"],
+  chase_uk:            ["jpmorgan chase", "chase bank uk", "chase uk", "chase"],
+  tide:                ["tide platform", "tide business", "tide"],
+  mettle:              ["natwest mettle", "mettle bank", "mettle"],
+  monese:              ["monese ltd", "monese"],
+};
+
 function detectBank(text) {
-  const t = text.slice(0, 4000).toUpperCase(); // scan the header area only
-  if (/BARCLAYS\s+BANK/.test(t) || /BARCLAYS\.CO\.UK/.test(t)) return "barclays";
-  if (/HSBC\s+BANK/.test(t)    || /HSBC\.CO\.UK/.test(t) || /\bHSBC\b/.test(t)) return "hsbc";
-  if (/LLOYDS\s+BANK/.test(t)  || /LLOYDS\.CO\.UK/.test(t)) return "lloyds";
-  if (/NATWEST/.test(t)        || /NAT\s*WEST/.test(t)) return "natwest";
-  if (/SANTANDER/.test(t)) return "santander";
-  if (/MONZO\s+BANK/.test(t)   || /MONZO\.COM/.test(t)) return "monzo";
-  if (/STARLING\s+BANK/.test(t)) return "starling";
-  if (/HALIFAX/.test(t)) return "halifax";
-  if (/NATIONWIDE/.test(t)) return "nationwide";
-  return "generic";
+  const t = text.slice(0, 6000).toLowerCase();
+  for (const [bank, keywords] of Object.entries(BANK_KEYWORDS)) {
+    for (const kw of keywords) {
+      if (t.includes(kw)) return bank;
+    }
+  }
+  return null; // unknown bank — may trigger AI tier
 }
 
 // ---------------------------------------------------------------------------
@@ -261,7 +288,6 @@ function findAmounts(str) {
 // STAGE 4 – NatWest transaction type codes
 // ---------------------------------------------------------------------------
 
-// NatWest puts a type column (DD, CR, TFR, SO, BP, etc.) between date and description
 const NATWEST_TYPE_RE = /^\s*(DD|CR|TFR|SO|BP|FP|ATM|INT|DIV|TXN|CHQ|DR)\s+/i;
 
 function extractNatWestType(section) {
@@ -274,7 +300,7 @@ function natwestSuffix(code) {
   if (!code) return "";
   if (["CR", "INT", "DIV"].includes(code)) return "CR";
   if (["DD", "SO", "BP", "FP", "ATM", "CHQ", "DR"].includes(code)) return "DR";
-  if (code === "TFR") return ""; // could be either direction
+  if (code === "TFR") return "";
   return "";
 }
 
@@ -298,6 +324,25 @@ function classifyType(rawSection, suffix) {
   for (const re of INCOME_KEYWORDS) if (re.test(rawSection)) return "income";
   return "expense";
 }
+
+// Banks that use raw amount sign (negative=debit, positive=credit) instead of CR/DR suffixes.
+// For these, we infer type from the sign of the parsed value rather than text suffixes.
+const SIGN_BASED_BANKS = new Set([
+  "revolut", "chase_uk", "tide", "mettle", "monese",
+]);
+
+function classifyTypeForBank(rawSection, suffix, value, bank) {
+  if (bank && SIGN_BASED_BANKS.has(bank)) {
+    if (value < 0) return "expense";
+    for (const re of FORCE_EXPENSE)  if (re.test(rawSection)) return "expense";
+    for (const re of REFUND_KEYWORDS) if (re.test(rawSection)) return "refund";
+    return "income";
+  }
+  return classifyType(rawSection, suffix);
+}
+
+// Banks that share NatWest's type-code column format (DD/CR/TFR/SO/BP etc.)
+const NATWEST_FORMAT_BANKS = new Set(["natwest", "royal_bank_scotland", "mettle"]);
 
 // ---------------------------------------------------------------------------
 // STAGE 5 – Description cleaning
@@ -444,11 +489,21 @@ const CATEGORY_RULES = [
     ],
   },
   {
+    name: "Business",
+    patterns: [
+      /\btide\b/i, /\bmettle\b/i, /\binvoice\b/i, /\bsubscription\s+fee\b/i,
+      /\baccountancy\b/i, /\baccounting\s+software\b/i, /\bxero\b/i,
+      /\bquickbooks\b/i, /\bsage\b/i, /\bcompany\s+house/i,
+      /\bbank\s+fee\b/i, /\bplatform\s+fee\b/i,
+    ],
+  },
+  {
     name: "Transfers",
     patterns: [
       /\bmonzo\b/i, /\bpaypal\b/i, /bank\s+transfer/i, /\brevolut\b/i,
       /\bwise\b/i, /\bcash\s+app\b/i, /\bchaps\b/i, /\bstarling\b/i,
       /transfer\s+to/i, /transfer\s+from/i, /sent\s+to/i, /received\s+from/i,
+      /\bchase\b/i, /\bmonese\b/i,
     ],
   },
   {
@@ -467,7 +522,7 @@ function categorize(rawSection, cleanedDescription, type) {
       if (re.test(combined)) return name;
     }
   }
-  return "Unknown \u26a0\ufe0f";
+  return "Unknown ⚠️";
 }
 
 // ---------------------------------------------------------------------------
@@ -504,6 +559,20 @@ const SKIP_PATTERNS = [
   /\bcontinued\b/i,
   /your\s+statement/i,
   /current\s+account\s+statement/i,
+  // Revolut-specific
+  /currency\s+exchange/i,
+  /top-up\s+reversal/i,
+  /exchange\s+rate/i,
+  // Tide/Mettle business bank headers
+  /vat\s+number/i,
+  /company\s+registration/i,
+  // Chase UK
+  /sort\s+code\s+60-05/i,
+  // First Direct / HSBC group
+  /first\s+direct\s+bank/i,
+  // Generic digital bank headers
+  /account\s+transactions/i,
+  /transaction\s+history/i,
 ];
 
 function shouldSkip(text) {
@@ -515,10 +584,7 @@ function shouldSkip(text) {
 // STAGE 7 – Transfer pairing detection
 // ---------------------------------------------------------------------------
 
-// After all transactions are parsed, flag pairs that look like internal transfers:
-// same absolute amount, both categorised as Transfers, within 5 days of each other.
 function detectTransferPairs(transactions) {
-  // Group by amount
   const byAmount = {};
   transactions.forEach((t, i) => {
     const key = Math.abs(Number(t.amount)).toFixed(2);
@@ -577,10 +643,9 @@ function primaryParse(text, bank) {
     const amounts = findAmounts(rawSection);
     if (amounts.length === 0) continue;
 
-    // For NatWest, extract the type code for better classification
     let section = rawSection;
     let natwestCode = null;
-    if (bank === "natwest") {
+    if (NATWEST_FORMAT_BANKS.has(bank)) {
       const { code, rest } = extractNatWestType(rawSection);
       natwestCode = code;
       section = rest;
@@ -593,7 +658,7 @@ function primaryParse(text, bank) {
       if (shouldSkip(descRaw)) continue;
 
       const effectiveSuffix = natwestCode ? natwestSuffix(natwestCode) : suffix;
-      const type = classifyType(descRaw, effectiveSuffix);
+      const type = classifyTypeForBank(descRaw, effectiveSuffix, value, bank);
       const baseDesc = cleanDescription(descRaw);
       const description = cleanMerchantName(baseDesc);
       const category = categorize(descRaw, description, type);
@@ -614,17 +679,10 @@ function primaryParse(text, bank) {
 function fallbackParse(text, bank) {
   const transactions = [];
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const unparsed = []; // lines with £ amounts that didn't parse (debug)
 
   for (const line of lines) {
     if (shouldSkip(line)) continue;
     const dateMatch = findFirstDate(line);
-
-    // Log any line with a currency amount but no date (for missed tx detection)
-    if (!dateMatch && /£[\d,]+\.\d{2}/.test(line)) {
-      unparsed.push(line);
-      continue;
-    }
     if (!dateMatch) continue;
 
     const amounts = findAmounts(line);
@@ -632,7 +690,7 @@ function fallbackParse(text, bank) {
 
     let section = line.replace(dateMatch.text, "").trim();
     let natwestCode = null;
-    if (bank === "natwest") {
+    if (NATWEST_FORMAT_BANKS.has(bank)) {
       const { code, rest } = extractNatWestType(section);
       natwestCode = code;
       section = rest;
@@ -642,7 +700,7 @@ function fallbackParse(text, bank) {
     if (shouldSkip(section)) continue;
 
     const effectiveSuffix = natwestCode ? natwestSuffix(natwestCode) : suffix;
-    const type = classifyType(section, effectiveSuffix);
+    const type = classifyTypeForBank(section, effectiveSuffix, value, bank);
     const baseDesc = cleanDescription(section);
     const description = cleanMerchantName(baseDesc);
     const category = categorize(section, description, type);
@@ -652,11 +710,94 @@ function fallbackParse(text, bank) {
     transactions.push({ date, description, amount, type, category });
   }
 
-  // Attempt to salvage multi-line descriptions that wrapped from previous line
-  // by pairing consecutive unparsed lines that have an amount but no date
-  // (already logged above – kept for future enhancement)
-
   return transactions;
+}
+
+// ---------------------------------------------------------------------------
+// TIER 2 – Claude AI fallback parser
+// ---------------------------------------------------------------------------
+
+const AI_PROMPT = (rawText) => `You are a bank statement parser. Extract all transactions from the following bank statement text and return them as a JSON array.
+
+Each transaction object must have exactly these fields:
+- date: string in DD/MM/YYYY format
+- description: string (merchant/payee name, cleaned and readable)
+- amount: number (negative for expenses/debits, positive for income/credits)
+- type: "expense" | "income" | "refund"
+- category: one of: Groceries, Shopping, Fast Food, Eating Out, Transport, Entertainment, Health & Beauty, Bills & Finance, ATM & Cash, Charity & Donations, Transfers, Refunds, Income, Vaping & Tobacco, Unknown
+
+Return ONLY a valid JSON array with no markdown, no explanation, no extra text.
+
+Bank statement text:
+${rawText.substring(0, 8000)}`;
+
+const AI_PROMPT_SIMPLE = (rawText) => `Extract transactions from this bank statement as JSON array. Each item: {date:"DD/MM/YYYY", description:"string", amount:number, type:"expense"|"income"|"refund", category:"string"}. Negative amounts = expenses. Return only JSON array.
+
+${rawText.substring(0, 5000)}`;
+
+async function callClaudeAPI(prompt) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 4000,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Claude API error ${response.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  const text = data.content?.[0]?.text?.trim();
+  if (!text) throw new Error("Empty response from Claude API");
+
+  // Strip markdown code fences if present
+  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  const parsed = JSON.parse(cleaned);
+
+  if (!Array.isArray(parsed)) throw new Error("Claude API did not return a JSON array");
+  return parsed;
+}
+
+async function aiParseStatement(rawText) {
+  // First attempt with full prompt
+  try {
+    return await callClaudeAPI(AI_PROMPT(rawText));
+  } catch (err) {
+    console.warn("AI parse first attempt failed:", err.message);
+  }
+
+  // Retry with simplified prompt
+  try {
+    return await callClaudeAPI(AI_PROMPT_SIMPLE(rawText));
+  } catch (err) {
+    console.warn("AI parse retry failed:", err.message);
+    throw new Error("AI parsing failed after retry. Please check your statement format.");
+  }
+}
+
+// Validate and normalise AI-returned transactions to match our schema
+function normaliseAITransactions(raw) {
+  return raw
+    .filter((t) => t && typeof t === "object" && t.date && t.amount != null)
+    .map((t) => ({
+      date: normalizeDateStr(String(t.date)) || String(t.date),
+      description: cleanMerchantName(String(t.description || "Transaction")),
+      amount: Number(t.amount),
+      type: ["expense", "income", "refund"].includes(t.type) ? t.type : (Number(t.amount) < 0 ? "expense" : "income"),
+      category: t.category || "Unknown ⚠️",
+    }));
 }
 
 // ---------------------------------------------------------------------------
@@ -664,6 +805,9 @@ function fallbackParse(text, bank) {
 // ---------------------------------------------------------------------------
 
 export async function POST(request) {
+  const startTime = Date.now();
+  const warnings  = [];
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");
@@ -695,14 +839,66 @@ export async function POST(request) {
     const text = cleanText(rawText);
     const bank = detectBank(text);
 
-    let transactions = primaryParse(text, bank);
+    if (!bank) warnings.push("Bank not recognised — falling back to generic rules parser");
+
+    // ── TIER 1: Rules-based parsing ──────────────────────────────────────────
+    let transactions = primaryParse(text, bank || "generic");
+    const primaryCount = transactions.length;
 
     if (transactions.length < 3) {
-      const fallback = fallbackParse(text, bank);
-      if (fallback.length > transactions.length) transactions = fallback;
+      const fallback = fallbackParse(text, bank || "generic");
+      if (fallback.length > transactions.length) {
+        transactions = fallback;
+        warnings.push(`Primary parser found ${primaryCount} tx; fallback parser found ${fallback.length} — using fallback`);
+      }
     }
 
-    if (transactions.length === 0) {
+    const rawCount = transactions.length;
+
+    // ── TIER 2: Claude AI fallback ───────────────────────────────────────────
+    // Trigger when: no bank detected AND rules parser found < 3 transactions
+    let confidence;
+    let parserUsed;
+
+    if (bank === null && transactions.length < 3) {
+      try {
+        const aiResults = await aiParseStatement(text);
+        const normalised = normaliseAITransactions(aiResults);
+
+        if (normalised.length > transactions.length) {
+          transactions = normalised;
+          confidence = "low";
+          parserUsed = "ai";
+        } else if (transactions.length >= 3) {
+          confidence = "medium";
+          parserUsed = "rules";
+          warnings.push("AI parser returned fewer results than rules parser — using rules result");
+        } else {
+          return NextResponse.json(
+            {
+              error:
+                "No transactions could be detected. The statement format may be unusual or the PDF may be image-based.",
+              rawTextPreview: text.slice(0, 600),
+            },
+            { status: 422 }
+          );
+        }
+      } catch (aiErr) {
+        if (transactions.length > 0) {
+          confidence = "medium";
+          parserUsed = "rules";
+          warnings.push(`AI fallback failed: ${aiErr.message} — using rules parser result`);
+        } else {
+          return NextResponse.json(
+            {
+              error: aiErr.message || "Could not parse this statement. Please check the file and try again.",
+              rawTextPreview: text.slice(0, 600),
+            },
+            { status: 422 }
+          );
+        }
+      }
+    } else if (transactions.length === 0) {
       return NextResponse.json(
         {
           error:
@@ -711,16 +907,36 @@ export async function POST(request) {
         },
         { status: 422 }
       );
+    } else {
+      confidence = bank !== null && transactions.length >= 10 ? "high" : "medium";
+      parserUsed = "rules";
     }
 
-    // Flag transfers (categorised as Transfers or paired opposite transactions)
+    // Flag transfers
     const withTransferFlags = detectTransferPairs(transactions);
+    const parseTimeMs = Date.now() - startTime;
 
-    return NextResponse.json({
+    const responseBody = {
       transactions: withTransferFlags,
       count: withTransferFlags.length,
-      bank,
-    });
+      bank: bank || "unknown",
+      confidence,
+      parserUsed,
+    };
+
+    // Include debug info in development
+    if (process.env.NODE_ENV === "development") {
+      responseBody.debug = {
+        bank:        bank || "unknown",
+        confidence,
+        parserUsed,
+        rawCount,
+        parseTimeMs,
+        warnings,
+      };
+    }
+
+    return NextResponse.json(responseBody);
   } catch (err) {
     console.error("PDF parse error:", err);
     return NextResponse.json(
