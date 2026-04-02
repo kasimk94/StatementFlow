@@ -287,7 +287,7 @@ export default function Home() {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#f8fafc" }}>
         <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="dash-header-inner max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <Link
               href="/"
               onClick={(e) => { e.preventDefault(); handleReset(); window.scrollTo(0, 0); }}
@@ -308,7 +308,7 @@ export default function Home() {
             </button>
           </div>
         </header>
-        <main className="max-w-6xl mx-auto px-6 py-10">
+        <main className="dash-main-inner max-w-6xl mx-auto px-6 py-10">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900">Your Statement</h2>
             <p className="text-slate-500 text-sm mt-1">{transactions.length} transactions found</p>
@@ -345,8 +345,8 @@ export default function Home() {
           </div>
 
           <h1
-            className="font-extrabold text-slate-900 leading-tight tracking-tight mb-8"
-            style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)" }}
+            className="hero-headline font-extrabold text-slate-900 leading-tight tracking-tight mb-8"
+            style={{ fontSize: "clamp(1.75rem, 4vw, 3.5rem)" }}
           >
             <span className="block scroll-animate" style={{ transitionDelay: "0.1s" }}>Turn Any Bank Statement Into</span>
             <span className="block scroll-animate" style={{ height: "1.35em", transitionDelay: "0.2s" }}>
@@ -394,10 +394,11 @@ export default function Home() {
           </p>
 
           {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14 scroll-animate" style={{ transitionDelay: "0.4s" }}>
+          <div className="hero-cta-group mb-14 scroll-animate" style={{ transitionDelay: "0.4s" }}>
             <button
               onClick={scrollToUpload}
               className="flex items-center gap-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-9 py-4 rounded-2xl text-base shadow-xl shadow-blue-200/60 btn-primary"
+              style={{ minHeight: 52 }}
             >
               Convert My Statement
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -407,6 +408,7 @@ export default function Home() {
             <a
               href="#how-it-works"
               className="flex items-center gap-2 border border-slate-300 hover:border-slate-400 text-slate-700 font-semibold px-9 py-4 rounded-2xl text-base shadow-sm btn-secondary"
+              style={{ minHeight: 52, justifyContent: "center" }}
             >
               See Example
             </a>
@@ -446,7 +448,7 @@ export default function Home() {
 
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             {/* Demo banner */}
-            <div style={{
+            <div className="demo-banner-row" style={{
               display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10,
               background: "#fffbeb", borderTop: "1px solid #fde68a", borderLeft: "1px solid #fde68a", borderRight: "1px solid #fde68a",
               padding: "11px 20px", borderRadius: "16px 16px 0 0",
@@ -469,7 +471,7 @@ export default function Home() {
             </div>
 
             {/* Dashboard card */}
-            <div style={{
+            <div className="demo-card-inner" style={{
               position: "relative",
               background: "#f8fafc",
               border: "1px solid #fde68a",
@@ -638,7 +640,7 @@ export default function Home() {
           </div>
 
           {/* Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mb-20">
+          <div className="pricing-grid-mobile grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mb-20">
 
             {/* ── FREE ── */}
             <div className="scroll-animate bg-white rounded-[20px] border border-slate-200 shadow-sm p-8 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
@@ -669,7 +671,7 @@ export default function Home() {
 
             {/* ── PRO (most popular) ── */}
             <div
-              className="scroll-animate relative md:-mt-5 md:-mb-5 flex flex-col rounded-[20px] p-8 transition-all duration-300 hover:-translate-y-1 z-10"
+              className="pricing-card-pro-mobile scroll-animate relative md:-mt-5 md:-mb-5 flex flex-col rounded-[20px] p-8 transition-all duration-300 hover:-translate-y-1 z-10"
               style={{
                 background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)",
                 boxShadow: "0 20px 60px rgba(108,92,231,0.35)",

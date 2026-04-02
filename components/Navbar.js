@@ -48,6 +48,59 @@ const NAVBAR_CSS = `
     box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
     background-position: 100% 50%;
   }
+
+  /* Mobile nav link inside hamburger menu */
+  .npill-mobile {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 13px 16px;
+    border-radius: 10px;
+    color: #4a4a6a;
+    transition: background 0.15s ease, color 0.15s ease;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+  .npill-mobile:hover,
+  .npill-mobile:active {
+    background: rgba(108, 92, 231, 0.08);
+    color: #6c5ce7;
+  }
+  .npill-mobile.active {
+    background: rgba(108, 92, 231, 0.1);
+    color: #6c5ce7;
+    font-weight: 600;
+  }
+
+  /* Hamburger button */
+  .nav-hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    color: #4a4a6a;
+    line-height: 1;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+  }
+  .nav-hamburger:hover { background: rgba(108,92,231,0.08); }
+
+  @media (max-width: 768px) {
+    .nav-hamburger { display: flex; }
+    .ntry-desktop  { display: none !important; }
+    .nav-wrapper   { width: calc(100% - 24px) !important; }
+  }
+  @media (min-width: 769px) {
+    .nav-mobile-dropdown { display: none !important; }
+  }
 `;
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
@@ -87,12 +140,14 @@ export default function Navbar({ onScrollToUpload }) {
   const [easing,        setEasing]        = useState("top 0.65s cubic-bezier(0.34,1.56,0.64,1)");
   const [activeSection, setActiveSection] = useState("");
   const [hoveredIdx,    setHoveredIdx]    = useState(null);
+  const [menuOpen,      setMenuOpen]      = useState(false);
 
   // Sliding pill geometry
   const [pill, setPill] = useState({ left: 0, width: 0, opacity: 0 });
 
   const navRef        = useRef(null);
-  const linkRefs      = useRef([]);    // one ref per nav link
+  const linkRefs      = useRef([]);
+  const wrapperRef    = useRef(null);
   const hasMounted    = useRef(false);
   const lastScrollY   = useRef(0);
   const hoverTopRef   = useRef(false);
@@ -108,9 +163,20 @@ export default function Navbar({ onScrollToUpload }) {
     document.head.appendChild(el);
   }, []);
 
+  // ── Close menu on outside click ───────────────────────────────────────────
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [menuOpen]);
+
   // ── Sliding pill position ─────────────────────────────────────────────────
   const activeIdx = NAV_LINKS.findIndex((l) => l.section === activeSection);
-  // Hovered takes priority; fall back to active; -1 means no pill
   const targetIdx = hoveredIdx !== null ? hoveredIdx : activeIdx;
 
   const movePill = useCallback((idx) => {
@@ -124,18 +190,11 @@ export default function Navbar({ onScrollToUpload }) {
   }, []);
 
   useEffect(() => {
-    if (targetIdx < 0) {
-      hidePill();
-    } else {
-      movePill(targetIdx);
-    }
+    if (targetIdx < 0) { hidePill(); } else { movePill(targetIdx); }
   }, [targetIdx, movePill, hidePill]);
 
-  // Recalculate on resize so pill stays aligned
   useEffect(() => {
-    function onResize() {
-      if (targetIdx >= 0) movePill(targetIdx);
-    }
+    function onResize() { if (targetIdx >= 0) movePill(targetIdx); }
     window.addEventListener("resize", onResize, { passive: true });
     return () => window.removeEventListener("resize", onResize);
   }, [targetIdx, movePill]);
@@ -161,14 +220,11 @@ export default function Navbar({ onScrollToUpload }) {
     function handleScroll() {
       if (!hasMounted.current) return;
       const y = window.scrollY;
-      if (y <= 0) {
-        show();
-      } else if (!hoverTopRef.current && y > lastScrollY.current + 4) {
+      if (y <= 0) { show(); }
+      else if (!hoverTopRef.current && y > lastScrollY.current + 4) {
         if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
         hide();
-      } else if (y < lastScrollY.current - 4) {
-        show();
-      }
+      } else if (y < lastScrollY.current - 4) { show(); }
       lastScrollY.current = y;
     }
 
@@ -228,6 +284,8 @@ export default function Navbar({ onScrollToUpload }) {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
+      ref={wrapperRef}
+      className="nav-wrapper"
       style={{
         position:   "fixed",
         top:        topPx,
@@ -247,16 +305,17 @@ export default function Navbar({ onScrollToUpload }) {
       {/* Inner frosted-glass pill */}
       <header
         style={{
-          borderRadius:        20,
-          height:              60,
-          background:          "rgba(255, 255, 255, 0.88)",
+          borderRadius:        menuOpen ? "20px 20px 0 0" : 20,
+          height:              56,
+          background:          "rgba(255, 255, 255, 0.95)",
           backdropFilter:      "blur(16px)",
           WebkitBackdropFilter:"blur(16px)",
-          boxShadow:           "0 8px 32px rgba(108,92,231,0.12), 0 2px 8px rgba(0,0,0,0.08)",
+          boxShadow:           menuOpen ? "none" : "0 8px 32px rgba(108,92,231,0.12), 0 2px 8px rgba(0,0,0,0.08)",
           display:             "grid",
           gridTemplateColumns: "1fr auto 1fr",
           alignItems:          "center",
-          padding:             "0 20px",
+          padding:             "0 16px 0 20px",
+          transition:          "border-radius 0.15s ease",
         }}
       >
         {/* ── Logo ── */}
@@ -265,9 +324,9 @@ export default function Navbar({ onScrollToUpload }) {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none" }}
         >
-          <LogoIcon size={32} />
+          <LogoIcon size={30} />
           <span style={{
-            fontSize:   17,
+            fontSize:   16,
             fontWeight: 800,
             letterSpacing: "-0.02em",
             background: "linear-gradient(135deg, #1a1a2e 0%, #6c5ce7 100%)",
@@ -279,14 +338,14 @@ export default function Navbar({ onScrollToUpload }) {
           </span>
         </Link>
 
-        {/* ── Nav links with sliding pill ── */}
+        {/* ── Desktop nav links with sliding pill ── */}
         <nav
           ref={navRef}
           className="hidden md:flex"
           style={{ position: "relative", alignItems: "center", gap: 2 }}
           onMouseLeave={() => setHoveredIdx(null)}
         >
-          {/* The sliding background pill */}
+          {/* Sliding background pill */}
           <div
             aria-hidden="true"
             style={{
@@ -303,7 +362,6 @@ export default function Navbar({ onScrollToUpload }) {
               pointerEvents: "none",
             }}
           />
-
           {NAV_LINKS.map(({ label, href, section }, i) => {
             const isActive  = activeSection === section;
             const isHovered = hoveredIdx === i;
@@ -326,13 +384,74 @@ export default function Navbar({ onScrollToUpload }) {
           })}
         </nav>
 
-        {/* ── Try Free ── */}
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button className="ntry" onClick={onScrollToUpload}>
+        {/* ── Right side: Try Free (desktop) + Hamburger (mobile) ── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+          {/* Try Free — desktop only */}
+          <button className="ntry ntry-desktop" onClick={onScrollToUpload}>
             Try Free
+          </button>
+          {/* Hamburger — mobile only */}
+          <button
+            className="nav-hamburger"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? (
+              /* X icon */
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            ) : (
+              /* Hamburger icon */
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="3" y1="6"  x2="21" y2="6"  />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            )}
           </button>
         </div>
       </header>
+
+      {/* ── Mobile dropdown menu ── */}
+      <div
+        className="nav-mobile-dropdown"
+        style={{
+          overflow:   "hidden",
+          maxHeight:  menuOpen ? 480 : 0,
+          transition: "max-height 0.3s ease",
+          background: "rgba(255, 255, 255, 0.97)",
+          backdropFilter:      "blur(16px)",
+          WebkitBackdropFilter:"blur(16px)",
+          borderRadius: "0 0 20px 20px",
+          borderTop: "1px solid rgba(108,92,231,0.1)",
+        }}
+      >
+        <nav style={{ padding: "8px 12px 16px" }}>
+          {NAV_LINKS.map(({ label, href, section }) => (
+            <a
+              key={section}
+              href={href}
+              className={`npill-mobile${activeSection === section ? " active" : ""}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              {label}
+            </a>
+          ))}
+          {/* Try Free in menu */}
+          <div style={{ padding: "8px 4px 0" }}>
+            <button
+              className="ntry"
+              style={{ width: "100%", borderRadius: 12, padding: "12px", fontSize: "15px" }}
+              onClick={() => { setMenuOpen(false); onScrollToUpload(); }}
+            >
+              Try Free
+            </button>
+          </div>
+        </nav>
+      </div>
     </div>
   );
 }

@@ -180,18 +180,14 @@ const PAGE_SIZE = 15;
 function ExportToolbar({ downloading, onDownload, onCSV, downloadError }) {
   return (
     <div
+      className="export-toolbar-inner"
       style={{
-        background:     "#ffffff",
-        borderRadius:   14,
-        border:         "1px solid #e8e4f8",
-        borderLeft:     "4px solid #6c5ce7",
-        boxShadow:      "0 2px 12px rgba(108,92,231,0.07), 0 1px 4px rgba(0,0,0,0.04)",
-        padding:        "12px 18px 12px 20px",
-        display:        "flex",
-        alignItems:     "center",
-        justifyContent: "space-between",
-        gap:            16,
-        flexWrap:       "wrap",
+        background:   "#ffffff",
+        borderRadius: 14,
+        border:       "1px solid #e8e4f8",
+        borderLeft:   "4px solid #6c5ce7",
+        boxShadow:    "0 2px 12px rgba(108,92,231,0.07), 0 1px 4px rgba(0,0,0,0.04)",
+        padding:      "12px 18px 12px 20px",
       }}
     >
       {/* Label */}
@@ -202,11 +198,11 @@ function ExportToolbar({ downloading, onDownload, onCSV, downloadError }) {
           <line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
         <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#1e293b" }}>Export Your Results</span>
-        <span style={{ fontSize: "0.8rem", color: "#94a3b8", fontWeight: 400 }}>— download your full statement report</span>
+        <span className="export-toolbar-label-sub" style={{ fontSize: "0.8rem", color: "#94a3b8", fontWeight: 400 }}>— download your full statement report</span>
       </div>
 
       {/* Buttons */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
+      <div className="export-toolbar-buttons">
         <button
           onClick={onDownload}
           disabled={downloading}
