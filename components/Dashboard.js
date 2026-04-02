@@ -146,7 +146,7 @@ function PieLegend({ data, totalExpenses }) {
         return (
           <div key={entry.name} className="flex items-center gap-2.5">
             <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
-            <span className="text-sm text-slate-600 flex-1 truncate">{entry.name}</span>
+            <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>{entry.name}</span>
             <span className="text-sm font-bold text-slate-800 shrink-0">{fmtShort(entry.value)}</span>
             <span
               className="text-xs text-white font-semibold rounded-full px-1.5 py-0.5 shrink-0"
@@ -684,8 +684,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         </div>
       )}
 
-      {/* ── EXPORT TOOLBAR (real dashboard — above KPI cards) ── */}
-      {!demoMode && <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />}
+      {/* ── EXPORT TOOLBAR (above KPI cards — both real and demo) ── */}
+      <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />
 
       {/* ── STAT CARDS ── */}
       <div ref={demoRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -741,9 +741,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         />
       </div>
 
-      {/* ── EXPORT TOOLBAR (demo — below KPI cards) ── */}
-      {demoMode && <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />}
-
       {/* ── CHARTS ── */}
       <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
 
@@ -756,7 +753,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           ) : (
             <div className="flex flex-col lg:flex-row gap-4 items-start">
               {/* Chart */}
-              <div className="w-full lg:w-56 shrink-0">
+              <div className="w-full lg:w-44 shrink-0">
                 <ResponsiveContainer width="100%" height={230}>
                   <PieChart>
                     <Pie
@@ -803,7 +800,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                 </ResponsiveContainer>
               </div>
               {/* Legend */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1">
                 <PieLegend data={pieData} totalExpenses={expenses} />
               </div>
             </div>
