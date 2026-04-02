@@ -78,6 +78,7 @@ const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works", section: "how-it-works" },
   { label: "Pricing",      href: "#pricing",      section: "pricing"      },
   { label: "Features",     href: "#features",     section: "features"     },
+  { label: "Reviews",      href: "#reviews",      section: "reviews"      },
   { label: "Security",     href: "#security",     section: "security"     },
 ];
 
