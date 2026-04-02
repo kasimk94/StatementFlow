@@ -611,7 +611,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     });
   }, [filtered, sortKey, sortDir]);
 
-  const pageSize   = demoMode ? 5 : PAGE_SIZE;
+  const pageSize   = demoMode ? 10 : PAGE_SIZE;
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const paginated  = sorted.slice((page - 1) * pageSize, page * pageSize);
 
