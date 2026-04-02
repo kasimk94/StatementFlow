@@ -753,15 +753,15 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           ) : (
             <div className="flex flex-col lg:flex-row gap-4 items-start">
               {/* Chart */}
-              <div className="w-full lg:w-44 shrink-0">
-                <ResponsiveContainer width="100%" height={230}>
-                  <PieChart>
+              <div className="w-full lg:w-56 shrink-0" style={{ overflow: "visible", padding: "0 8px" }}>
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={65}
-                      outerRadius={100}
+                      innerRadius={60}
+                      outerRadius={88}
                       paddingAngle={2}
                       dataKey="value"
                       strokeWidth={0}
