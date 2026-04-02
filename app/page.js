@@ -5,6 +5,8 @@ import Link from "next/link";
 import UploadZone from "../components/UploadZone";
 import Dashboard from "../components/Dashboard";
 import Navbar from "../components/Navbar";
+import FeedbackPopup from "../components/FeedbackPopup";
+import ReviewsSection from "../components/ReviewsSection";
 
 // ── Demo transactions (debits are negative, credits positive) ─────────────────
 const DEMO_TRANSACTIONS = [
@@ -39,6 +41,25 @@ const DEMO_TRANSACTIONS = [
   { date: "03 Mar 2026", description: "TfL",                    category: "Transport",        amount:    -2.80 },
   { date: "02 Mar 2026", description: "Costa Coffee",           category: "Eating Out",       amount:    -4.95 },
 ];
+
+// ── Hidden admin link (visible only at ?admin=true) ──────────────────────────
+function AdminLink() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    setShow(new URLSearchParams(window.location.search).get("admin") === "true");
+  }, []);
+  if (!show) return null;
+  return (
+    <div style={{ marginTop: 16, textAlign: "center" }}>
+      <a
+        href="#reviews"
+        style={{ fontSize: "0.72rem", color: "#475569", textDecoration: "underline", opacity: 0.6 }}
+      >
+        Admin: manage reviews
+      </a>
+    </div>
+  );
+}
 
 // ── Pricing feature row ───────────────────────────────────────────────────────
 function PricingFeature({ text, included, light }) {
@@ -89,10 +110,11 @@ function LogoIcon({ size = 32 }) {
 }
 
 export default function Home() {
-  const [transactions, setTransactions] = useState(null);
-  const [parseResult, setParseResult]   = useState(null);
-  const [loading, setLoading]           = useState(false);
-  const [error, setError]               = useState(null);
+  const [transactions,  setTransactions]  = useState(null);
+  const [parseResult,   setParseResult]   = useState(null);
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState(null);
+  const [showFeedback,  setShowFeedback]  = useState(false);
 
   const CYCLING_WORDS = [
     { text: "Clarity",        icon: "✨" },
@@ -240,6 +262,20 @@ export default function Home() {
   function handleReset() {
     setTransactions(null);
     setError(null);
+    setShowFeedback(false);
+  }
+
+  // Show feedback popup 10 s after a successful parse (once per session)
+  useEffect(() => {
+    if (!transactions) return;
+    if (sessionStorage.getItem("sf_feedback_shown")) return;
+    const t = setTimeout(() => setShowFeedback(true), 10000);
+    return () => clearTimeout(t);
+  }, [transactions]);
+
+  function closeFeedback() {
+    sessionStorage.setItem("sf_feedback_shown", "1");
+    setShowFeedback(false);
   }
 
   function scrollToUpload() {
@@ -284,6 +320,7 @@ export default function Home() {
             debug={parseResult?.debug}
           />
         </main>
+        {showFeedback && <FeedbackPopup onClose={closeFeedback} />}
       </div>
     );
   }
@@ -787,6 +824,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── REVIEWS ── */}
+      <ReviewsSection onScrollToUpload={scrollToUpload} />
+
       {/* ── SECURITY ── */}
       <section id="security" className="py-20 px-6 bg-white border-t border-slate-100">
         <div className="max-w-5xl mx-auto">
@@ -980,6 +1020,8 @@ export default function Home() {
             </div>
             <p className="text-xs text-slate-600">Built for UK bank statements · Free to use · No account required</p>
           </div>
+          {/* Hidden admin link — only visible at ?admin=true */}
+          <AdminLink />
         </div>
       </footer>
 
