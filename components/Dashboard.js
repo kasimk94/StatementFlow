@@ -611,8 +611,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     });
   }, [filtered, sortKey, sortDir]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const paginated  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pageSize   = demoMode ? 5 : PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const paginated  = sorted.slice((page - 1) * pageSize, page * pageSize);
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -1063,7 +1064,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500 bg-slate-50/60">
             <span className="text-xs text-slate-400">
-              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sorted.length)} of {sorted.length}
+              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, sorted.length)} of {sorted.length}
             </span>
             <div className="flex items-center gap-1.5">
               <button
