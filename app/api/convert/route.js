@@ -1,947 +1,329 @@
 import { NextResponse } from "next/server";
 import { extractText } from "unpdf";
 
-// ---------------------------------------------------------------------------
-// MERCHANT MAP – longest key matched first (greedy)
-// ---------------------------------------------------------------------------
-
-const MERCHANT_MAP = {
-  // Amazon
-  'AMAZON PRIME VIDEO': 'Amazon Prime', 'AMAZON PRIME': 'Amazon Prime',
-  'AMAZON.CO.UK': 'Amazon', 'AMZNMKTPLACE': 'Amazon', 'AMAZON': 'Amazon',
-  'AMZN': 'Amazon',
-  // Supermarkets
-  'TESCO EXPRESS': 'Tesco Express', 'TESCO EXTRA': 'Tesco Extra',
-  'TESCO STORES': 'Tesco', 'TESCO': 'Tesco',
-  'SAINSBURYS': "Sainsbury's", 'SAINSBURY': "Sainsbury's",
-  'ASDA': 'ASDA', 'MORRISONS': 'Morrisons', 'WAITROSE': 'Waitrose',
-  'LIDL': 'Lidl', 'ALDI': 'Aldi',
-  'MARKS AND SPENCER': 'M&S', 'MARKSSPENCER': 'M&S',
-  'CO-OPERATIVE': 'Co-op', 'COOPERATIVE': 'Co-op', 'COOP': 'Co-op',
-  'ICELAND FOODS': 'Iceland', 'ICELAND': 'Iceland', 'FARMFOODS': 'Farmfoods',
-  // Transport
-  'TRANSPORT FOR LONDON': 'TfL', 'LONDON UNDERGROUND': 'TfL', 'OYSTER': 'TfL',
-  'TFL': 'TfL',
-  'UBER EATS': 'Uber Eats', 'UBER': 'Uber',
-  'BOLT': 'Bolt', 'TRAINLINE': 'Trainline',
-  'GWR': 'GWR Trains', 'LNER': 'LNER Trains',
-  'NATIONAL RAIL': 'National Rail', 'AVANTI': 'Avanti West Coast',
-  'NATIONAL EXPRESS': 'National Express', 'MEGABUS': 'Megabus',
-  // Food & Drink
-  'MCDONALDS UK': "McDonald's", 'MCDONALDS': "McDonald's", 'MCDONALD': "McDonald's",
-  'STARBUCKS': 'Starbucks', 'COSTA COFFEE': 'Costa Coffee', 'COSTA': 'Costa Coffee',
-  'CAFFE NERO': 'Caffè Nero', 'GREGGS': 'Greggs',
-  'PRET A MANGER': 'Pret A Manger', 'PRET': 'Pret A Manger',
-  'DELIVEROO': 'Deliveroo', 'JUST EAT': 'Just Eat', 'JUSTEAT': 'Just Eat',
-  'KFC': 'KFC', 'SUBWAY': 'Subway',
-  'DOMINOS': "Domino's", 'DOMINO': "Domino's", 'PIZZA HUT': 'Pizza Hut',
-  'NANDOS': "Nando's", 'WAGAMAMA': 'Wagamama', 'LEON': 'Leon',
-  'FIVE GUYS': 'Five Guys', 'BURGER KING': 'Burger King',
-  'PAPA JOHNS': "Papa John's",
-  // Subscriptions / Streaming
-  'NETFLIX': 'Netflix', 'SPOTIFY': 'Spotify',
-  'DISNEY PLUS': 'Disney+', 'DISNEYPLUS': 'Disney+', 'DISNEY+': 'Disney+',
-  'NOW TV': 'Now TV', 'NOWTV': 'Now TV',
-  'YOUTUBE PREMIUM': 'YouTube Premium', 'YOUTUBE': 'YouTube Premium',
-  'APPLE.COM': 'Apple', 'APPLE': 'Apple',
-  'MICROSOFT': 'Microsoft', 'GOOGLE': 'Google',
-  // Telecoms
-  'SKY': 'Sky', 'BT GROUP': 'BT', 'EE LIMITED': 'EE',
-  'VODAFONE': 'Vodafone', 'O2': 'O2', 'THREE': 'Three Mobile',
-  'VIRGIN MEDIA': 'Virgin Media',
-  // Retail
-  'PRIMARK': 'Primark', 'NEXT': 'Next', 'H&M': 'H&M', 'ZARA': 'Zara',
-  'ASOS': 'ASOS', 'EBAY': 'eBay', 'ARGOS': 'Argos', 'CURRYS': 'Currys',
-  'JOHN LEWIS': 'John Lewis', 'IKEA': 'IKEA', 'B&Q': 'B&Q', 'BOOHOO': 'Boohoo',
-  // Fuel
-  'BP': 'BP Fuel', 'SHELL': 'Shell Fuel', 'ESSO': 'Esso Fuel',
-  'TEXACO': 'Texaco Fuel',
-  // Finance & Transfers
-  'PAYPAL': 'PayPal', 'MONZO': 'Monzo Transfer', 'STARLING': 'Starling Transfer',
-  'REVOLUT': 'Revolut Transfer', 'WISE': 'Wise Transfer',
-  'CHASE': 'Chase Transfer', 'JPMORGAN': 'Chase UK',
-  'TIDE': 'Tide', 'METTLE': 'Mettle', 'MONESE': 'Monese Transfer',
-  'FIRST DIRECT': 'First Direct',
-  // Health
-  'BOOTS': 'Boots', 'SUPERDRUG': 'Superdrug',
-  'HOLLAND AND BARRETT': 'Holland & Barrett', 'HOLLAND BARRETT': 'Holland & Barrett',
-  // Charity
-  'ISLAMIC RELIEF': 'Islamic Relief', 'MUSLIM AID': 'Muslim Aid',
-  'PENNY APPEAL': 'Penny Appeal', 'HUMAN APPEAL': 'Human Appeal',
-  'RED CROSS': 'Red Cross', 'OXFAM': 'Oxfam',
-};
-
-// Sorted longest-first so the most specific match wins
-const MERCHANT_KEYS = Object.keys(MERCHANT_MAP).sort((a, b) => b.length - a.length);
-
-function cleanMerchantName(desc) {
-  if (!desc || desc === "Transaction") return desc;
-
-  const stripped = desc
-    .replace(/\*{2,}\s*\d{4}/g, "")          // **** 1234
-    .replace(/\b\d{2}-\d{2}-\d{2}\b/g, "")   // sort codes
-    .replace(/\b\d{8}\b/g, "")               // 8-digit account numbers
-    .replace(/\b\d{6}\b/g, "")               // 6-digit references
-    .replace(/\s+[A-Z0-9]{10,}$/i, "")       // trailing long ref strings
-    .replace(/\s{2,}/g, " ")
-    .trim();
-
-  const upper = stripped.toUpperCase();
-  for (const key of MERCHANT_KEYS) {
-    if (upper.includes(key)) return MERCHANT_MAP[key];
-  }
-
-  // No map match: title-case and strip corporate suffixes
-  const cleaned = stripped
-    .replace(/\s+\b(Serv|Svcs?|Svc|Grp|Intl|Ltd|Plc|Inc|Corp|Co\.?|UK|GB)\b\.?\s*$/i, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-
-  return cleaned
-    ? cleaned.replace(/\b\w/g, (c) => c.toUpperCase())
-    : desc || "Transaction";
-}
+// Note: unpdf is used for PDF text extraction (ESM-compatible, already installed).
+// pdf-parse is available as a fallback but has known Next.js App Router compatibility
+// issues with its test-file loading at import time.
 
 // ---------------------------------------------------------------------------
-// STAGE 1 – Text cleaning
+// POST /api/convert
 // ---------------------------------------------------------------------------
-
-function cleanText(raw) {
-  return raw
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .replace(/[ \t]{2,}/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-// ---------------------------------------------------------------------------
-// STAGE 2 – Date patterns (including 2-digit year for HSBC)
-// ---------------------------------------------------------------------------
-
-const MON = String.raw`(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)`;
-
-const DATE_PATTERN_SOURCES = [
-  // DD MMM YYYY — most common UK
-  [String.raw`\d{1,2}\s+` + MON + String.raw`\s+\d{4}`, "gi"],
-  // MMM DD, YYYY — US format sometimes appears
-  [MON + String.raw`\s+\d{1,2},?\s+\d{4}`, "gi"],
-  // DD/MM/YYYY or DD-MM-YYYY
-  [String.raw`\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}`, "g"],
-  // DD MMM YY — HSBC 2-digit year (lower priority)
-  [String.raw`\d{1,2}\s+` + MON + String.raw`\s+\d{2}`, "gi"],
-  // DD MMM — no year (lowest priority)
-  [String.raw`\d{1,2}\s+` + MON, "gi"],
-];
-
-const REFERENCE_DATE_PREFIX = /\b(on|at|dated?|processed|value)\s+$/i;
-
-function findAllDates(text) {
-  const found = new Map();
-  for (const [src, flags] of DATE_PATTERN_SOURCES) {
-    const re = new RegExp(`(${src})`, flags);
-    let m;
-    while ((m = re.exec(text)) !== null) {
-      const before = text.slice(Math.max(0, m.index - 10), m.index);
-      if (REFERENCE_DATE_PREFIX.test(before)) continue;
-      if (!found.has(m.index)) {
-        found.set(m.index, { text: m[1], index: m.index, length: m[1].length });
-      }
-    }
-  }
-  return [...found.values()].sort((a, b) => a.index - b.index);
-}
-
-function findFirstDate(str) {
-  for (const [src, flags] of DATE_PATTERN_SOURCES) {
-    const re = new RegExp(`(${src})`, flags);
-    const m = re.exec(str);
-    if (m) return { text: m[1], index: m.index, length: m[1].length };
-  }
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Date normalisation – always output DD/MM/YYYY
-// ---------------------------------------------------------------------------
-
-const MONTH_NUM = {
-  jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-  jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
-};
-
-function normalizeDateStr(dateText) {
-  if (!dateText) return dateText;
-  const s = dateText.trim();
-
-  // DD MMM YYYY  (e.g. "02 Apr 2024")
-  const m1 = s.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})$/);
-  if (m1) {
-    const mon = MONTH_NUM[m1[2].toLowerCase().slice(0, 3)];
-    if (mon) return `${m1[1].padStart(2, "0")}/${mon}/${m1[3]}`;
-  }
-
-  // DD MMM YY  (HSBC, e.g. "02 Apr 24")
-  const m2 = s.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{2})$/);
-  if (m2) {
-    const mon = MONTH_NUM[m2[2].toLowerCase().slice(0, 3)];
-    const yr  = parseInt(m2[3], 10) < 50 ? "20" + m2[3] : "19" + m2[3];
-    if (mon) return `${m2[1].padStart(2, "0")}/${mon}/${yr}`;
-  }
-
-  // DD MMM  (no year, e.g. "02 Apr")
-  const m3 = s.match(/^(\d{1,2})\s+([A-Za-z]{3,})$/);
-  if (m3) {
-    const mon = MONTH_NUM[m3[2].toLowerCase().slice(0, 3)];
-    if (mon) return `${m3[1].padStart(2, "0")}/${mon}/${new Date().getFullYear()}`;
-  }
-
-  // MMM DD, YYYY  (US, e.g. "Apr 02, 2024")
-  const m4 = s.match(/^([A-Za-z]{3,})\s+(\d{1,2}),?\s+(\d{4})$/);
-  if (m4) {
-    const mon = MONTH_NUM[m4[1].toLowerCase().slice(0, 3)];
-    if (mon) return `${m4[2].padStart(2, "0")}/${mon}/${m4[3]}`;
-  }
-
-  // DD/MM/YYYY or DD-MM-YYYY
-  const m5 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (m5) return `${m5[1].padStart(2, "0")}/${m5[2].padStart(2, "0")}/${m5[3]}`;
-
-  // YYYY-MM-DD (ISO)
-  const m6 = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-  if (m6) return `${m6[3].padStart(2, "0")}/${m6[2].padStart(2, "0")}/${m6[1]}`;
-
-  return s; // return as-is if unrecognised
-}
-
-// Parse normalised DD/MM/YYYY back to a timestamp for comparison
-function parseDateTs(dateStr) {
-  if (!dateStr) return null;
-  const m = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!m) return null;
-  return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])).getTime();
-}
-
-// ---------------------------------------------------------------------------
-// Bank detection – returns null for unknown (triggers AI tier)
-// ---------------------------------------------------------------------------
-
-const BANK_KEYWORDS = {
-  // ── Traditional banks ──────────────────────────────────────────────────────
-  barclays:            ["barclays bank", "barclaycard", "barclays.co.uk", "barclays"],
-  // first_direct before hsbc — "first direct" must not fall through to hsbc
-  first_direct:        ["first direct", "firstdirect", "1st direct"],
-  hsbc:                ["hsbc bank", "hsbc uk", "hsbc.co.uk", "hsbc"],
-  lloyds:              ["lloyds bank", "lloydtsb", "lloyds.com", "lloyds"],
-  // royal_bank_scotland before natwest — "rbs" / "royal bank of scotland" are RBS, not NatWest
-  royal_bank_scotland: ["royal bank of scotland", "rbs", "natwest group"],
-  natwest:             ["national westminster", "natwest", "nat west"],
-  santander:           ["santander uk", "santander"],
-  // bank_of_scotland before halifax — same Lloyds group but distinct brand
-  bank_of_scotland:    ["bank of scotland", "bankofscotland"],
-  halifax:             ["halifax"],
-  nationwide:          ["nationwide building society", "nationwide"],
-  tsb:                 ["tsb bank", "tsb"],
-  metro:               ["metro bank"],
-  virgin:              ["virgin money", "virgin bank"],
-  // ── Digital / challenger banks ─────────────────────────────────────────────
-  monzo:               ["monzo bank", "monzo.com", "monzo"],
-  starling:            ["starling bank", "starling"],
-  revolut:             ["revolut ltd", "revolut bank", "revolut"],
-  chase_uk:            ["jpmorgan chase", "chase bank uk", "chase uk", "chase"],
-  tide:                ["tide platform", "tide business", "tide"],
-  mettle:              ["natwest mettle", "mettle bank", "mettle"],
-  monese:              ["monese ltd", "monese"],
-};
-
-function detectBank(text) {
-  const t = text.slice(0, 6000).toLowerCase();
-  for (const [bank, keywords] of Object.entries(BANK_KEYWORDS)) {
-    for (const kw of keywords) {
-      if (t.includes(kw)) return bank;
-    }
-  }
-  return null; // unknown bank — may trigger AI tier
-}
-
-// ---------------------------------------------------------------------------
-// STAGE 3 – Amount detection
-// ---------------------------------------------------------------------------
-
-const AMT_SRC = String.raw`(?<![.\d])-?\s*£?(?:\d{1,6}(?:,\d{3})*|\d+)\.\d{2}(?!\d)`;
-const AMT_SUFFIX_SRC = String.raw`\s*(?:(CR)|(DR))?(?=\s|$|[,)])`;
-
-function findAmounts(str) {
-  const re = new RegExp(`(${AMT_SRC})${AMT_SUFFIX_SRC}`, "gi");
-  const results = [];
-  let m;
-  while ((m = re.exec(str)) !== null) {
-    const raw = m[1].trim();
-    const suffix = m[2] ? "CR" : m[3] ? "DR" : "";
-    const value = parseFloat(raw.replace(/[£,\s]/g, ""));
-    if (!isNaN(value)) results.push({ raw, value, index: m.index, suffix });
-  }
-  return results;
-}
-
-// ---------------------------------------------------------------------------
-// STAGE 4 – NatWest transaction type codes
-// ---------------------------------------------------------------------------
-
-const NATWEST_TYPE_RE = /^\s*(DD|CR|TFR|SO|BP|FP|ATM|INT|DIV|TXN|CHQ|DR)\s+/i;
-
-function extractNatWestType(section) {
-  const m = section.match(NATWEST_TYPE_RE);
-  if (!m) return { code: null, rest: section };
-  return { code: m[1].toUpperCase(), rest: section.slice(m[0].length) };
-}
-
-function natwestSuffix(code) {
-  if (!code) return "";
-  if (["CR", "INT", "DIV"].includes(code)) return "CR";
-  if (["DD", "SO", "BP", "FP", "ATM", "CHQ", "DR"].includes(code)) return "DR";
-  if (code === "TFR") return "";
-  return "";
-}
-
-// ---------------------------------------------------------------------------
-// STAGE 4b – Income / expense / refund classification
-// ---------------------------------------------------------------------------
-
-const REFUND_KEYWORDS = [/refund\s+from/i, /\brefund\b/i];
-const INCOME_KEYWORDS = [
-  /received\s+from/i, /\bhmrc\b/i, /\bsalary\b/i, /\bwages\b/i,
-  /faster\s+payment\s+received/i, /bacs\s+credit/i, /payment\s+from/i,
-  /transfer\s+in/i, /money\s+in/i, /interest\s+paid/i,
-];
-const FORCE_EXPENSE = [/unpaid\s+direct\s+debit/i, /returned\s+direct\s+debit/i];
-
-function classifyType(rawSection, suffix) {
-  if (suffix === "DR") return "expense";
-  for (const re of FORCE_EXPENSE) if (re.test(rawSection)) return "expense";
-  if (suffix === "CR") return "income";
-  for (const re of REFUND_KEYWORDS) if (re.test(rawSection)) return "refund";
-  for (const re of INCOME_KEYWORDS) if (re.test(rawSection)) return "income";
-  return "expense";
-}
-
-// Banks that use raw amount sign (negative=debit, positive=credit) instead of CR/DR suffixes.
-// For these, we infer type from the sign of the parsed value rather than text suffixes.
-const SIGN_BASED_BANKS = new Set([
-  "revolut", "chase_uk", "tide", "mettle", "monese",
-]);
-
-function classifyTypeForBank(rawSection, suffix, value, bank) {
-  if (bank && SIGN_BASED_BANKS.has(bank)) {
-    if (value < 0) return "expense";
-    for (const re of FORCE_EXPENSE)  if (re.test(rawSection)) return "expense";
-    for (const re of REFUND_KEYWORDS) if (re.test(rawSection)) return "refund";
-    return "income";
-  }
-  return classifyType(rawSection, suffix);
-}
-
-// Banks that share NatWest's type-code column format (DD/CR/TFR/SO/BP etc.)
-const NATWEST_FORMAT_BANKS = new Set(["natwest", "royal_bank_scotland", "mettle"]);
-
-// ---------------------------------------------------------------------------
-// STAGE 5 – Description cleaning
-// ---------------------------------------------------------------------------
-
-const DESC_PREFIXES = [
-  [/^cash\s+machine\s+withdrawal\s+at\s+.*/i, "ATM Withdrawal"],
-  [/^cash\s+withdrawal\s+.*/i,                "ATM Withdrawal"],
-  [/^card\s+payment\s+to\s+/i,                ""],
-  [/^contactless\s+payment\s+to\s+/i,         ""],
-  [/^contactless\s+/i,                        ""],
-  [/^direct\s+debit\s+to\s+/i,               ""],
-  [/^unpaid\s+direct\s+debit\s+to\s+/i,      "Unpaid DD – "],
-  [/^bill\s+payment\s+to\s+/i,               ""],
-  [/^standing\s+order\s+to\s+/i,             ""],
-  [/^faster\s+payment\s+to\s+/i,             ""],
-  [/^transfer\s+to\s+/i,                     ""],
-  [/^received\s+from\s+/i,                   ""],
-  [/^refund\s+from\s+/i,                     ""],
-  [/^payment\s+from\s+/i,                    ""],
-  [/^paid\s+to\s+/i,                         ""],
-];
-
-function cleanDescription(rawSection) {
-  let d = rawSection
-    .replace(new RegExp(AMT_SRC, "gi"), "")
-    .replace(/\b(CR|DR)\b/g, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-
-  for (const [re, replacement] of DESC_PREFIXES) {
-    if (re.test(d)) {
-      if (replacement !== "" && !replacement.endsWith("– ")) return replacement;
-      d = d.replace(re, replacement);
-      break;
-    }
-  }
-
-  d = d
-    .replace(/\s+on\s+\d{1,2}\s+[A-Za-z]{3}\b.*/i, "")
-    .replace(/\s+ref(?:erence)?[:\s]+\S+(\s+\S+)*/i, "")
-    .replace(/\*\s*\d[\d\-\s]*/g, "")
-    .replace(/\*+/g, "")
-    .replace(/\b\d{5,}\b/g, "")
-    .replace(/\s+\b(Serv|Svcs?|Svc|Grp|Intl|Ltd|Plc|Inc|Corp|Co|UK|GB)\b\.?\s*$/i, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-
-  if (d.length > 60) d = d.slice(0, 60).replace(/\s+\S+$/, "").trim();
-  return d || "Transaction";
-}
-
-// ---------------------------------------------------------------------------
-// STAGE 5b – Category assignment
-// ---------------------------------------------------------------------------
-
-const CATEGORY_RULES = [
-  {
-    name: "Groceries",
-    patterns: [
-      /tesco/i, /sainsbury/i, /\basda\b/i, /\blidl\b/i, /\baldi\b/i,
-      /morrisons/i, /waitrose/i, /\biceland\b/i, /marks\s*[&and]+\s*spencer/i,
-      /\bm&s\b/i, /\bm\s+&\s+s\b/i, /co-?op\s+food/i, /farmfoods/i,
-    ],
-  },
-  {
-    name: "Shopping",
-    patterns: [
-      /\bamazon\b/i, /amznmktplace/i, /amzn/i, /\bebay\b/i, /\bargos\b/i,
-      /\bikea\b/i, /\bprimark\b/i, /\bnext\b/i, /\basos\b/i, /\bboohoo\b/i,
-      /very\.co/i, /\bcurry/i, /\bjohn\s+lewis\b/i, /\bzara\b/i, /\bh&m\b/i,
-    ],
-  },
-  // Fast Food before Eating Out so specific chains match here
-  {
-    name: "Fast Food",
-    patterns: [
-      /nandos/i, /mcdonald/i, /\bkfc\b/i, /\bsubway\b/i, /burger\s*king/i,
-      /\bgreggs/i, /\bpizza\b/i, /domino/i, /papa\s*john/i, /five\s+guys/i,
-      /leon\s+restaurant/i,
-    ],
-  },
-  {
-    name: "Eating Out",
-    patterns: [
-      /restaurant/i, /\bcafe\b/i, /coffee/i, /deliveroo/i, /uber\s*eats/i,
-      /just\s*eat/i, /dessert/i, /\bbistro\b/i, /pret\b/i, /costa\b/i,
-      /starbucks/i, /caffe\s+nero/i, /wagamama/i,
-    ],
-  },
-  {
-    name: "Transport",
-    patterns: [
-      /\btfl\b/i, /transport\s+for\s+london/i, /\btrain\b/i, /\bbus\b/i,
-      /parking/i, /petrol/i, /\bshell\b/i, /\bbp\b/i, /\besso\b/i,
-      /national\s+rail/i, /trainline/i, /\blyft\b/i, /national\s+express/i,
-      /\bgwr\b/i, /\blner\b/i, /avanti/i, /megabus/i, /bolt\s+/i,
-    ],
-  },
-  {
-    name: "Transport",
-    patterns: [/\buber\b/i], // after Eating Out so "Uber Eats" stays there
-  },
-  {
-    name: "Entertainment",
-    patterns: [
-      /netflix/i, /spotify/i, /disney/i, /cinema/i, /theatre/i,
-      /\bsteam\b/i, /youtube\s+premium/i, /prime\s+video/i, /apple\s+tv/i,
-      /ticketmaster/i, /sky\s+cinema/i, /\bxbox\b/i, /\bplaystation\b/i,
-      /eventbrite/i, /now\s+tv/i,
-    ],
-  },
-  {
-    name: "Health & Beauty",
-    patterns: [
-      /pharmacy/i, /superdrug/i, /\bboots\b/i, /\bgym\b/i, /fitness/i,
-      /holland\s+&?\s*barrett/i, /\bnhs\b/i, /dental/i, /optician/i,
-      /\bspa\b/i, /\bsalon\b/i, /chemist/i,
-    ],
-  },
-  {
-    name: "Bills & Finance",
-    patterns: [
-      /direct\s+debit/i, /council\s+tax/i, /\bwater\b/i, /\bgas\b/i,
-      /electric/i, /\bbarclays\b/i, /insurance/i, /broadband/i,
-      /vodafone/i, /voda\b/i, /\bthree\b/i, /\bo2\b/i, /\bee\b/i,
-      /\bsky\b/i, /virgin\s+media/i, /bill\s+payment/i, /standing\s+order/i,
-      /council/i, /unpaid\s+dd/i, /microsoft/i,
-    ],
-  },
-  {
-    name: "ATM & Cash",
-    patterns: [
-      /\batm\b/i, /cash\s+machine/i, /\bwithdrawal\b/i, /atm\s+withdrawal/i,
-      /cardtronics/i, /post\s+office\s+cash/i,
-    ],
-  },
-  {
-    name: "Charity & Donations",
-    patterns: [
-      /islamic\s+relief/i, /muslim\s+aid/i, /penny\s+appeal/i, /human\s+appeal/i,
-      /red\s+cross/i, /\boxfam\b/i, /\bdonation\b/i, /\bcharity\b/i,
-      /\bmuslim\b/i, /cancer\s+research/i, /save\s+the\s+children/i,
-    ],
-  },
-  {
-    name: "Business",
-    patterns: [
-      /\btide\b/i, /\bmettle\b/i, /\binvoice\b/i, /\bsubscription\s+fee\b/i,
-      /\baccountancy\b/i, /\baccounting\s+software\b/i, /\bxero\b/i,
-      /\bquickbooks\b/i, /\bsage\b/i, /\bcompany\s+house/i,
-      /\bbank\s+fee\b/i, /\bplatform\s+fee\b/i,
-    ],
-  },
-  {
-    name: "Transfers",
-    patterns: [
-      /\bmonzo\b/i, /\bpaypal\b/i, /bank\s+transfer/i, /\brevolut\b/i,
-      /\bwise\b/i, /\bcash\s+app\b/i, /\bchaps\b/i, /\bstarling\b/i,
-      /transfer\s+to/i, /transfer\s+from/i, /sent\s+to/i, /received\s+from/i,
-      /\bchase\b/i, /\bmonese\b/i,
-    ],
-  },
-  {
-    name: "Vaping & Tobacco",
-    patterns: [/\bvape\b/i, /\bvapes\b/i, /vaping/i, /cloud\s+city/i, /\btobacco\b/i, /e-?cig/i],
-  },
-];
-
-function categorize(rawSection, cleanedDescription, type) {
-  if (type === "refund") return "Refunds";
-  if (type === "income") return "Income";
-
-  const combined = rawSection + " " + cleanedDescription;
-  for (const { name, patterns } of CATEGORY_RULES) {
-    for (const re of patterns) {
-      if (re.test(combined)) return name;
-    }
-  }
-  return "Unknown ⚠️";
-}
-
-// ---------------------------------------------------------------------------
-// STAGE 6 – Skip-line rules
-// ---------------------------------------------------------------------------
-
-const SKIP_PATTERNS = [
-  /start\s+balance/i,
-  /end\s+balance/i,
-  /opening\s+balance/i,
-  /closing\s+balance/i,
-  /balance\s+brought\s+forward/i,
-  /balance\s+carried\s+forward/i,
-  /sort\s+code\s+20/i,
-  /\bsort\s+code\b/i,
-  /account\s+number/i,
-  /account\s+no\b/i,
-  /\biban\b/i,
-  /\bswift\b/i,
-  /statement\s+date/i,
-  /date\s+description/i,
-  /financial\s+conduct\s+authority/i,
-  /prudential\s+regulation\s+authority/i,
-  /registered\s+in\s+england/i,
-  /registered\s+office/i,
-  /authorised\s+by/i,
-  /will\s+be\s+debited\s+to\s+this\s+account/i,
-  /charges\s+are\s+summarised/i,
-  /help\s+you\s+budget/i,
-  /appear\s+on\s+your\s+next\s+statement/i,
-  /barclays\s+bank\s+uk\s+plc/i,
-  /financial\s+services\s+register/i,
-  /\bpage\s+\d/i,
-  /\bcontinued\b/i,
-  /your\s+statement/i,
-  /current\s+account\s+statement/i,
-  // Revolut-specific
-  /currency\s+exchange/i,
-  /top-up\s+reversal/i,
-  /exchange\s+rate/i,
-  // Tide/Mettle business bank headers
-  /vat\s+number/i,
-  /company\s+registration/i,
-  // Chase UK
-  /sort\s+code\s+60-05/i,
-  // First Direct / HSBC group
-  /first\s+direct\s+bank/i,
-  // Generic digital bank headers
-  /account\s+transactions/i,
-  /transaction\s+history/i,
-];
-
-function shouldSkip(text) {
-  if (text.trim().length < 4) return true;
-  return SKIP_PATTERNS.some((re) => re.test(text));
-}
-
-// ---------------------------------------------------------------------------
-// STAGE 7 – Transfer pairing detection
-// ---------------------------------------------------------------------------
-
-function detectTransferPairs(transactions) {
-  const byAmount = {};
-  transactions.forEach((t, i) => {
-    const key = Math.abs(Number(t.amount)).toFixed(2);
-    if (!byAmount[key]) byAmount[key] = [];
-    byAmount[key].push(i);
-  });
-
-  const pairedIndices = new Set();
-
-  for (const indices of Object.values(byAmount)) {
-    if (indices.length < 2) continue;
-
-    const credits = indices.filter((i) => transactions[i].amount > 0 && transactions[i].category === "Transfers");
-    const debits  = indices.filter((i) => transactions[i].amount < 0 && transactions[i].category === "Transfers");
-
-    for (const di of debits) {
-      const dTs = parseDateTs(transactions[di].date);
-      if (dTs === null) continue;
-      for (const ci of credits) {
-        if (pairedIndices.has(ci)) continue;
-        const cTs = parseDateTs(transactions[ci].date);
-        if (cTs === null) continue;
-        if (Math.abs(cTs - dTs) <= 5 * 24 * 60 * 60 * 1000) {
-          pairedIndices.add(di);
-          pairedIndices.add(ci);
-          break;
-        }
-      }
-    }
-  }
-
-  return transactions.map((t, i) => ({
-    ...t,
-    isTransfer: t.category === "Transfers" || pairedIndices.has(i),
-  }));
-}
-
-// ---------------------------------------------------------------------------
-// PRIMARY PARSER
-// ---------------------------------------------------------------------------
-
-function primaryParse(text, bank) {
-  const transactions = [];
-  const dateMarkers = findAllDates(text);
-  if (dateMarkers.length === 0) return transactions;
-
-  for (let i = 0; i < dateMarkers.length; i++) {
-    const { text: dateText, index, length } = dateMarkers[i];
-    const sectionStart = index + length;
-    const sectionEnd =
-      i + 1 < dateMarkers.length ? dateMarkers[i + 1].index : text.length;
-    const rawSection = text.slice(sectionStart, sectionEnd).trim();
-
-    if (!rawSection || shouldSkip(dateText + " " + rawSection)) continue;
-
-    const amounts = findAmounts(rawSection);
-    if (amounts.length === 0) continue;
-
-    let section = rawSection;
-    let natwestCode = null;
-    if (NATWEST_FORMAT_BANKS.has(bank)) {
-      const { code, rest } = extractNatWestType(rawSection);
-      natwestCode = code;
-      section = rest;
-    }
-
-    const txAmounts = amounts.length > 1 ? amounts.slice(0, -1) : amounts;
-
-    for (const { value, index: amtIdx, suffix } of txAmounts) {
-      const descRaw = section.slice(0, amtIdx).trim();
-      if (shouldSkip(descRaw)) continue;
-
-      const effectiveSuffix = natwestCode ? natwestSuffix(natwestCode) : suffix;
-      const type = classifyTypeForBank(descRaw, effectiveSuffix, value, bank);
-      const baseDesc = cleanDescription(descRaw);
-      const description = cleanMerchantName(baseDesc);
-      const category = categorize(descRaw, description, type);
-      const amount = type === "expense" ? -Math.abs(value) : Math.abs(value);
-      const date = normalizeDateStr(dateText);
-
-      transactions.push({ date, description, amount, type, category });
-    }
-  }
-
-  return transactions;
-}
-
-// ---------------------------------------------------------------------------
-// FALLBACK PARSER – any line containing date + amount
-// ---------------------------------------------------------------------------
-
-function fallbackParse(text, bank) {
-  const transactions = [];
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-
-  for (const line of lines) {
-    if (shouldSkip(line)) continue;
-    const dateMatch = findFirstDate(line);
-    if (!dateMatch) continue;
-
-    const amounts = findAmounts(line);
-    if (amounts.length === 0) continue;
-
-    let section = line.replace(dateMatch.text, "").trim();
-    let natwestCode = null;
-    if (NATWEST_FORMAT_BANKS.has(bank)) {
-      const { code, rest } = extractNatWestType(section);
-      natwestCode = code;
-      section = rest;
-    }
-
-    const { value, suffix } = amounts[0];
-    if (shouldSkip(section)) continue;
-
-    const effectiveSuffix = natwestCode ? natwestSuffix(natwestCode) : suffix;
-    const type = classifyTypeForBank(section, effectiveSuffix, value, bank);
-    const baseDesc = cleanDescription(section);
-    const description = cleanMerchantName(baseDesc);
-    const category = categorize(section, description, type);
-    const amount = type === "expense" ? -Math.abs(value) : Math.abs(value);
-    const date = normalizeDateStr(dateMatch.text);
-
-    transactions.push({ date, description, amount, type, category });
-  }
-
-  return transactions;
-}
-
-// ---------------------------------------------------------------------------
-// TIER 2 – Claude AI fallback parser
-// ---------------------------------------------------------------------------
-
-const AI_PROMPT = (rawText) => `You are a bank statement parser. Extract all transactions from the following bank statement text and return them as a JSON array.
-
-Each transaction object must have exactly these fields:
-- date: string in DD/MM/YYYY format
-- description: string (merchant/payee name, cleaned and readable)
-- amount: number (negative for expenses/debits, positive for income/credits)
-- type: "expense" | "income" | "refund"
-- category: one of: Groceries, Shopping, Fast Food, Eating Out, Transport, Entertainment, Health & Beauty, Bills & Finance, ATM & Cash, Charity & Donations, Transfers, Refunds, Income, Vaping & Tobacco, Unknown
-
-Return ONLY a valid JSON array with no markdown, no explanation, no extra text.
-
-Bank statement text:
-${rawText.substring(0, 8000)}`;
-
-const AI_PROMPT_SIMPLE = (rawText) => `Extract transactions from this bank statement as JSON array. Each item: {date:"DD/MM/YYYY", description:"string", amount:number, type:"expense"|"income"|"refund", category:"string"}. Negative amounts = expenses. Return only JSON array.
-
-${rawText.substring(0, 5000)}`;
-
-async function callClaudeAPI(prompt) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4000,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Claude API error ${response.status}: ${errText.slice(0, 200)}`);
-  }
-
-  const data = await response.json();
-  const text = data.content?.[0]?.text?.trim();
-  if (!text) throw new Error("Empty response from Claude API");
-
-  // Strip markdown code fences if present
-  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-  const parsed = JSON.parse(cleaned);
-
-  if (!Array.isArray(parsed)) throw new Error("Claude API did not return a JSON array");
-  return parsed;
-}
-
-async function aiParseStatement(rawText) {
-  // First attempt with full prompt
-  try {
-    return await callClaudeAPI(AI_PROMPT(rawText));
-  } catch (err) {
-    console.warn("AI parse first attempt failed:", err.message);
-  }
-
-  // Retry with simplified prompt
-  try {
-    return await callClaudeAPI(AI_PROMPT_SIMPLE(rawText));
-  } catch (err) {
-    console.warn("AI parse retry failed:", err.message);
-    throw new Error("AI parsing failed after retry. Please check your statement format.");
-  }
-}
-
-// Validate and normalise AI-returned transactions to match our schema
-function normaliseAITransactions(raw) {
-  return raw
-    .filter((t) => t && typeof t === "object" && t.date && t.amount != null)
-    .map((t) => ({
-      date: normalizeDateStr(String(t.date)) || String(t.date),
-      description: cleanMerchantName(String(t.description || "Transaction")),
-      amount: Number(t.amount),
-      type: ["expense", "income", "refund"].includes(t.type) ? t.type : (Number(t.amount) < 0 ? "expense" : "income"),
-      category: t.category || "Unknown ⚠️",
-    }));
-}
-
-// ---------------------------------------------------------------------------
-// API route
-// ---------------------------------------------------------------------------
-
 export async function POST(request) {
-  const startTime = Date.now();
-  const warnings  = [];
-
   try {
     const formData = await request.formData();
     const file = formData.get("file");
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    const mime = file.type || "";
-    if (!mime.includes("pdf") && !file.name?.toLowerCase().endsWith(".pdf")) {
+    // ── 1. Extract raw text from PDF ────────────────────────────────────────
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
+
+    let rawText = "";
+    try {
+      const result = await extractText(uint8, { mergePages: true });
+      rawText = Array.isArray(result.text) ? result.text.join("\n") : (result.text || "");
+    } catch {
       return NextResponse.json(
-        { error: "Only PDF files are supported" },
+        { error: "Could not read this PDF. It may be corrupted or password-protected." },
         { status: 400 }
       );
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const { text: rawText } = await extractText(new Uint8Array(arrayBuffer), {
-      mergePages: true,
+    if (!rawText || rawText.trim().length < 50) {
+      return NextResponse.json(
+        { error: "Could not extract text from this PDF. It may be a scanned image — please use a text-based PDF downloaded from your online banking." },
+        { status: 400 }
+      );
+    }
+
+    // ── 2. Parse with Claude AI ─────────────────────────────────────────────
+    let parsed;
+    try {
+      parsed = await parseWithClaude(rawText);
+    } catch (err) {
+      console.error("Claude parsing error:", err);
+      return NextResponse.json(
+        { error: "AI parsing failed. Please try again or use a different statement." },
+        { status: 502 }
+      );
+    }
+
+    if (!parsed || parsed.length === 0) {
+      return NextResponse.json(
+        { error: "No transactions found in this statement. Please check the file is a valid bank statement." },
+        { status: 400 }
+      );
+    }
+
+    // ── 3. Normalise + categorise ───────────────────────────────────────────
+    const transactions = parsed
+      .map((t) => {
+        const amount = typeof t.amount === "number" ? t.amount : parseFloat(String(t.amount).replace(/[^0-9.\-]/g, "")) || 0;
+        return {
+          date:        normaliseDate(t.date),
+          description: (t.description || "Transaction").trim(),
+          amount,
+          category:    categoriseTransaction(t.description, amount, t.type),
+        };
+      })
+      .filter((t) => t.date && !isNaN(t.amount));
+
+    if (transactions.length === 0) {
+      return NextResponse.json(
+        { error: "Could not normalise any transactions from the parsed data. Please try again." },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      transactions,
+      confidence: "high",
+      bank:       "ai-parsed",
     });
 
-    if (!rawText || rawText.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Could not extract text from this PDF. It may be a scanned image." },
-        { status: 422 }
-      );
-    }
-
-    const text = cleanText(rawText);
-    const bank = detectBank(text);
-
-    if (!bank) warnings.push("Bank not recognised — falling back to generic rules parser");
-
-    // ── TIER 1: Rules-based parsing ──────────────────────────────────────────
-    let transactions = primaryParse(text, bank || "generic");
-    const primaryCount = transactions.length;
-
-    if (transactions.length < 3) {
-      const fallback = fallbackParse(text, bank || "generic");
-      if (fallback.length > transactions.length) {
-        transactions = fallback;
-        warnings.push(`Primary parser found ${primaryCount} tx; fallback parser found ${fallback.length} — using fallback`);
-      }
-    }
-
-    const rawCount = transactions.length;
-
-    // ── TIER 2: Claude AI fallback ───────────────────────────────────────────
-    // Trigger when: no bank detected AND rules parser found < 3 transactions
-    let confidence;
-    let parserUsed;
-
-    if (bank === null && transactions.length < 3) {
-      try {
-        const aiResults = await aiParseStatement(text);
-        const normalised = normaliseAITransactions(aiResults);
-
-        if (normalised.length > transactions.length) {
-          transactions = normalised;
-          confidence = "low";
-          parserUsed = "ai";
-        } else if (transactions.length >= 3) {
-          confidence = "medium";
-          parserUsed = "rules";
-          warnings.push("AI parser returned fewer results than rules parser — using rules result");
-        } else {
-          return NextResponse.json(
-            {
-              error:
-                "No transactions could be detected. The statement format may be unusual or the PDF may be image-based.",
-              rawTextPreview: text.slice(0, 600),
-            },
-            { status: 422 }
-          );
-        }
-      } catch (aiErr) {
-        if (transactions.length > 0) {
-          confidence = "medium";
-          parserUsed = "rules";
-          warnings.push(`AI fallback failed: ${aiErr.message} — using rules parser result`);
-        } else {
-          return NextResponse.json(
-            {
-              error: aiErr.message || "Could not parse this statement. Please check the file and try again.",
-              rawTextPreview: text.slice(0, 600),
-            },
-            { status: 422 }
-          );
-        }
-      }
-    } else if (transactions.length === 0) {
-      return NextResponse.json(
-        {
-          error:
-            "No transactions could be detected. The PDF text was extracted but no recognisable date + amount pairs were found.",
-          rawTextPreview: text.slice(0, 600),
-        },
-        { status: 422 }
-      );
-    } else {
-      confidence = bank !== null && transactions.length >= 10 ? "high" : "medium";
-      parserUsed = "rules";
-    }
-
-    // Flag transfers
-    const withTransferFlags = detectTransferPairs(transactions);
-    const parseTimeMs = Date.now() - startTime;
-
-    const responseBody = {
-      transactions: withTransferFlags,
-      count: withTransferFlags.length,
-      bank: bank || "unknown",
-      confidence,
-      parserUsed,
-    };
-
-    // Include debug info in development
-    if (process.env.NODE_ENV === "development") {
-      responseBody.debug = {
-        bank:        bank || "unknown",
-        confidence,
-        parserUsed,
-        rawCount,
-        parseTimeMs,
-        warnings,
-      };
-    }
-
-    return NextResponse.json(responseBody);
-  } catch (err) {
-    console.error("PDF parse error:", err);
+  } catch (error) {
+    console.error("Unhandled convert error:", error);
     return NextResponse.json(
-      { error: "Failed to process the PDF: " + err.message },
+      { error: "Failed to process statement. Please try again." },
       { status: 500 }
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Claude AI parser
+// ---------------------------------------------------------------------------
+async function parseWithClaude(rawText) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY environment variable is not set");
+
+  const textChunk = rawText.substring(0, 15000);
+
+  const prompt = `You are the world's most accurate UK bank statement parser. You have expert knowledge of every UK bank format.
+
+BANKS YOU MUST HANDLE PERFECTLY:
+Traditional: Barclays, HSBC, Lloyds, NatWest, RBS, Santander, Halifax, Bank of Scotland, Nationwide, TSB, Metro Bank, Virgin Money, First Direct, Co-operative Bank
+Digital: Monzo, Starling, Revolut, Chase UK, Tide, Mettle, Monese, Atom Bank
+Building Societies: Nationwide, Yorkshire BS, Leeds BS, Coventry BS
+
+HOW TO IDENTIFY DEBITS vs CREDITS FOR EACH BANK:
+
+REVOLUT:
+- Has columns: Date | Description | Amount | Balance
+- Negative amounts (-£45.00) = DEBIT = money OUT
+- Positive amounts (+£2500.00) = CREDIT = money IN
+
+MONZO:
+- Pot withdrawals TO account = CREDIT
+- Pot deposits FROM account = DEBIT
+- All purchases = DEBIT
+
+STARLING:
+- Has "Money In" and "Money Out" columns
+- Money Out = DEBIT, Money In = CREDIT
+
+CHASE UK:
+- Negative amounts = DEBIT, Positive amounts = CREDIT
+- Cashback = CREDIT
+
+BARCLAYS:
+- Has separate "Money Out" and "Money In" columns
+- Money Out = DEBIT, Money In = CREDIT
+
+HSBC / FIRST DIRECT:
+- Has "Paid Out" and "Paid In" columns
+- Paid Out = DEBIT, Paid In = CREDIT
+
+LLOYDS / HALIFAX / BANK OF SCOTLAND:
+- Has "Debit" and "Credit" columns
+- Debit column = DEBIT, Credit column = CREDIT
+
+NATWEST / RBS:
+- Has "Value" column with type codes
+- Type DD/SO/TFR/POS = DEBIT
+- Type CR/BAC = CREDIT
+
+SANTANDER:
+- Has "Money Out" and "Money In" columns
+- Money Out = DEBIT, Money In = CREDIT
+
+NATIONWIDE:
+- Has "Payments Out" and "Payments In" columns
+- Payments Out = DEBIT, Payments In = CREDIT
+
+UNIVERSAL RULES (apply to ALL banks):
+ALWAYS DEBIT (money leaving):
+- Any purchase at a shop, restaurant, online retailer
+- Netflix, Spotify, Disney+, Apple, Google, Microsoft subscriptions
+- Utility bills, council tax, insurance payments
+- Mortgage/rent payments
+- ATM cash withdrawals
+- Direct debits and standing orders going OUT
+- Transfers sent TO another person
+
+ALWAYS CREDIT (money coming in):
+- Salary, wages, payroll from employer
+- BACS payments, faster payments received
+- HMRC tax credits, universal credit, benefits
+- Refunds from merchants
+- Cashback
+- Transfers received FROM another person
+- Interest earned
+
+AMOUNT FORMAT RULES:
+- DEBIT = ALWAYS return as NEGATIVE number e.g. -45.50
+- CREDIT = ALWAYS return as POSITIVE number e.g. 2500.00
+- NEVER return a shop purchase as positive
+- NEVER return a salary as negative
+
+MERCHANT NAME CLEANING:
+Clean up ALL merchant names to be human readable:
+- AMZNMKTPLACE / AMAZON / AMZ → Amazon
+- TFL / TRANSPORT FOR LONDON → TfL
+- MCDONALDS / MCDONALD → McDonald's
+- TESCO STORES / TESCO EXPRESS → Tesco
+- SAINSBURYS → Sainsbury's
+- NETFLIX.COM → Netflix
+- SPOTIFYABCDEF → Spotify
+- JUST EAT / JUSTEAT → Just Eat
+- UBER / UBEREATS → Uber
+- Remove ALL reference numbers (long strings of digits/letters)
+- Remove card numbers like **** 1234
+- Remove sort codes
+- Convert to proper Title Case
+
+EXTRACT EVERY SINGLE TRANSACTION:
+- Do not skip any transaction
+- Include ALL debits and credits
+- Include transfers, fees
+- Extract from all pages
+
+Return ONLY a valid JSON array. No explanation. No markdown. No backticks. No code fences.
+
+Format:
+[
+  {
+    "date": "DD/MM/YYYY",
+    "description": "Clean Merchant Name",
+    "amount": -45.50,
+    "type": "debit",
+    "balance": 1234.56
+  }
+]
+
+If balance is not available use null.
+Date must always be DD/MM/YYYY format.
+
+BANK STATEMENT TEXT:
+${textChunk}
+
+Return ONLY the JSON array:`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type":    "application/json",
+      "x-api-key":       apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model:      "claude-haiku-4-5-20251001",
+      max_tokens: 8000,
+      messages:   [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Anthropic API ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(`Claude API error: ${data.error.message || JSON.stringify(data.error)}`);
+  }
+
+  const rawResponse = data.content?.[0]?.text?.trim() ?? "";
+
+  // Strip any accidental markdown fences
+  const clean = rawResponse
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/, "")
+    .trim();
+
+  // Find the JSON array (handle any leading/trailing text)
+  const start = clean.indexOf("[");
+  const end   = clean.lastIndexOf("]");
+  if (start === -1 || end === -1) {
+    throw new Error(`Claude did not return a JSON array. Response: ${clean.substring(0, 200)}`);
+  }
+
+  return JSON.parse(clean.slice(start, end + 1));
+}
+
+// ---------------------------------------------------------------------------
+// Date normaliser  DD/MM/YYYY → DD MMM YYYY
+// ---------------------------------------------------------------------------
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function normaliseDate(raw) {
+  if (!raw) return "";
+  const s = String(raw).trim();
+
+  // DD/MM/YYYY
+  const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (m1) {
+    const d = m1[1].padStart(2, "0");
+    const mo = parseInt(m1[2], 10) - 1;
+    const y = m1[3];
+    if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
+  }
+
+  // YYYY-MM-DD (ISO)
+  const m2 = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+  if (m2) {
+    const y = m2[1];
+    const mo = parseInt(m2[2], 10) - 1;
+    const d = m2[3].padStart(2, "0");
+    if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
+  }
+
+  // Already looks readable (e.g. "15 Mar 2026")
+  if (/\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/.test(s)) return s;
+
+  return s; // return as-is if unrecognised
+}
+
+// ---------------------------------------------------------------------------
+// Categorisation
+// ---------------------------------------------------------------------------
+function categoriseTransaction(description, amount, type) {
+  const desc = (description || "").toLowerCase();
+
+  if (type === "credit" || amount > 0) {
+    if (["salary","wages","payroll","bacs","employer","hmrc","universal credit","benefits","pension","dividend"].some(s => desc.includes(s))) return "Income";
+    if (["refund","cashback","reversal","chargeback"].some(s => desc.includes(s)))                                                             return "Refunds";
+    if (["transfer","faster payment","fpay","sent from"].some(s => desc.includes(s)))                                                         return "Transfers In";
+    return "Income";
+  }
+
+  if (["tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi","co-op","m&s food","marks","iceland","farmfoods","ocado","booths"].some(s => desc.includes(s)))                                                                                                                                                                    return "Groceries";
+  if (["mcdonald","kfc","subway","pizza","nandos","wagamama","greggs","pret","costa","starbucks","cafe","restaurant","deliveroo","just eat","uber eat","domino","burger king","five guys","itsu","wasabi","leon"].some(s => desc.includes(s)))                                                                                               return "Eating Out";
+  if (["tfl","trainline","national rail","gwr","lner","avanti","southeastern","thameslink","great western","parking","bp","shell","esso","texaco","petrol","fuel","bus","taxi","black cab","addison lee"].some(s => desc.includes(s)))                                                                                                       return "Transport";
+  if (["uber"].some(s => desc.includes(s)) && !["uber eat"].some(s => desc.includes(s)))                                                                                                                                                                                                                                                  return "Transport";
+  if (["amazon","asos","ebay","primark","next","h&m","zara","argos","currys","john lewis","ikea","b&q","jd sport","nike","adidas","boohoo","pretty little thing","shein","very","littlewoods","ao.com","apple store"].some(s => desc.includes(s)))                                                                                         return "Shopping";
+  if (["netflix","spotify","disney","youtube premium","now tv","amazon prime","microsoft","adobe","google","playstation","xbox game","nintendo","hulu","paramount","discovery","apple"].some(s => desc.includes(s)))                                                                                                                        return "Subscriptions";
+  if (["british gas","octopus","eon","edf","bulb","ovo energy","scottish power","npower","thames water","severn trent","anglian water","council tax","bt ","virgin media","sky ","vodafone","o2","ee ","three","talktalk","insurance","aviva","axa","legal general","direct line"].some(s => desc.includes(s)))                            return "Bills & Utilities";
+  if (["mortgage","rent","landlord","letting"].some(s => desc.includes(s)))                                                                                                                                                                                                                                                                return "Rent & Mortgage";
+  if (["pharmacy","boots","lloyds pharmacy","chemist","dentist","doctor","nhs","gym","fitness","puregym","david lloyd","virgin active","health","medical","hospital","specsavers","vision express"].some(s => desc.includes(s)))                                                                                                            return "Health & Fitness";
+  if (["cinema","odeon","vue","cineworld","showcase","theatre","ticketmaster","eventbrite","steam","playstation store","xbox","game ","bowling","laser","escape room"].some(s => desc.includes(s)))                                                                                                                                         return "Entertainment";
+  if (["atm","cash","cashpoint","withdrawal"].some(s => desc.includes(s)))                                                                                                                                                                                                                                                                 return "Cash";
+  if (["transfer","paypal","revolut","monzo","starling","wise","western union","currency","loan","credit card","standing order"].some(s => desc.includes(s)))                                                                                                                                                                               return "Transfers";
+  if (["fee","charge","interest","overdraft","bank charge"].some(s => desc.includes(s)))                                                                                                                                                                                                                                                   return "Bank Fees";
+
+  return "Other";
 }
