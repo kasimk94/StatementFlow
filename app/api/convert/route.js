@@ -1,65 +1,83 @@
 import { NextResponse } from "next/server";
-import { extractText } from "unpdf";
-
-// Note: unpdf is used for PDF text extraction (ESM-compatible, already installed).
-// pdf-parse is available as a fallback but has known Next.js App Router compatibility
-// issues with its test-file loading at import time.
 
 // ---------------------------------------------------------------------------
 // POST /api/convert
 // ---------------------------------------------------------------------------
-export async function POST(request) {
+export async function POST(req) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file");
+    console.log("=== PDF CONVERSION STARTED ===");
+
+    // ── 1. Read form data ───────────────────────────────────────────────────
+    const formData = await req.formData();
+    const file = formData.get("file") || formData.get("pdf");
 
     if (!file) {
+      console.error("No file in request");
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // ── 1. Extract raw text from PDF ────────────────────────────────────────
-    const arrayBuffer = await file.arrayBuffer();
+    console.log("File received:", file.name, file.size, "bytes");
 
-    // Reject PDFs larger than 5 MB
-    if (arrayBuffer.byteLength > 5 * 1024 * 1024) {
+    // ── 2. Size check ───────────────────────────────────────────────────────
+    if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: "File too large. Please upload a PDF under 5 MB." },
         { status: 400 }
       );
     }
 
+    // ── 3. Extract text from PDF ────────────────────────────────────────────
+    const arrayBuffer = await file.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
 
     let rawText = "";
     try {
-      const result = await extractText(uint8, { mergePages: true });
-      rawText = Array.isArray(result.text) ? result.text.join("\n") : (result.text || "");
-    } catch {
+      const unpdf = await import("unpdf");
+      const result = await unpdf.extractText(uint8, { mergePages: true });
+      rawText = Array.isArray(result.text)
+        ? result.text.join("\n")
+        : result.text || "";
+      console.log("Text extracted, length:", rawText.length);
+    } catch (pdfErr) {
+      console.error("PDF extraction failed:", pdfErr.message);
       return NextResponse.json(
-        { error: "Could not read this PDF. It may be corrupted or password-protected." },
+        { error: "Could not read this PDF file. Please make sure it is a valid bank statement." },
         { status: 400 }
       );
     }
 
-    if (!rawText || rawText.trim().length < 100) {
+    if (!rawText || rawText.trim().length < 50) {
+      console.error("Extracted text too short:", rawText?.length);
       return NextResponse.json(
-        { error: "Could not extract text from this PDF. It may be a scanned image — please use a text-based PDF downloaded from your online banking." },
+        { error: "This PDF appears to be a scanned image. Please use a text-based PDF bank statement." },
         { status: 400 }
       );
     }
+
+    // ── 4. Check API key ────────────────────────────────────────────────────
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error("ANTHROPIC_API_KEY not set!");
+      return NextResponse.json(
+        { error: "Server configuration error. Please contact support." },
+        { status: 500 }
+      );
+    }
+    console.log("API key present:", apiKey.substring(0, 10) + "...");
 
     // Truncate very large statements before sending to AI
     const textForParsing = rawText.length > 50000 ? rawText.substring(0, 50000) : rawText;
 
-    // ── 2. Parse with Claude AI ─────────────────────────────────────────────
-    let parsed;
+    // ── 5. Parse with Claude ────────────────────────────────────────────────
+    let parsed = [];
     try {
-      parsed = await parseWithClaude(textForParsing);
-    } catch (err) {
-      console.error("Claude parsing error:", err);
+      parsed = await parseWithClaude(textForParsing, apiKey);
+      console.log("Transactions parsed:", parsed.length);
+    } catch (claudeErr) {
+      console.error("Claude parsing failed:", claudeErr.message);
       return NextResponse.json(
-        { error: "AI parsing failed. Please try again or use a different statement." },
-        { status: 502 }
+        { error: "AI parsing failed: " + claudeErr.message },
+        { status: 500 }
       );
     }
 
@@ -70,14 +88,18 @@ export async function POST(request) {
       );
     }
 
-    // ── 3. Normalise + categorise ───────────────────────────────────────────
+    // ── 6. Normalise + categorise ───────────────────────────────────────────
     const transactions = parsed
       .map((t) => {
-        const amount = typeof t.amount === "number" ? t.amount : parseFloat(String(t.amount).replace(/[^0-9.\-]/g, "")) || 0;
+        const amount =
+          typeof t.amount === "number"
+            ? t.amount
+            : parseFloat(String(t.amount).replace(/[^0-9.\-]/g, "")) || 0;
         return {
           date:        normaliseDate(t.date),
           description: (t.description || "Transaction").trim(),
           amount,
+          type:        t.type || (amount >= 0 ? "credit" : "debit"),
           category:    categoriseTransaction(t.description, amount, t.type),
         };
       })
@@ -90,16 +112,26 @@ export async function POST(request) {
       );
     }
 
+    const totalIncome   = transactions.filter(t => t.type === "credit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const totalExpenses = transactions.filter(t => t.type === "debit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const netBalance    = totalIncome - totalExpenses;
+
+    console.log("=== CONVERSION SUCCESS ===", transactions.length, "transactions");
+
     return NextResponse.json({
       transactions,
+      totalIncome,
+      totalExpenses,
+      netBalance,
+      transactionCount: transactions.length,
       confidence: "high",
-      bank:       "ai-parsed",
+      bank: "ai-parsed",
     });
 
-  } catch (error) {
-    console.error("Unhandled convert error:", error);
+  } catch (err) {
+    console.error("=== CONVERSION FAILED ===", err.message, err.stack);
     return NextResponse.json(
-      { error: "Failed to process statement. Please try again." },
+      { error: "Unexpected error: " + err.message },
       { status: 500 }
     );
   }
@@ -121,23 +153,9 @@ function extractTransactionLines(rawText) {
   return filtered.join("\n").substring(0, 8000);
 }
 
-async function parseWithClaude(rawText) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY environment variable is not set");
-
-  const prompt = `You are a UK bank statement parser. Extract ALL transactions from the data below and return ONLY a valid JSON array.
-
-Rules:
-1. Each transaction: {"date":"DD/MM/YYYY","description":"Merchant Name","amount":-45.50,"type":"debit","balance":null}
-2. Debits/payments/purchases = negative amount. Credits/incoming/salary = positive amount.
-3. Use DD/MM/YYYY date format. If year is missing, use the most recent plausible year.
-4. Clean merchant names: remove reference numbers, sort codes, card numbers. Keep brand name only.
-5. Include ALL transactions — do not skip any.
-6. Return ONLY the JSON array. No markdown, no explanation, no extra text.
-7. If balance column exists, include it as a number (not string).
-
-Bank statement data:
-${extractTransactionLines(rawText)}`;
+async function parseWithClaude(rawText, apiKey) {
+  const processedText = extractTransactionLines(rawText);
+  console.log("Sending to Claude, text length:", processedText.length);
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -149,30 +167,49 @@ ${extractTransactionLines(rawText)}`;
     body: JSON.stringify({
       model:      "claude-haiku-4-5-20251001",
       max_tokens: 2000,
-      messages:   [{ role: "user", content: prompt }],
+      messages: [{
+        role: "user",
+        content: `You are an expert UK bank statement parser. Extract ALL transactions accurately.
+
+CRITICAL RULES:
+1. Debits (money OUT) = NEGATIVE amount + type "debit"
+2. Credits (money IN) = POSITIVE amount + type "credit"
+3. NEVER miss a transaction
+4. Clean merchant names: remove reference numbers, convert to readable names
+5. Date format: DD/MM/YYYY always
+
+Return ONLY valid JSON array:
+[{"date":"DD/MM/YYYY","description":"Merchant Name","amount":-45.50,"type":"debit","balance":null}]
+
+Statement data:
+${processedText}`,
+      }],
     }),
   });
 
+  console.log("Claude response status:", response.status);
+
   if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Anthropic API ${response.status}: ${err}`);
+    const errText = await response.text();
+    throw new Error(`Anthropic API ${response.status}: ${errText}`);
   }
 
   const data = await response.json();
+  console.log("Claude response:", JSON.stringify(data).substring(0, 200));
 
   if (data.error) {
-    throw new Error(`Claude API error: ${data.error.message || JSON.stringify(data.error)}`);
+    throw new Error(`Claude API: ${data.error.type} - ${data.error.message}`);
   }
 
-  const rawResponse = data.content?.[0]?.text?.trim() ?? "";
+  const text = data.content?.[0]?.text?.trim() ?? "";
+  console.log("Claude text response:", text.substring(0, 300));
 
-  // Extract JSON array, handling markdown fences and any surrounding text
-  const match = rawResponse.match(/\[[\s\S]*\]/);
-  if (!match) {
-    throw new Error(`Claude did not return a JSON array. Response: ${rawResponse.substring(0, 200)}`);
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) {
+    throw new Error("Claude did not return valid JSON. Response: " + text.substring(0, 100));
   }
 
-  return JSON.parse(match[0]);
+  return JSON.parse(jsonMatch[0]);
 }
 
 // ---------------------------------------------------------------------------
@@ -187,25 +224,25 @@ function normaliseDate(raw) {
   // DD/MM/YYYY
   const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
   if (m1) {
-    const d = m1[1].padStart(2, "0");
+    const d  = m1[1].padStart(2, "0");
     const mo = parseInt(m1[2], 10) - 1;
-    const y = m1[3];
+    const y  = m1[3];
     if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
   }
 
   // YYYY-MM-DD (ISO)
   const m2 = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
   if (m2) {
-    const y = m2[1];
+    const y  = m2[1];
     const mo = parseInt(m2[2], 10) - 1;
-    const d = m2[3].padStart(2, "0");
+    const d  = m2[3].padStart(2, "0");
     if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
   }
 
-  // Already looks readable (e.g. "15 Mar 2026")
+  // Already readable (e.g. "15 Mar 2026")
   if (/\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/.test(s)) return s;
 
-  return s; // return as-is if unrecognised
+  return s;
 }
 
 // ---------------------------------------------------------------------------
@@ -221,19 +258,19 @@ function categoriseTransaction(description, amount, type) {
     return "Income";
   }
 
-  if (["tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi","co-op","m&s food","marks","iceland","farmfoods","ocado","booths"].some(s => desc.includes(s)))                                                                                                                                                                    return "Groceries";
-  if (["mcdonald","kfc","subway","pizza","nandos","wagamama","greggs","pret","costa","starbucks","cafe","restaurant","deliveroo","just eat","uber eat","domino","burger king","five guys","itsu","wasabi","leon"].some(s => desc.includes(s)))                                                                                               return "Eating Out";
-  if (["tfl","trainline","national rail","gwr","lner","avanti","southeastern","thameslink","great western","parking","bp","shell","esso","texaco","petrol","fuel","bus","taxi","black cab","addison lee"].some(s => desc.includes(s)))                                                                                                       return "Transport";
-  if (["uber"].some(s => desc.includes(s)) && !["uber eat"].some(s => desc.includes(s)))                                                                                                                                                                                                                                                  return "Transport";
-  if (["amazon","asos","ebay","primark","next","h&m","zara","argos","currys","john lewis","ikea","b&q","jd sport","nike","adidas","boohoo","pretty little thing","shein","very","littlewoods","ao.com","apple store"].some(s => desc.includes(s)))                                                                                         return "Shopping";
-  if (["netflix","spotify","disney","youtube premium","now tv","amazon prime","microsoft","adobe","google","playstation","xbox game","nintendo","hulu","paramount","discovery","apple"].some(s => desc.includes(s)))                                                                                                                        return "Subscriptions";
-  if (["british gas","octopus","eon","edf","bulb","ovo energy","scottish power","npower","thames water","severn trent","anglian water","council tax","bt ","virgin media","sky ","vodafone","o2","ee ","three","talktalk","insurance","aviva","axa","legal general","direct line"].some(s => desc.includes(s)))                            return "Bills & Utilities";
-  if (["mortgage","rent","landlord","letting"].some(s => desc.includes(s)))                                                                                                                                                                                                                                                                return "Rent & Mortgage";
-  if (["pharmacy","boots","lloyds pharmacy","chemist","dentist","doctor","nhs","gym","fitness","puregym","david lloyd","virgin active","health","medical","hospital","specsavers","vision express"].some(s => desc.includes(s)))                                                                                                            return "Health & Fitness";
-  if (["cinema","odeon","vue","cineworld","showcase","theatre","ticketmaster","eventbrite","steam","playstation store","xbox","game ","bowling","laser","escape room"].some(s => desc.includes(s)))                                                                                                                                         return "Entertainment";
-  if (["atm","cash","cashpoint","withdrawal"].some(s => desc.includes(s)))                                                                                                                                                                                                                                                                 return "Cash";
-  if (["transfer","paypal","revolut","monzo","starling","wise","western union","currency","loan","credit card","standing order"].some(s => desc.includes(s)))                                                                                                                                                                               return "Transfers";
-  if (["fee","charge","interest","overdraft","bank charge"].some(s => desc.includes(s)))                                                                                                                                                                                                                                                   return "Bank Fees";
+  if (["tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi","co-op","m&s food","marks","iceland","farmfoods","ocado","booths"].some(s => desc.includes(s)))                                                                                                                              return "Groceries";
+  if (["mcdonald","kfc","subway","pizza","nandos","wagamama","greggs","pret","costa","starbucks","cafe","restaurant","deliveroo","just eat","uber eat","domino","burger king","five guys","itsu","wasabi","leon"].some(s => desc.includes(s)))                                                       return "Eating Out";
+  if (["tfl","trainline","national rail","gwr","lner","avanti","southeastern","thameslink","great western","parking","bp","shell","esso","texaco","petrol","fuel","bus","taxi","black cab","addison lee"].some(s => desc.includes(s)))                                                              return "Transport";
+  if (["uber"].some(s => desc.includes(s)) && !["uber eat"].some(s => desc.includes(s)))                                                                                                                                                                                                          return "Transport";
+  if (["amazon","asos","ebay","primark","next","h&m","zara","argos","currys","john lewis","ikea","b&q","jd sport","nike","adidas","boohoo","pretty little thing","shein","very","littlewoods","ao.com","apple store"].some(s => desc.includes(s)))                                                 return "Shopping";
+  if (["netflix","spotify","disney","youtube premium","now tv","amazon prime","microsoft","adobe","google","playstation","xbox game","nintendo","hulu","paramount","discovery","apple"].some(s => desc.includes(s)))                                                                               return "Subscriptions";
+  if (["british gas","octopus","eon","edf","bulb","ovo energy","scottish power","npower","thames water","severn trent","anglian water","council tax","bt ","virgin media","sky ","vodafone","o2","ee ","three","talktalk","insurance","aviva","axa","legal general","direct line"].some(s => desc.includes(s))) return "Bills & Utilities";
+  if (["mortgage","rent","landlord","letting"].some(s => desc.includes(s)))                                                                                                                                                                                                                        return "Rent & Mortgage";
+  if (["pharmacy","boots","lloyds pharmacy","chemist","dentist","doctor","nhs","gym","fitness","puregym","david lloyd","virgin active","health","medical","hospital","specsavers","vision express"].some(s => desc.includes(s)))                                                                    return "Health & Fitness";
+  if (["cinema","odeon","vue","cineworld","showcase","theatre","ticketmaster","eventbrite","steam","playstation store","xbox","game ","bowling","laser","escape room"].some(s => desc.includes(s)))                                                                                                return "Entertainment";
+  if (["atm","cash","cashpoint","withdrawal"].some(s => desc.includes(s)))                                                                                                                                                                                                                         return "Cash";
+  if (["transfer","paypal","revolut","monzo","starling","wise","western union","currency","loan","credit card","standing order"].some(s => desc.includes(s)))                                                                                                                                      return "Transfers";
+  if (["fee","charge","interest","overdraft","bank charge"].some(s => desc.includes(s)))                                                                                                                                                                                                           return "Bank Fees";
 
   return "Other";
 }
