@@ -43,7 +43,7 @@ const STEPS = [
         <line x1="6"  y1="20" x2="6"  y2="14"/>
       </svg>
     ),
-    label: "Building your dashboard...", to: 100,
+    label: "Complete! Loading your dashboard...", to: 100,
   },
 ];
 const DURATIONS = [800, 800, 800, 600];
@@ -90,10 +90,11 @@ const KEYFRAMES = `
 `;
 
 // ─── LoadingOverlay ───────────────────────────────────────────────────────────
-function LoadingOverlay({ step, progress }) {
+function LoadingOverlay({ step, progress, onComplete }) {
   const [displayPct, setDisplayPct] = useState(0);
-  const rafRef  = useRef(null);
-  const fromRef = useRef(0);
+  const rafRef      = useRef(null);
+  const fromRef     = useRef(0);
+  const completedRef = useRef(false);
 
   useEffect(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -108,7 +109,12 @@ function LoadingOverlay({ step, progress }) {
       const cur   = Math.round(from + (to - from) * eased);
       fromRef.current = cur;
       setDisplayPct(cur);
-      if (f < 1) rafRef.current = requestAnimationFrame(tick);
+      if (f < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else if (to >= 100 && !completedRef.current) {
+        completedRef.current = true;
+        if (onComplete) setTimeout(onComplete, 500);
+      }
     }
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
@@ -129,16 +135,23 @@ function LoadingOverlay({ step, progress }) {
         borderRadius: 20,
       }}
     >
-      {/* Step icon */}
+      {/* Step icon — swap to checkmark at 100% */}
       <div
         key={step}
         style={{
           lineHeight: 1,
           marginBottom: 14,
-          animation: "uz-icon-in 0.3s ease forwards, uz-icon-pulse 2.2s ease-in-out 0.3s infinite",
+          animation: progress >= 100
+            ? "uz-icon-in 0.3s ease forwards"
+            : "uz-icon-in 0.3s ease forwards, uz-icon-pulse 2.2s ease-in-out 0.3s infinite",
         }}
       >
-        {STEPS[step].icon}
+        {progress >= 100 ? (
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        ) : STEPS[step].icon}
       </div>
 
       {/* Progress ring */}
@@ -186,20 +199,22 @@ function LoadingOverlay({ step, progress }) {
         {STEPS[step].label}
       </p>
 
-      {/* Pulsing dots */}
-      <div style={{ display: "flex", gap: 7, marginTop: 14 }}>
-        {[0, 0.18, 0.36].map((delay, i) => (
-          <div
-            key={i}
-            style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: "#6c5ce7",
-              animation: `uz-dot 1.3s ease-in-out infinite`,
-              animationDelay: `${delay}s`,
-            }}
-          />
-        ))}
-      </div>
+      {/* Pulsing dots — hidden at 100% */}
+      {progress < 100 && (
+        <div style={{ display: "flex", gap: 7, marginTop: 14 }}>
+          {[0, 0.18, 0.36].map((delay, i) => (
+            <div
+              key={i}
+              style={{
+                width: 6, height: 6, borderRadius: "50%",
+                background: "#6c5ce7",
+                animation: `uz-dot 1.3s ease-in-out infinite`,
+                animationDelay: `${delay}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <p style={{ color: "#94a3b8", fontSize: "0.68rem", textAlign: "center", marginTop: 18, paddingInline: 20, lineHeight: 1.4 }}>
         🔒 Your data is never stored or shared
@@ -323,7 +338,7 @@ export default function UploadZone({ onFile, loading }) {
             <input {...getInputProps()} />
 
             {/* ── LOADING OVERLAY ── */}
-            {loading && <LoadingOverlay step={step} progress={progress} />}
+            {loading && <LoadingOverlay step={step} progress={progress} onComplete={null} />}
 
             {/* ── DRAG ACTIVE ── */}
             {!loading && isDragActive && !isDragReject && (

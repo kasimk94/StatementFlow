@@ -279,7 +279,11 @@ export default function Home() {
   }
 
   function scrollToUpload() {
-    uploadRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = document.getElementById("get-started");
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
   }
 
   // ── Dashboard view (after upload) ─────────────────────────────────────────
