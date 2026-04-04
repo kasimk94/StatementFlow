@@ -96,11 +96,24 @@ export async function POST(request) {
 // ---------------------------------------------------------------------------
 // Claude AI parser
 // ---------------------------------------------------------------------------
+function preprocessText(rawText) {
+  const lines = rawText.split("\n");
+  const relevant = lines.filter((line) => {
+    const trimmed = line.trim();
+    if (trimmed.length < 3) return false;
+    const hasDate   = /\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}|\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(trimmed);
+    const hasAmount = /£[\d,]+\.?\d*|\d+\.\d{2}/.test(trimmed);
+    const hasNumber = /\d/.test(trimmed);
+    return hasDate || hasAmount || (hasNumber && trimmed.length > 5);
+  });
+  return relevant.join("\n").substring(0, 6000);
+}
+
 async function parseWithClaude(rawText) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY environment variable is not set");
 
-  const textChunk = rawText.substring(0, 15000);
+  const textChunk = preprocessText(rawText);
 
   const prompt = `You are the world's most accurate UK bank statement parser. You have expert knowledge of every UK bank format.
 
@@ -231,7 +244,7 @@ Return ONLY the JSON array:`;
     },
     body: JSON.stringify({
       model:      "claude-haiku-4-5-20251001",
-      max_tokens: 8000,
+      max_tokens: 2000,
       messages:   [{ role: "user", content: prompt }],
     }),
   });

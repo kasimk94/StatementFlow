@@ -163,12 +163,14 @@ function LoadingOverlay({ step, progress }) {
           />
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ fontSize: "2.4rem", fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-            {displayPct}
-          </span>
-          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#94a3b8", alignSelf: "flex-end", paddingBottom: "5px", marginLeft: "1px" }}>
-            %
-          </span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+            <span style={{ fontSize: "2.4rem", fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              {displayPct}
+            </span>
+            <span style={{ fontSize: "1rem", fontWeight: 600, color: "#94a3b8", lineHeight: 1 }}>
+              %
+            </span>
+          </div>
         </div>
       </div>
 
