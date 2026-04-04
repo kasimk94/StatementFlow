@@ -551,6 +551,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const [downloadError, setDownloadError]     = useState(null);
   const [copied, setCopied]                   = useState(false);
   const [demoToast, setDemoToast]             = useState(false);
+  const [txExpanded, setTxExpanded]           = useState(false);
 
   // Animation states
   const [loaded,          setLoaded]          = useState(false);
@@ -1125,9 +1126,39 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── TRANSACTIONS TABLE ── */}
+      <div style={sectionStyle(550)}>
+        {/* Collapse toggle */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: txExpanded ? 12 : 0 }}>
+          <button
+            onClick={() => setTxExpanded(v => !v)}
+            style={{
+              display: "flex", alignItems: "center", gap: 10,
+              background: txExpanded ? "linear-gradient(135deg,#6c5ce7,#a29bfe)" : "#f8fafc",
+              color: txExpanded ? "#fff" : "#1e293b",
+              fontWeight: 700, fontSize: "0.95rem",
+              padding: "11px 20px", borderRadius: 12, border: "1px solid #e2e8f0",
+              cursor: "pointer", transition: "all 0.2s ease",
+              boxShadow: txExpanded ? "0 4px 14px rgba(108,92,231,0.3)" : "none",
+            }}
+          >
+            <span>{txExpanded ? "▲" : "📋"}</span>
+            <span>{txExpanded ? "Hide Transactions" : `View Transactions (${transactions.length})`}</span>
+          </button>
+          {!txExpanded && (
+            <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>Full list available in your Excel export</span>
+          )}
+        </div>
+
+      <div
+        style={{
+          maxHeight: txExpanded ? "9999px" : "0px",
+          overflow: "hidden",
+          transition: "max-height 0.4s ease",
+        }}
+      >
       <div
         className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
-        style={{ ...sectionStyle(550), borderRadius: 16 }}
+        style={{ borderRadius: 16 }}
       >
         {/* Filter bar */}
         <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap bg-white">
@@ -1303,6 +1334,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           </div>
         )}
       </div>
+
+      </div>{/* end max-height wrapper */}
+      </div>{/* end transactions outer */}
 
       {/* ── DEV DEBUG PANEL ── */}
       {process.env.NODE_ENV === "development" && !demoMode && debug && (

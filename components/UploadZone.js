@@ -5,48 +5,56 @@ import { useDropzone } from "react-dropzone";
 
 // ─── Loading steps ────────────────────────────────────────────────────────────
 const IC = "#6c5ce7";
-const STEPS = [
-  {
-    icon: (
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <line x1="10" y1="9"  x2="8"  y2="9"/>
-      </svg>
-    ),
-    label: "Reading your PDF...", to: 30,
-  },
-  {
-    icon: (
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-    ),
-    label: "Extracting transactions...", to: 60,
-  },
-  {
-    icon: (
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-      </svg>
-    ),
-    label: "Categorising payments...", to: 85,
-  },
-  {
-    icon: (
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6"  y1="20" x2="6"  y2="14"/>
-      </svg>
-    ),
-    label: "Complete! Loading your dashboard...", to: 100,
-  },
+
+// Icons indexed 0-3 by progress phase
+const STEP_ICONS = [
+  // 0: 0-29% — Reading PDF
+  <svg key="s0" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+    <line x1="10" y1="9"  x2="8"  y2="9"/>
+  </svg>,
+  // 1: 30-59% — Extracting
+  <svg key="s1" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>,
+  // 2: 60-84% — AI analysis
+  <svg key="s2" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+  </svg>,
+  // 3: 85-99% — Almost there
+  <svg key="s3" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10"/>
+    <line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6"  y1="20" x2="6"  y2="14"/>
+  </svg>,
 ];
-const DURATIONS = [800, 800, 800, 600];
+
+const STEP_LABELS = [
+  "Reading your PDF...",
+  "Extracting transactions...",
+  "AI analysis in progress...",
+  "Almost there...",
+];
+
+// Progress → step index
+function stepFromProgress(pct) {
+  if (pct < 30) return 0;
+  if (pct < 60) return 1;
+  if (pct < 85) return 2;
+  return 3;
+}
+
+// Progress rate (%/second) by current value
+function rateFromProgress(pct) {
+  if (pct < 30) return 15;   // fast   — ~2s
+  if (pct < 60) return 10;   // medium — ~3s
+  if (pct < 85) return 7;    // slower — ~3.6s
+  return 1.2;                 // crawl  — waits for API
+}
 
 // SVG ring constants
 const R    = 44;
@@ -90,35 +98,8 @@ const KEYFRAMES = `
 `;
 
 // ─── LoadingOverlay ───────────────────────────────────────────────────────────
-function LoadingOverlay({ step, progress, onComplete }) {
-  const [displayPct, setDisplayPct] = useState(0);
-  const rafRef      = useRef(null);
-  const fromRef     = useRef(0);
-  const completedRef = useRef(false);
-
-  useEffect(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    const from = fromRef.current;
-    const to   = progress;
-    const dur  = DURATIONS[step] ?? 600;
-    const t0   = performance.now();
-
-    function tick(now) {
-      const f     = Math.min((now - t0) / dur, 1);
-      const eased = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
-      const cur   = Math.round(from + (to - from) * eased);
-      fromRef.current = cur;
-      setDisplayPct(cur);
-      if (f < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      } else if (to >= 100 && !completedRef.current) {
-        completedRef.current = true;
-        if (onComplete) setTimeout(onComplete, 500);
-      }
-    }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [progress]); // eslint-disable-line react-hooks/exhaustive-deps
+function LoadingOverlay({ progress, isComplete }) {
+  const stepIdx = isComplete ? 3 : stepFromProgress(progress);
 
   const offset = CIRC * (1 - progress / 100);
 
@@ -137,21 +118,21 @@ function LoadingOverlay({ step, progress, onComplete }) {
     >
       {/* Step icon — swap to checkmark at 100% */}
       <div
-        key={step}
+        key={stepIdx}
         style={{
           lineHeight: 1,
           marginBottom: 14,
-          animation: progress >= 100
+          animation: isComplete
             ? "uz-icon-in 0.3s ease forwards"
             : "uz-icon-in 0.3s ease forwards, uz-icon-pulse 2.2s ease-in-out 0.3s infinite",
         }}
       >
-        {progress >= 100 ? (
+        {isComplete ? (
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-        ) : STEPS[step].icon}
+        ) : STEP_ICONS[stepIdx]}
       </div>
 
       {/* Progress ring */}
@@ -171,14 +152,14 @@ function LoadingOverlay({ step, progress, onComplete }) {
             strokeDashoffset={offset}
             transform="rotate(-90 50 50)"
             style={{
-              transition: `stroke-dashoffset ${DURATIONS[step] ?? 600}ms cubic-bezier(0.4,0,0.2,1)`,
+              transition: "stroke-dashoffset 300ms cubic-bezier(0.4,0,0.2,1)",
             }}
           />
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
             <span style={{ fontSize: "2.4rem", fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-              {displayPct}
+              {progress}
             </span>
             <span style={{ fontSize: "1rem", fontWeight: 600, color: "#94a3b8", lineHeight: 1 }}>
               %
@@ -189,18 +170,18 @@ function LoadingOverlay({ step, progress, onComplete }) {
 
       {/* Step label */}
       <p
-        key={`label-${step}`}
+        key={`label-${stepIdx}-${isComplete}`}
         style={{
           color: "#2d3436", fontSize: "0.8rem", fontWeight: 600,
           letterSpacing: "0.01em", marginTop: 16, textAlign: "center",
           animation: "uz-text-in 0.3s ease forwards",
         }}
       >
-        {STEPS[step].label}
+        {isComplete ? "Complete! ✓" : STEP_LABELS[stepIdx]}
       </p>
 
-      {/* Pulsing dots — hidden at 100% */}
-      {progress < 100 && (
+      {/* Pulsing dots — hidden when complete */}
+      {!isComplete && (
         <div style={{ display: "flex", gap: 7, marginTop: 14 }}>
           {[0, 0.18, 0.36].map((delay, i) => (
             <div
@@ -250,26 +231,41 @@ function CloudUploadIcon({ size = 72, color = "#6c5ce7", fast = false }) {
 }
 
 // ─── UploadZone ───────────────────────────────────────────────────────────────
-export default function UploadZone({ onFile, loading }) {
-  const [dragError, setDragError] = useState(null);
-  const [step,      setStep]      = useState(0);
-  const [progress,  setProgress]  = useState(0);
+export default function UploadZone({ onFile, loading, apiDone = false, onAnimationDone }) {
+  const [dragError,   setDragError]   = useState(null);
+  const [progress,    setProgress]    = useState(0);
+  const [isComplete,  setIsComplete]  = useState(false);
 
-  // Loading step progression
+  // RAF-based smooth progress simulation: 0 → 95%
   useEffect(() => {
-    if (!loading) { setStep(0); setProgress(0); return; }
-    let alive = true;
-    const timers = [];
-    function advance(idx) {
-      if (!alive || idx >= STEPS.length) return;
-      setStep(idx);
-      setProgress(STEPS[idx].to);
-      if (idx + 1 < STEPS.length)
-        timers.push(setTimeout(() => advance(idx + 1), DURATIONS[idx]));
+    if (!loading) { setProgress(0); setIsComplete(false); return; }
+    let current = 0;
+    let animId;
+    let alive    = true;
+    let lastTime = performance.now();
+
+    function tick(now) {
+      if (!alive) return;
+      const dt = (now - lastTime) / 1000; // seconds
+      lastTime  = now;
+      if (current < 95) {
+        current = Math.min(current + rateFromProgress(current) * dt, 95);
+        setProgress(Math.round(current));
+      }
+      animId = requestAnimationFrame(tick);
     }
-    timers.push(setTimeout(() => advance(0), 40));
-    return () => { alive = false; timers.forEach(clearTimeout); };
+    animId = requestAnimationFrame(tick);
+    return () => { alive = false; cancelAnimationFrame(animId); };
   }, [loading]);
+
+  // When API responds: jump to 100%, show Complete for 600ms, then show dashboard
+  useEffect(() => {
+    if (!apiDone || !loading) return;
+    setProgress(100);
+    setIsComplete(true);
+    const t = setTimeout(() => { if (onAnimationDone) onAnimationDone(); }, 600);
+    return () => clearTimeout(t);
+  }, [apiDone]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onDrop = useCallback((accepted, rejected) => {
     setDragError(null);
@@ -338,7 +334,7 @@ export default function UploadZone({ onFile, loading }) {
             <input {...getInputProps()} />
 
             {/* ── LOADING OVERLAY ── */}
-            {loading && <LoadingOverlay step={step} progress={progress} onComplete={null} />}
+            {loading && <LoadingOverlay progress={progress} isComplete={isComplete} />}
 
             {/* ── DRAG ACTIVE ── */}
             {!loading && isDragActive && !isDragReject && (

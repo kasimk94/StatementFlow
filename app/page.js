@@ -113,8 +113,10 @@ export default function Home() {
   const [transactions,  setTransactions]  = useState(null);
   const [parseResult,   setParseResult]   = useState(null);
   const [loading,       setLoading]       = useState(false);
+  const [apiDone,       setApiDone]       = useState(false);
   const [error,         setError]         = useState(null);
   const [showFeedback,  setShowFeedback]  = useState(false);
+  const pendingDataRef = useRef(null);
 
   const CYCLING_WORDS = [
     { text: "Clarity",        icon: "✨" },
@@ -241,22 +243,35 @@ export default function Home() {
 
   async function handleFile(file) {
     setLoading(true);
+    setApiDone(false);
     setError(null);
     setTransactions(null);
+    pendingDataRef.current = null;
     const formData = new FormData();
     formData.append("file", file);
     try {
       const res  = await fetch("/api/convert", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Conversion failed");
-      setTransactions(data.transactions);
-      setParseResult({ confidence: data.confidence, bank: data.bank, debug: data.debug ?? null, insights: data.insights ?? null });
-      window.scrollTo(0, 0);
+      // Store result — dashboard shown after animation completes
+      pendingDataRef.current = data;
+      setApiDone(true);
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
+      setApiDone(false);
     }
+  }
+
+  function handleAnimationDone() {
+    const data = pendingDataRef.current;
+    if (!data) return;
+    pendingDataRef.current = null;
+    setTransactions(data.transactions);
+    setParseResult({ confidence: data.confidence, bank: data.bank, debug: data.debug ?? null, insights: data.insights ?? null });
+    setLoading(false);
+    setApiDone(false);
+    window.scrollTo(0, 0);
   }
 
   function handleReset() {
@@ -280,10 +295,7 @@ export default function Home() {
 
   function scrollToUpload() {
     const el = document.getElementById("get-started");
-    if (el) {
-      const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   // ── Dashboard view (after upload) ─────────────────────────────────────────
@@ -881,7 +893,7 @@ export default function Home() {
 
           {/* Upload zone — fades in 0.2s after title */}
           <div className="flex justify-center scroll-animate" style={{ transitionDelay: "0.2s" }}>
-            <UploadZone onFile={handleFile} loading={loading} />
+            <UploadZone onFile={handleFile} loading={loading} apiDone={apiDone} onAnimationDone={handleAnimationDone} />
           </div>
 
           {error && (
