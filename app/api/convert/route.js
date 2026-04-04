@@ -96,144 +96,26 @@ export async function POST(request) {
 // ---------------------------------------------------------------------------
 // Claude AI parser
 // ---------------------------------------------------------------------------
-function preprocessText(rawText) {
+function extractTransactionLines(rawText) {
   const lines = rawText.split("\n");
-  const relevant = lines.filter((line) => {
-    const trimmed = line.trim();
-    if (trimmed.length < 3) return false;
-    const hasDate   = /\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}|\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(trimmed);
-    const hasAmount = /£[\d,]+\.?\d*|\d+\.\d{2}/.test(trimmed);
-    const hasNumber = /\d/.test(trimmed);
-    return hasDate || hasAmount || (hasNumber && trimmed.length > 5);
+  const filtered = lines.filter((line) => {
+    const t = line.trim();
+    if (t.length < 4) return false;
+    const hasAmount = /\d+\.\d{2}/.test(t);
+    const hasDate   = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(t);
+    return hasAmount || hasDate;
   });
-  return relevant.join("\n").substring(0, 6000);
+  return filtered.join("\n").substring(0, 3000);
 }
 
 async function parseWithClaude(rawText) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY environment variable is not set");
 
-  const textChunk = preprocessText(rawText);
-
-  const prompt = `You are the world's most accurate UK bank statement parser. You have expert knowledge of every UK bank format.
-
-BANKS YOU MUST HANDLE PERFECTLY:
-Traditional: Barclays, HSBC, Lloyds, NatWest, RBS, Santander, Halifax, Bank of Scotland, Nationwide, TSB, Metro Bank, Virgin Money, First Direct, Co-operative Bank
-Digital: Monzo, Starling, Revolut, Chase UK, Tide, Mettle, Monese, Atom Bank
-Building Societies: Nationwide, Yorkshire BS, Leeds BS, Coventry BS
-
-HOW TO IDENTIFY DEBITS vs CREDITS FOR EACH BANK:
-
-REVOLUT:
-- Has columns: Date | Description | Amount | Balance
-- Negative amounts (-£45.00) = DEBIT = money OUT
-- Positive amounts (+£2500.00) = CREDIT = money IN
-
-MONZO:
-- Pot withdrawals TO account = CREDIT
-- Pot deposits FROM account = DEBIT
-- All purchases = DEBIT
-
-STARLING:
-- Has "Money In" and "Money Out" columns
-- Money Out = DEBIT, Money In = CREDIT
-
-CHASE UK:
-- Negative amounts = DEBIT, Positive amounts = CREDIT
-- Cashback = CREDIT
-
-BARCLAYS:
-- Has separate "Money Out" and "Money In" columns
-- Money Out = DEBIT, Money In = CREDIT
-
-HSBC / FIRST DIRECT:
-- Has "Paid Out" and "Paid In" columns
-- Paid Out = DEBIT, Paid In = CREDIT
-
-LLOYDS / HALIFAX / BANK OF SCOTLAND:
-- Has "Debit" and "Credit" columns
-- Debit column = DEBIT, Credit column = CREDIT
-
-NATWEST / RBS:
-- Has "Value" column with type codes
-- Type DD/SO/TFR/POS = DEBIT
-- Type CR/BAC = CREDIT
-
-SANTANDER:
-- Has "Money Out" and "Money In" columns
-- Money Out = DEBIT, Money In = CREDIT
-
-NATIONWIDE:
-- Has "Payments Out" and "Payments In" columns
-- Payments Out = DEBIT, Payments In = CREDIT
-
-UNIVERSAL RULES (apply to ALL banks):
-ALWAYS DEBIT (money leaving):
-- Any purchase at a shop, restaurant, online retailer
-- Netflix, Spotify, Disney+, Apple, Google, Microsoft subscriptions
-- Utility bills, council tax, insurance payments
-- Mortgage/rent payments
-- ATM cash withdrawals
-- Direct debits and standing orders going OUT
-- Transfers sent TO another person
-
-ALWAYS CREDIT (money coming in):
-- Salary, wages, payroll from employer
-- BACS payments, faster payments received
-- HMRC tax credits, universal credit, benefits
-- Refunds from merchants
-- Cashback
-- Transfers received FROM another person
-- Interest earned
-
-AMOUNT FORMAT RULES:
-- DEBIT = ALWAYS return as NEGATIVE number e.g. -45.50
-- CREDIT = ALWAYS return as POSITIVE number e.g. 2500.00
-- NEVER return a shop purchase as positive
-- NEVER return a salary as negative
-
-MERCHANT NAME CLEANING:
-Clean up ALL merchant names to be human readable:
-- AMZNMKTPLACE / AMAZON / AMZ → Amazon
-- TFL / TRANSPORT FOR LONDON → TfL
-- MCDONALDS / MCDONALD → McDonald's
-- TESCO STORES / TESCO EXPRESS → Tesco
-- SAINSBURYS → Sainsbury's
-- NETFLIX.COM → Netflix
-- SPOTIFYABCDEF → Spotify
-- JUST EAT / JUSTEAT → Just Eat
-- UBER / UBEREATS → Uber
-- Remove ALL reference numbers (long strings of digits/letters)
-- Remove card numbers like **** 1234
-- Remove sort codes
-- Convert to proper Title Case
-
-EXTRACT EVERY SINGLE TRANSACTION:
-- Do not skip any transaction
-- Include ALL debits and credits
-- Include transfers, fees
-- Extract from all pages
-
-Return ONLY a valid JSON array. No explanation. No markdown. No backticks. No code fences.
-
-Format:
-[
-  {
-    "date": "DD/MM/YYYY",
-    "description": "Clean Merchant Name",
-    "amount": -45.50,
-    "type": "debit",
-    "balance": 1234.56
-  }
-]
-
-If balance is not available use null.
-Date must always be DD/MM/YYYY format.
-
-BANK STATEMENT TEXT:
-${textChunk}
-
-Return ONLY the JSON array:`;
+  const prompt = `Parse this UK bank statement. Return ONLY a JSON array of transactions.
+Each item: {"date":"DD/MM/YYYY","description":"Clean Name","amount":-45.50,"type":"debit","balance":null}
+Rules: debits=negative amount, credits=positive. Clean merchant names. No markdown, no explanation.
+Data: ${extractTransactionLines(rawText)}`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -244,7 +126,7 @@ Return ONLY the JSON array:`;
     },
     body: JSON.stringify({
       model:      "claude-haiku-4-5-20251001",
-      max_tokens: 2000,
+      max_tokens: 1500,
       messages:   [{ role: "user", content: prompt }],
     }),
   });
