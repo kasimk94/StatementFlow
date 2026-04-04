@@ -361,93 +361,88 @@ function DebugPanel({ debug }) {
 }
 
 // ─── AI Insights Popup ────────────────────────────────────────────────────────
-function InsightsPopup({ insights, onClose }) {
+function InsightsPopup({ insights, onClose, totalIncome, totalExpenses }) {
   const score      = insights.spendingScore ?? 0;
   const scoreColor = score >= 80 ? "#10b981" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
   const scoreLabel = score >= 80 ? "Excellent 🌟" : score >= 60 ? "Good 👍" : score >= 40 ? "Fair ⚠️" : "Needs Attention 🔴";
+  const subTotal   = insights.subscriptions?.total ?? 0;
+  const saved      = (totalIncome ?? 0) - (totalExpenses ?? 0);
+  const alerts     = (insights.alerts ?? []).slice(0, 2);
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", backdropFilter: "blur(4px)" }}>
-      <div style={{ background: "#fff", borderRadius: 20, maxWidth: 560, width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 60px rgba(0,0,0,0.3)", position: "relative" }}>
+      <div style={{ background: "#fff", borderRadius: 20, maxWidth: 480, width: "100%", boxShadow: "0 25px 60px rgba(0,0,0,0.3)", position: "relative" }}>
         {/* Header */}
-        <div style={{ padding: "24px 24px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#1e293b", margin: 0 }}>✨ Your Financial Insights</h2>
-            <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: "4px 0 0" }}>Here&apos;s what we found in your statement</p>
-          </div>
-          <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: "1rem", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
+        <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#1e293b", margin: 0 }}>✨ Your Money Summary</h2>
+          <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, width: 30, height: 30, cursor: "pointer", fontSize: "0.9rem", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
         </div>
 
-        <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
 
-          {/* Spending Score */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, background: "#f8fafc", borderRadius: 14, padding: "16px" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", background: scoreColor, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 4px 20px ${scoreColor}55` }}>
-              <span style={{ fontSize: "1.5rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{score}</span>
+          {/* 1. Score Row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#f8fafc", borderRadius: 12, padding: "12px 14px" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 3px 14px ${scoreColor}55` }}>
+              <span style={{ fontSize: "1.3rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{score}</span>
             </div>
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: "1rem", color: "#1e293b" }}>{scoreLabel}</p>
-              {insights.summary && <p style={{ margin: "4px 0 0", fontSize: "0.83rem", color: "#64748b", lineHeight: 1.5 }}>{insights.summary}</p>}
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: "0.9rem", color: "#1e293b" }}>{scoreLabel}</p>
+              {insights.summary && (
+                <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#64748b", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{insights.summary}</p>
+              )}
             </div>
           </div>
 
-          {/* Top Insight */}
+          {/* 2. Three Key Stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            <div style={{ background: "#fff1f2", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+              <p style={{ margin: "0 0 2px" }}>💰</p>
+              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: "#9f1239", textTransform: "uppercase", letterSpacing: "0.04em" }}>Spent</p>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#be123c" }}>{fmt(totalExpenses ?? 0)}</p>
+            </div>
+            <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+              <p style={{ margin: "0 0 2px" }}>📈</p>
+              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: saved >= 0 ? "#166534" : "#9a3412", textTransform: "uppercase", letterSpacing: "0.04em" }}>Saved</p>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: saved >= 0 ? "#15803d" : "#c2410c" }}>{fmt(saved)}</p>
+            </div>
+            <div style={{ background: "#fffbeb", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+              <p style={{ margin: "0 0 2px" }}>🔄</p>
+              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: "0.04em" }}>Subs/mo</p>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#78350f" }}>£{subTotal.toFixed(2)}</p>
+            </div>
+          </div>
+
+          {/* 3. Top Insight */}
           {insights.topInsight && (
-            <div style={{ background: "#ede9fe", borderRadius: 12, padding: "14px 16px", display: "flex", gap: 10 }}>
-              <span style={{ fontSize: "1.2rem", flexShrink: 0 }}>💡</span>
-              <p style={{ margin: 0, fontSize: "0.88rem", fontWeight: 600, color: "#4c1d95", lineHeight: 1.5 }}>{insights.topInsight}</p>
+            <div style={{ background: "#ede9fe", borderRadius: 10, padding: "12px 14px", display: "flex", gap: 8 }}>
+              <span style={{ fontSize: "1rem", flexShrink: 0 }}>💡</span>
+              <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#4c1d95", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{insights.topInsight}</p>
             </div>
           )}
 
-          {/* Subscriptions */}
-          {insights.subscriptions?.list?.length > 0 && (
-            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: "14px 16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <span style={{ fontSize: "1.1rem" }}>🔄</span>
-                <span style={{ fontWeight: 700, color: "#92400e", fontSize: "0.9rem" }}>Subscriptions Detected</span>
-                <span style={{ marginLeft: "auto", fontWeight: 800, color: "#92400e", fontSize: "0.95rem" }}>£{(insights.subscriptions.total ?? 0).toFixed(2)}/mo</span>
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {insights.subscriptions.list.map((sub, i) => (
-                  <span key={i} style={{ background: "#fef3c7", color: "#78350f", fontSize: "0.78rem", fontWeight: 600, padding: "3px 10px", borderRadius: 20, border: "1px solid #fde68a" }}>{sub}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Savings Opportunity */}
-          {insights.savingsOpportunity && (
-            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "14px 16px", display: "flex", gap: 10 }}>
-              <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>💰</span>
-              <div>
-                <p style={{ margin: 0, fontSize: "0.85rem", color: "#166534", lineHeight: 1.5 }}>{insights.savingsOpportunity.message}</p>
-                {insights.savingsOpportunity.potentialSaving && (
-                  <p style={{ margin: "4px 0 0", fontWeight: 800, color: "#15803d", fontSize: "0.88rem" }}>Potential saving: {insights.savingsOpportunity.potentialSaving}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Positive Note */}
-          {insights.positiveNote && (
-            <div style={{ background: "#f0fdf4", borderRadius: 12, padding: "12px 16px", display: "flex", gap: 10 }}>
-              <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>✅</span>
-              <p style={{ margin: 0, fontSize: "0.85rem", color: "#166534", lineHeight: 1.5 }}>{insights.positiveNote}</p>
-            </div>
-          )}
-
-          {/* Alerts */}
-          {insights.alerts?.length > 0 && insights.alerts.map((alert, i) => (
-            <div key={i} style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 12, padding: "12px 16px", display: "flex", gap: 10 }}>
-              <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>⚠️</span>
-              <p style={{ margin: 0, fontSize: "0.85rem", color: "#9a3412", lineHeight: 1.5 }}>{alert}</p>
+          {/* 4. Top 2 Alerts */}
+          {alerts.length > 0 && alerts.map((alert, i) => (
+            <div key={i} style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8 }}>
+              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>⚠️</span>
+              <p style={{ margin: 0, fontSize: "0.82rem", color: "#9a3412", lineHeight: 1.4 }}>{alert}</p>
             </div>
           ))}
 
-          {/* CTA */}
+          {/* 5. Savings Tip */}
+          {insights.savingsOpportunity && (
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8 }}>
+              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>💰</span>
+              <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534", lineHeight: 1.4 }}>
+                {insights.savingsOpportunity.message}
+                {insights.savingsOpportunity.potentialSaving ? ` — save ${insights.savingsOpportunity.potentialSaving}` : ""}
+              </p>
+            </div>
+          )}
+
+          {/* 6. CTA */}
           <button
             onClick={onClose}
-            style={{ background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", color: "#fff", fontWeight: 700, fontSize: "0.95rem", padding: "14px", borderRadius: 12, border: "none", cursor: "pointer", marginTop: 4, boxShadow: "0 4px 20px rgba(108,92,231,0.4)" }}
+            style={{ background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", color: "#fff", fontWeight: 700, fontSize: "0.95rem", padding: "13px", borderRadius: 12, border: "none", cursor: "pointer", marginTop: 2, boxShadow: "0 4px 20px rgba(108,92,231,0.4)" }}
           >
             View Full Dashboard →
           </button>
@@ -458,11 +453,14 @@ function InsightsPopup({ insights, onClose }) {
 }
 
 // ─── AI Insights Panel ────────────────────────────────────────────────────────
-function InsightsPanel({ insights }) {
+function InsightsPanel({ insights, totalIncome, totalExpenses }) {
   const [open, setOpen] = useState(false);
   const score      = insights.spendingScore ?? 0;
   const scoreColor = score >= 80 ? "#10b981" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
   const scoreLabel = score >= 80 ? "Excellent 🌟" : score >= 60 ? "Good 👍" : score >= 40 ? "Fair ⚠️" : "Needs Attention 🔴";
+  const subTotal   = insights.subscriptions?.total ?? 0;
+  const saved      = (totalIncome ?? 0) - (totalExpenses ?? 0);
+  const alerts     = (insights.alerts ?? []).slice(0, 2);
 
   return (
     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e8e4f8", borderLeft: "4px solid #6c5ce7", boxShadow: "0 2px 12px rgba(108,92,231,0.07)", overflow: "hidden" }}>
@@ -473,71 +471,67 @@ function InsightsPanel({ insights }) {
       >
         <span style={{ fontSize: "1.1rem" }}>✨</span>
         <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1e293b", flex: 1, textAlign: "left" }}>AI Insights</span>
-        <span style={{ fontSize: "0.7rem", fontWeight: 600, background: "linear-gradient(135deg, #6c5ce7, #a29bfe)", color: "#fff", padding: "2px 8px", borderRadius: 20 }}>Powered by Claude</span>
+        <span style={{ fontSize: "0.7rem", fontWeight: 600, background: "linear-gradient(135deg, #6c5ce7, #a29bfe)", color: "#fff", padding: "2px 8px", borderRadius: 20 }}>StatementFlow AI</span>
         <span style={{ fontSize: "0.8rem", color: "#94a3b8", marginLeft: 8 }}>{open ? "▲ Hide" : "▼ Show"} insights</span>
       </button>
 
       {open && (
         <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Row 1: Score + Summary */}
+
+          {/* Score row */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#f8fafc", borderRadius: 12, padding: "12px 14px" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 3px 12px ${scoreColor}44` }}>
-              <span style={{ fontSize: "1rem", fontWeight: 900, color: "#fff" }}>{score}</span>
+            <div style={{ width: 44, height: 44, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 3px 12px ${scoreColor}44` }}>
+              <span style={{ fontSize: "0.95rem", fontWeight: 900, color: "#fff" }}>{score}</span>
             </div>
             <div>
               <p style={{ margin: 0, fontWeight: 700, fontSize: "0.85rem", color: "#1e293b" }}>{scoreLabel}</p>
-              {insights.summary && <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#64748b" }}>{insights.summary}</p>}
+              {insights.summary && <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#64748b" }}>{insights.summary}</p>}
             </div>
           </div>
 
-          {/* Row 2: 3 cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: "12px 14px" }}>
-              <p style={{ margin: "0 0 4px" }}>🔄</p>
-              <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.78rem", color: "#92400e" }}>Subscriptions</p>
-              <p style={{ margin: "0 0 2px", fontWeight: 800, fontSize: "0.95rem", color: "#78350f" }}>£{(insights.subscriptions?.total ?? 0).toFixed(2)}</p>
-              <p style={{ margin: 0, fontSize: "0.72rem", color: "#a16207" }}>{insights.subscriptions?.list?.length ?? 0} detected</p>
+          {/* 3 key stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            <div style={{ background: "#fff1f2", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+              <p style={{ margin: "0 0 2px" }}>💰</p>
+              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: "#9f1239", textTransform: "uppercase" }}>Spent</p>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#be123c" }}>{fmt(totalExpenses ?? 0)}</p>
             </div>
-            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "12px 14px" }}>
-              <p style={{ margin: "0 0 4px" }}>💰</p>
-              <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.78rem", color: "#166534" }}>Savings Tip</p>
-              <p style={{ margin: 0, fontSize: "0.75rem", color: "#15803d", lineHeight: 1.4 }}>{insights.savingsOpportunity?.potentialSaving ?? "See details"}</p>
+            <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+              <p style={{ margin: "0 0 2px" }}>📈</p>
+              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: saved >= 0 ? "#166534" : "#9a3412", textTransform: "uppercase" }}>Saved</p>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: saved >= 0 ? "#15803d" : "#c2410c" }}>{fmt(saved)}</p>
             </div>
-            {insights.unusualSpending?.detected ? (
-              <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 12, padding: "12px 14px" }}>
-                <p style={{ margin: "0 0 4px" }}>⚠️</p>
-                <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.78rem", color: "#9a3412" }}>Alert</p>
-                <p style={{ margin: 0, fontSize: "0.72rem", color: "#c2410c", lineHeight: 1.4 }}>{(insights.unusualSpending.message ?? "").substring(0, 55)}{(insights.unusualSpending.message ?? "").length > 55 ? "…" : ""}</p>
-              </div>
-            ) : (
-              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "12px 14px" }}>
-                <p style={{ margin: "0 0 4px" }}>✅</p>
-                <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.78rem", color: "#166534" }}>All looks good</p>
-                <p style={{ margin: 0, fontSize: "0.72rem", color: "#15803d" }}>No unusual spending</p>
-              </div>
-            )}
+            <div style={{ background: "#fffbeb", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+              <p style={{ margin: "0 0 2px" }}>🔄</p>
+              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>Subs/mo</p>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#78350f" }}>£{subTotal.toFixed(2)}</p>
+            </div>
           </div>
 
-          {/* Biggest Category */}
-          {insights.biggestCategory && (
-            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", display: "flex", gap: 10, alignItems: "center" }}>
-              <span style={{ fontSize: "1.1rem" }}>📊</span>
-              <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: "0.82rem", color: "#1e293b" }}>
-                  Biggest spend: {insights.biggestCategory.name} — £{(insights.biggestCategory.amount ?? 0).toFixed(2)} ({insights.biggestCategory.percentage ?? 0}%)
-                </p>
-                {insights.biggestCategory.message && (
-                  <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#64748b" }}>{insights.biggestCategory.message}</p>
-                )}
-              </div>
+          {/* Top insight */}
+          {insights.topInsight && (
+            <div style={{ background: "#ede9fe", borderRadius: 10, padding: "12px 14px", display: "flex", gap: 8 }}>
+              <span style={{ fontSize: "1rem", flexShrink: 0 }}>💡</span>
+              <p style={{ margin: 0, fontSize: "0.83rem", fontWeight: 700, color: "#4c1d95", lineHeight: 1.4 }}>{insights.topInsight}</p>
             </div>
           )}
 
-          {/* Positive Note */}
-          {insights.positiveNote && (
-            <div style={{ background: "#f0fdf4", borderRadius: 12, padding: "12px 14px", display: "flex", gap: 10 }}>
-              <span style={{ fontSize: "1rem", flexShrink: 0 }}>✅</span>
-              <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534", lineHeight: 1.5 }}>{insights.positiveNote}</p>
+          {/* Top 2 alerts */}
+          {alerts.map((alert, i) => (
+            <div key={i} style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8 }}>
+              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>⚠️</span>
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "#9a3412", lineHeight: 1.4 }}>{alert}</p>
+            </div>
+          ))}
+
+          {/* Savings tip */}
+          {insights.savingsOpportunity && (
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8 }}>
+              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>💰</span>
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "#166534", lineHeight: 1.4 }}>
+                {insights.savingsOpportunity.message}
+                {insights.savingsOpportunity.potentialSaving ? ` — save ${insights.savingsOpportunity.potentialSaving}` : ""}
+              </p>
             </div>
           )}
         </div>
@@ -877,7 +871,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {/* ── AI INSIGHTS POPUP ── */}
       {showPopup && insights && (
-        <InsightsPopup insights={insights} onClose={() => setShowPopup(false)} />
+        <InsightsPopup insights={insights} onClose={() => setShowPopup(false)} totalIncome={income} totalExpenses={expenses} />
       )}
 
       {/* ── EXPORT TOOLBAR (above KPI cards — both real and demo) ── */}
@@ -885,7 +879,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {/* ── AI INSIGHTS PANEL ── */}
       {!demoMode && insights && (
-        <InsightsPanel insights={insights} />
+        <InsightsPanel insights={insights} totalIncome={income} totalExpenses={expenses} />
       )}
 
       {/* ── STAT CARDS ── */}

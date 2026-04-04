@@ -283,9 +283,21 @@ async function generateInsights(transactions, apiKey) {
   transactions.forEach(t => {
     merchantCounts[t.description] = (merchantCounts[t.description] || 0) + 1;
   });
+  const EXCLUDE_SUB_KEYWORDS = ["transfer","salary","wages","bacs","faster payment","standing order","direct credit","refund","cashback","atm","cash","withdrawal"];
+  const INCLUDE_SUB_KEYWORDS = ["netflix","spotify","disney","apple","google","microsoft","amazon prime","now tv","sky","gym","membership","insurance","adobe","youtube","amazon","deliveroo","uber","just eat"];
   const subscriptions = Object.entries(merchantCounts)
-    .filter(([, count]) => count >= 2)
-    .map(([name, count]) => ({ name, count }));
+    .filter(([name, count]) => {
+      if (count < 2) return false;
+      const n = name.toLowerCase();
+      if (EXCLUDE_SUB_KEYWORDS.some(k => n.includes(k))) return false;
+      return INCLUDE_SUB_KEYWORDS.some(k => n.includes(k)) || count >= 3;
+    })
+    .map(([name, count]) => {
+      const merchantTxns = transactions.filter(t => t.description === name && t.type === "debit");
+      const total = merchantTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      return { name, count, total };
+    });
+  const subscriptionTotal = subscriptions.reduce((sum, s) => sum + s.total, 0);
 
   const merchantTotals = {};
   transactions.filter(t => t.type === "debit").forEach(t => {
@@ -302,7 +314,7 @@ async function generateInsights(transactions, apiKey) {
     netBalance: totalIncome - totalExpenses,
     transactionCount: transactions.length,
     categories,
-    subscriptions,
+    subscriptions: { total: subscriptionTotal, list: subscriptions.map(s => s.name) },
     topMerchants,
     dateRange: {
       first: transactions[transactions.length - 1]?.date,
@@ -429,6 +441,9 @@ function categoriseTransaction(description, amount, type) {
   if (["atm","cash","cashpoint","withdrawal"].some(s => desc.includes(s)))                                                                                                                                                                                                                         return "Cash";
   if (["transfer","paypal","revolut","monzo","starling","wise","western union","currency","loan","credit card","standing order"].some(s => desc.includes(s)))                                                                                                                                      return "Transfers";
   if (["fee","charge","interest","overdraft","bank charge"].some(s => desc.includes(s)))                                                                                                                                                                                                           return "Bank Fees";
+  if (["amzn","amazon"].some(s => desc.includes(s)))                                                                                                                                                                                                                                               return "Shopping";
+  if (["standing order","faster payment","fp ","sent to","received from","bank transfer"].some(s => desc.includes(s)))                                                                                                                                                                             return "Transfers";
+  if (["financial","services","rci","lloyds","barclays","hsbc","natwest","halifax","nationwide","santander","monzo","starling","revolut"].some(s => desc.includes(s)))                                                                                                                              return "Finance & Transfers";
 
   return "Other";
 }
