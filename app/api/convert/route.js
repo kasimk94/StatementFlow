@@ -161,13 +161,42 @@ function extractJSON(text) {
     .trim();
 
   const start = cleaned.indexOf("[");
-  const end   = cleaned.lastIndexOf("]");
-
-  if (start === -1 || end === -1) {
+  if (start === -1) {
     throw new Error("No JSON array found in response: " + cleaned.substring(0, 100));
   }
 
-  return JSON.parse(cleaned.substring(start, end + 1));
+  // Try full array first
+  const end = cleaned.lastIndexOf("]");
+  if (end !== -1 && end > start) {
+    try {
+      return JSON.parse(cleaned.substring(start, end + 1));
+    } catch (e) {
+      console.log("Full parse failed, trying repair...");
+    }
+  }
+
+  // Truncated response — repair by finding last complete object
+  let jsonStr = cleaned.substring(start);
+  const lastComma = jsonStr.lastIndexOf("},");
+  if (lastComma !== -1) {
+    try {
+      return JSON.parse(jsonStr.substring(0, lastComma + 1) + "]");
+    } catch (e) {
+      console.log("Repair (},) failed:", e.message);
+    }
+  }
+
+  // Last resort — last closing brace
+  const lastBrace = jsonStr.lastIndexOf("}");
+  if (lastBrace !== -1) {
+    try {
+      return JSON.parse(jsonStr.substring(0, lastBrace + 1) + "]");
+    } catch (e) {
+      throw new Error("Could not parse JSON: " + e.message);
+    }
+  }
+
+  throw new Error("No valid JSON found");
 }
 
 async function parseWithClaude(rawText, apiKey) {
@@ -183,10 +212,12 @@ async function parseWithClaude(rawText, apiKey) {
     },
     body: JSON.stringify({
       model:      "claude-haiku-4-5-20251001",
-      max_tokens: 2000,
+      max_tokens: 4000,
       messages: [{
         role: "user",
-        content: `You are an expert UK bank statement parser. Extract ALL transactions accurately.
+        content: `CRITICAL: You MUST return complete valid JSON only. No markdown backticks. No explanation. Start response with [ and end with ]
+
+You are an expert UK bank statement parser. Extract ALL transactions accurately.
 
 CRITICAL RULES:
 1. Debits (money OUT) = NEGATIVE amount + type "debit"
