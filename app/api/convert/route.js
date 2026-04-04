@@ -153,6 +153,23 @@ function extractTransactionLines(rawText) {
   return filtered.join("\n").substring(0, 8000);
 }
 
+function extractJSON(text) {
+  // Strip markdown code fences
+  const cleaned = text
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  const start = cleaned.indexOf("[");
+  const end   = cleaned.lastIndexOf("]");
+
+  if (start === -1 || end === -1) {
+    throw new Error("No JSON array found in response: " + cleaned.substring(0, 100));
+  }
+
+  return JSON.parse(cleaned.substring(start, end + 1));
+}
+
 async function parseWithClaude(rawText, apiKey) {
   const processedText = extractTransactionLines(rawText);
   console.log("Sending to Claude, text length:", processedText.length);
@@ -181,6 +198,8 @@ CRITICAL RULES:
 Return ONLY valid JSON array:
 [{"date":"DD/MM/YYYY","description":"Merchant Name","amount":-45.50,"type":"debit","balance":null}]
 
+IMPORTANT: Return raw JSON only. No markdown. No backticks. Start with [ end with ]
+
 Statement data:
 ${processedText}`,
       }],
@@ -204,12 +223,7 @@ ${processedText}`,
   const text = data.content?.[0]?.text?.trim() ?? "";
   console.log("Claude text response:", text.substring(0, 300));
 
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) {
-    throw new Error("Claude did not return valid JSON. Response: " + text.substring(0, 100));
-  }
-
-  return JSON.parse(jsonMatch[0]);
+  return extractJSON(text);
 }
 
 // ---------------------------------------------------------------------------
