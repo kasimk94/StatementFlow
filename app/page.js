@@ -250,7 +250,7 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Conversion failed");
       setTransactions(data.transactions);
-      setParseResult({ confidence: data.confidence, bank: data.bank, debug: data.debug ?? null });
+      setParseResult({ confidence: data.confidence, bank: data.bank, debug: data.debug ?? null, insights: data.insights ?? null });
       window.scrollTo(0, 0);
     } catch (err) {
       setError(err.message);
@@ -318,6 +318,7 @@ export default function Home() {
             confidence={parseResult?.confidence}
             bank={parseResult?.bank}
             debug={parseResult?.debug}
+            insights={parseResult?.insights}
           />
         </main>
         {showFeedback && <FeedbackPopup onClose={closeFeedback} />}

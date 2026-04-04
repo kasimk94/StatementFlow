@@ -116,6 +116,15 @@ export async function POST(req) {
     const totalExpenses = transactions.filter(t => t.type === "debit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const netBalance    = totalIncome - totalExpenses;
 
+    // ── 7. Generate AI insights (separate cheap call) ───────────────────────
+    let insights = null;
+    try {
+      insights = await generateInsights(transactions, apiKey);
+      console.log("Insights generated:", !!insights);
+    } catch (insightErr) {
+      console.error("Insights generation failed (non-fatal):", insightErr.message);
+    }
+
     console.log("=== CONVERSION SUCCESS ===", transactions.length, "transactions");
 
     return NextResponse.json({
@@ -126,6 +135,7 @@ export async function POST(req) {
       transactionCount: transactions.length,
       confidence: "high",
       bank: "ai-parsed",
+      insights,
     });
 
   } catch (err) {
@@ -255,6 +265,109 @@ ${processedText}`,
   console.log("Claude text response:", text.substring(0, 300));
 
   return extractJSON(text);
+}
+
+// ---------------------------------------------------------------------------
+// AI Insights generator
+// ---------------------------------------------------------------------------
+async function generateInsights(transactions, apiKey) {
+  const totalIncome   = transactions.filter(t => t.type === "credit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const totalExpenses = transactions.filter(t => t.type === "debit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const categories = {};
+  transactions.filter(t => t.type === "debit").forEach(t => {
+    categories[t.category] = (categories[t.category] || 0) + Math.abs(t.amount);
+  });
+
+  const merchantCounts = {};
+  transactions.forEach(t => {
+    merchantCounts[t.description] = (merchantCounts[t.description] || 0) + 1;
+  });
+  const subscriptions = Object.entries(merchantCounts)
+    .filter(([, count]) => count >= 2)
+    .map(([name, count]) => ({ name, count }));
+
+  const merchantTotals = {};
+  transactions.filter(t => t.type === "debit").forEach(t => {
+    merchantTotals[t.description] = (merchantTotals[t.description] || 0) + Math.abs(t.amount);
+  });
+  const topMerchants = Object.entries(merchantTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, amount]) => ({ name, amount }));
+
+  const summaryData = {
+    totalIncome,
+    totalExpenses,
+    netBalance: totalIncome - totalExpenses,
+    transactionCount: transactions.length,
+    categories,
+    subscriptions,
+    topMerchants,
+    dateRange: {
+      first: transactions[transactions.length - 1]?.date,
+      last:  transactions[0]?.date,
+    },
+  };
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type":      "application/json",
+      "x-api-key":         apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model:      "claude-haiku-4-5-20251001",
+      max_tokens: 1000,
+      messages: [{
+        role: "user",
+        content: `You are a friendly UK personal finance assistant. Analyse this spending summary and return a JSON object with insights.
+
+Spending data: ${JSON.stringify(summaryData)}
+
+Return ONLY this JSON structure with NO markdown:
+{
+  "summary": "One sentence overview of their finances this month",
+  "topInsight": "The single most important observation about their spending",
+  "subscriptions": {
+    "total": 0.00,
+    "list": ["Netflix £10.99", "Spotify £9.99"],
+    "message": "You spend £X/month on subscriptions"
+  },
+  "biggestCategory": {
+    "name": "category name",
+    "amount": 0.00,
+    "percentage": 0,
+    "message": "friendly observation about this"
+  },
+  "savingsOpportunity": {
+    "message": "One specific actionable saving tip based on their spending",
+    "potentialSaving": "£X per month"
+  },
+  "unusualSpending": {
+    "detected": true,
+    "message": "observation if something looks unusual or high"
+  },
+  "positiveNote": "One encouraging positive observation about their finances",
+  "spendingScore": 75,
+  "spendingScoreLabel": "Good",
+  "alerts": ["alert 1 if any"]
+}
+
+Be friendly, specific with £ amounts, and genuinely helpful. Use British English.`,
+      }],
+    }),
+  });
+
+  const data = await response.json();
+  if (data.error) return null;
+
+  const text  = data.content?.[0]?.text?.trim() ?? "";
+  const start = text.indexOf("{");
+  const end   = text.lastIndexOf("}");
+  if (start === -1 || end === -1) return null;
+  return JSON.parse(text.substring(start, end + 1));
 }
 
 // ---------------------------------------------------------------------------
