@@ -19,6 +19,15 @@ export async function POST(request) {
 
     // ── 1. Extract raw text from PDF ────────────────────────────────────────
     const arrayBuffer = await file.arrayBuffer();
+
+    // Reject PDFs larger than 5 MB
+    if (arrayBuffer.byteLength > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large. Please upload a PDF under 5 MB." },
+        { status: 400 }
+      );
+    }
+
     const uint8 = new Uint8Array(arrayBuffer);
 
     let rawText = "";
@@ -32,17 +41,20 @@ export async function POST(request) {
       );
     }
 
-    if (!rawText || rawText.trim().length < 50) {
+    if (!rawText || rawText.trim().length < 100) {
       return NextResponse.json(
         { error: "Could not extract text from this PDF. It may be a scanned image — please use a text-based PDF downloaded from your online banking." },
         { status: 400 }
       );
     }
 
+    // Truncate very large statements before sending to AI
+    const textForParsing = rawText.length > 50000 ? rawText.substring(0, 50000) : rawText;
+
     // ── 2. Parse with Claude AI ─────────────────────────────────────────────
     let parsed;
     try {
-      parsed = await parseWithClaude(rawText);
+      parsed = await parseWithClaude(textForParsing);
     } catch (err) {
       console.error("Claude parsing error:", err);
       return NextResponse.json(
@@ -100,33 +112,43 @@ function extractTransactionLines(rawText) {
   const lines = rawText.split("\n");
   const filtered = lines.filter((line) => {
     const t = line.trim();
-    if (t.length < 4) return false;
-    const hasAmount = /\d+\.\d{2}/.test(t);
-    const hasDate   = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(t);
-    return hasAmount || hasDate;
+    if (t.length < 3) return false;
+    const hasAmount  = /[£$]?\d+[.,]\d{2}/.test(t);
+    const hasDate    = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]?\d{0,4}|\d{1,2}\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(t);
+    const hasKeyword = /(debit|credit|payment|transfer|balance|paid|received|purchase|withdrawal|deposit)/i.test(t);
+    return hasAmount || hasDate || hasKeyword;
   });
-  return filtered.join("\n").substring(0, 3000);
+  return filtered.join("\n").substring(0, 8000);
 }
 
 async function parseWithClaude(rawText) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY environment variable is not set");
 
-  const prompt = `Parse this UK bank statement. Return ONLY a JSON array of transactions.
-Each item: {"date":"DD/MM/YYYY","description":"Clean Name","amount":-45.50,"type":"debit","balance":null}
-Rules: debits=negative amount, credits=positive. Clean merchant names. No markdown, no explanation.
-Data: ${extractTransactionLines(rawText)}`;
+  const prompt = `You are a UK bank statement parser. Extract ALL transactions from the data below and return ONLY a valid JSON array.
+
+Rules:
+1. Each transaction: {"date":"DD/MM/YYYY","description":"Merchant Name","amount":-45.50,"type":"debit","balance":null}
+2. Debits/payments/purchases = negative amount. Credits/incoming/salary = positive amount.
+3. Use DD/MM/YYYY date format. If year is missing, use the most recent plausible year.
+4. Clean merchant names: remove reference numbers, sort codes, card numbers. Keep brand name only.
+5. Include ALL transactions — do not skip any.
+6. Return ONLY the JSON array. No markdown, no explanation, no extra text.
+7. If balance column exists, include it as a number (not string).
+
+Bank statement data:
+${extractTransactionLines(rawText)}`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      "Content-Type":    "application/json",
-      "x-api-key":       apiKey,
+      "Content-Type":      "application/json",
+      "x-api-key":         apiKey,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
       model:      "claude-haiku-4-5-20251001",
-      max_tokens: 1500,
+      max_tokens: 2000,
       messages:   [{ role: "user", content: prompt }],
     }),
   });
@@ -144,20 +166,13 @@ Data: ${extractTransactionLines(rawText)}`;
 
   const rawResponse = data.content?.[0]?.text?.trim() ?? "";
 
-  // Strip any accidental markdown fences
-  const clean = rawResponse
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```\s*$/, "")
-    .trim();
-
-  // Find the JSON array (handle any leading/trailing text)
-  const start = clean.indexOf("[");
-  const end   = clean.lastIndexOf("]");
-  if (start === -1 || end === -1) {
-    throw new Error(`Claude did not return a JSON array. Response: ${clean.substring(0, 200)}`);
+  // Extract JSON array, handling markdown fences and any surrounding text
+  const match = rawResponse.match(/\[[\s\S]*\]/);
+  if (!match) {
+    throw new Error(`Claude did not return a JSON array. Response: ${rawResponse.substring(0, 200)}`);
   }
 
-  return JSON.parse(clean.slice(start, end + 1));
+  return JSON.parse(match[0]);
 }
 
 // ---------------------------------------------------------------------------
