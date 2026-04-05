@@ -762,6 +762,12 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         if (entry.target === demoRef.current) {
           setLoaded(true);
           setDemoTriggered(true);
+          if (insights && !sessionStorage.getItem("sf_demo_popup_shown")) {
+            setTimeout(() => {
+              sessionStorage.setItem("sf_demo_popup_shown", "1");
+              setShowPopup(true);
+            }, 2000);
+          }
         }
         if (entry.target === chartsRef.current) {
           setBarsVisible(true);
@@ -1049,12 +1055,12 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />
 
       {/* ── AI INSIGHTS PANEL ── */}
-      {!demoMode && insights && (
+      {insights && (
         <InsightsPanel insights={insights} totalIncome={income} totalExpenses={expenses} />
       )}
 
       {/* ── FINANCIAL SNAPSHOT ── */}
-      {!demoMode && transactions.length > 0 && (
+      {transactions.length > 0 && (
         <FinancialSnapshot
           transactions={transactions}
           income={income}

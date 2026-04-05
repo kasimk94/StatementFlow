@@ -42,6 +42,35 @@ const DEMO_TRANSACTIONS = [
   { date: "02 Mar 2026", description: "Costa Coffee",           category: "Eating Out",       amount:    -4.95 },
 ];
 
+// ── Demo insights (mirrors what the AI would generate) ───────────────────────
+const DEMO_INSIGHTS = {
+  summary: "You're spending 82% of your income with a healthy £612 surplus this month",
+  topInsight: "Over £67/month goes to subscriptions — Netflix, Spotify and Amazon Prime alone cost £29.97",
+  spendingScore: 74,
+  spendingScoreLabel: "Good",
+  subscriptions: {
+    total: 67.96,
+    list: ["Netflix £10.99", "Spotify £9.99", "Amazon Prime £8.99", "Disney+ £4.99", "Sky £32.00"],
+    message: "You spend £67.96/month on subscriptions",
+  },
+  biggestCategory: {
+    name: "Bills & Finance",
+    amount: 950.00,
+    percentage: 56,
+    message: "Your mortgage/rent dominates spending at 56% of expenses",
+  },
+  savingsOpportunity: {
+    message: "Reducing eating out from 5x to 3x per week could save you significantly",
+    potentialSaving: "£45 per month",
+  },
+  unusualSpending: { detected: false, message: "Your spending looks consistent this month" },
+  positiveNote: "Well done! You're saving £612 this month — that's 18% of your income",
+  alerts: [
+    "Amazon appears 4 times — check for duplicate subscriptions",
+    "Costa Coffee visits (5×) cost £29.25 this month",
+  ],
+};
+
 // ── Hidden admin link (visible only at ?admin=true) ──────────────────────────
 function AdminLink() {
   const [show, setShow] = useState(false);
@@ -422,13 +451,13 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </button>
-            <a
-              href="#how-it-works"
+            <button
+              onClick={() => { const el = document.getElementById("demo-preview"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }}
               className="flex items-center gap-2 border border-slate-300 hover:border-slate-400 text-slate-700 font-semibold px-9 py-4 rounded-2xl text-base shadow-sm btn-secondary"
               style={{ minHeight: 52, justifyContent: "center" }}
             >
               See Example
-            </a>
+            </button>
           </div>
 
           {/* Trust badges — staggered pop-in via IntersectionObserver */}
@@ -456,7 +485,7 @@ export default function Home() {
         </div>
 
         {/* ── DEMO DASHBOARD ── */}
-        <div className="mt-24 pb-10 px-6 scroll-animate" style={{ transitionDelay: "0.5s" }}>
+        <div id="demo-preview" className="mt-24 pb-10 px-6 scroll-animate" style={{ transitionDelay: "0.5s" }}>
           <div className="text-center mb-10">
             <p className="text-blue-600 font-bold text-xs uppercase tracking-widest mb-3">Live Preview</p>
             <h2 className="text-3xl font-extrabold text-slate-900 mb-2">See exactly what you'll get</h2>
@@ -513,7 +542,7 @@ export default function Home() {
                 ✨ DEMO
               </div>
 
-              <Dashboard transactions={DEMO_TRANSACTIONS} demoMode={true} />
+              <Dashboard transactions={DEMO_TRANSACTIONS} demoMode={true} insights={DEMO_INSIGHTS} />
             </div>
           </div>
         </div>
