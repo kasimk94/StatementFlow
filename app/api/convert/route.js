@@ -268,6 +268,88 @@ ${processedText}`,
 }
 
 // ---------------------------------------------------------------------------
+// Subscription detector
+// ---------------------------------------------------------------------------
+function detectSubscriptions(transactions) {
+  const knownSubscriptions = [
+    "netflix","spotify","disney","disney+","apple music","apple tv",
+    "amazon prime","prime video","now tv","nowtv","sky cinema","sky sports",
+    "microsoft 365","microsoft office","adobe","creative cloud",
+    "youtube premium","google one","google storage",
+    "playstation plus","ps plus","xbox game pass","nintendo online",
+    "audible","kindle unlimited",
+    "gym","puregym","david lloyd","virgin active","anytime fitness","the gym",
+    "duolingo","headspace","calm",
+    "dropbox","icloud","onedrive",
+    "linkedin premium","indeed","canva",
+    "deliveroo plus","uber one",
+    "times","telegraph","guardian","ft.com","financial times",
+    "insurance","aviva","axa","direct line","admiral",
+    "aa membership","rac membership",
+    "vodafone","o2","ee","three","bt","sky broadband","virgin media","talktalk",
+    "council tax","tv licence",
+  ];
+
+  const neverSubscriptions = [
+    "tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi",
+    "co-op","marks spencer","m&s","iceland","farmfoods","ocado",
+    "amazon marketplace","amzn",
+    "argos","currys","john lewis","ikea","next","primark","asos",
+    "mcdonald","kfc","subway","burger king","greggs","pret",
+    "costa","starbucks","cafe","restaurant",
+    "deliveroo","just eat","uber eats",
+    "uber","bolt","taxi","tfl","trainline",
+    "petrol","bp","shell","esso",
+    "boots","pharmacy","chemist",
+    "atm","cash","withdrawal",
+    "paypal","transfer","faster payment",
+  ];
+
+  const subscriptions = [];
+  const debitTransactions = transactions.filter(t => t.type === "debit");
+
+  debitTransactions.forEach(t => {
+    const desc = t.description.toLowerCase();
+    const isKnownSub      = knownSubscriptions.some(sub  => desc.includes(sub));
+    const isRegularShop   = neverSubscriptions.some(shop => desc.includes(shop));
+
+    // Special case: "amazon" alone = shopping, "amazon prime" = subscription (handled by knownSubscriptions)
+    const isAmazonRegular = /\bamazon\b/.test(desc) && !desc.includes("amazon prime") && !desc.includes("prime video");
+    if (isAmazonRegular) return;
+
+    if (isKnownSub && !isRegularShop) {
+      const existing = subscriptions.find(s => s.name === t.description);
+      if (existing) {
+        existing.total += Math.abs(t.amount);
+        existing.count++;
+      } else {
+        subscriptions.push({ name: t.description, amount: Math.abs(t.amount), total: Math.abs(t.amount), count: 1 });
+      }
+      return;
+    }
+
+    // Pattern detection: same merchant, exact same amount, 2+ times — but not regular shopping
+    if (!isRegularShop && !isKnownSub) {
+      const sameAmountSameMerchant = debitTransactions.filter(
+        t2 => t2.description === t.description && Math.abs(Math.abs(t2.amount) - Math.abs(t.amount)) < 0.01
+      );
+      if (sameAmountSameMerchant.length >= 2 && !subscriptions.find(s => s.name === t.description)) {
+        subscriptions.push({
+          name:     t.description,
+          amount:   Math.abs(t.amount),
+          total:    Math.abs(t.amount) * sameAmountSameMerchant.length,
+          count:    sameAmountSameMerchant.length,
+          detected: "pattern",
+        });
+      }
+    }
+  });
+
+  const total = subscriptions.reduce((sum, s) => sum + s.amount, 0);
+  return { list: subscriptions, total, count: subscriptions.length };
+}
+
+// ---------------------------------------------------------------------------
 // AI Insights generator
 // ---------------------------------------------------------------------------
 async function generateInsights(transactions, apiKey) {
@@ -279,25 +361,8 @@ async function generateInsights(transactions, apiKey) {
     categories[t.category] = (categories[t.category] || 0) + Math.abs(t.amount);
   });
 
-  const merchantCounts = {};
-  transactions.forEach(t => {
-    merchantCounts[t.description] = (merchantCounts[t.description] || 0) + 1;
-  });
-  const EXCLUDE_SUB_KEYWORDS = ["transfer","salary","wages","bacs","faster payment","standing order","direct credit","refund","cashback","atm","cash","withdrawal"];
-  const INCLUDE_SUB_KEYWORDS = ["netflix","spotify","disney","apple","google","microsoft","amazon prime","now tv","sky","gym","membership","insurance","adobe","youtube","amazon","deliveroo","uber","just eat"];
-  const subscriptions = Object.entries(merchantCounts)
-    .filter(([name, count]) => {
-      if (count < 2) return false;
-      const n = name.toLowerCase();
-      if (EXCLUDE_SUB_KEYWORDS.some(k => n.includes(k))) return false;
-      return INCLUDE_SUB_KEYWORDS.some(k => n.includes(k)) || count >= 3;
-    })
-    .map(([name, count]) => {
-      const merchantTxns = transactions.filter(t => t.description === name && t.type === "debit");
-      const total = merchantTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      return { name, count, total };
-    });
-  const subscriptionTotal = subscriptions.reduce((sum, s) => sum + s.total, 0);
+  const detected = detectSubscriptions(transactions);
+  const subscriptionTotal = detected.total;
 
   const merchantTotals = {};
   transactions.filter(t => t.type === "debit").forEach(t => {
@@ -314,7 +379,11 @@ async function generateInsights(transactions, apiKey) {
     netBalance: totalIncome - totalExpenses,
     transactionCount: transactions.length,
     categories,
-    subscriptions: { total: subscriptionTotal, list: subscriptions.map(s => s.name) },
+    subscriptions: {
+      total: subscriptionTotal,
+      list:  detected.list.map(s => `${s.name} £${s.amount.toFixed(2)}`),
+      count: detected.count,
+    },
     topMerchants,
     dateRange: {
       first: transactions[transactions.length - 1]?.date,
@@ -335,6 +404,8 @@ async function generateInsights(transactions, apiKey) {
       messages: [{
         role: "user",
         content: `You are a friendly UK personal finance assistant. Analyse this spending summary and return a JSON object with insights.
+
+IMPORTANT - SUBSCRIPTIONS: The subscriptions list has already been accurately detected. Use ONLY the provided subscriptions data. Do NOT reclassify Amazon, Tesco, Deliveroo or any shopping/food as subscriptions — those are regular purchases, not recurring fixed-fee services. Subscriptions are ONLY fixed recurring services like Netflix, Spotify, gym memberships, phone bills, insurance etc.
 
 Spending data: ${JSON.stringify(summaryData)}
 
@@ -432,8 +503,9 @@ function categoriseTransaction(description, amount, type) {
   if (["mcdonald","kfc","subway","pizza","nandos","wagamama","greggs","pret","costa","starbucks","cafe","restaurant","deliveroo","just eat","uber eat","domino","burger king","five guys","itsu","wasabi","leon"].some(s => desc.includes(s)))                                                       return "Eating Out";
   if (["tfl","trainline","national rail","gwr","lner","avanti","southeastern","thameslink","great western","parking","bp","shell","esso","texaco","petrol","fuel","bus","taxi","black cab","addison lee"].some(s => desc.includes(s)))                                                              return "Transport";
   if (["uber"].some(s => desc.includes(s)) && !["uber eat"].some(s => desc.includes(s)))                                                                                                                                                                                                          return "Transport";
-  if (["amazon","asos","ebay","primark","next","h&m","zara","argos","currys","john lewis","ikea","b&q","jd sport","nike","adidas","boohoo","pretty little thing","shein","very","littlewoods","ao.com","apple store"].some(s => desc.includes(s)))                                                 return "Shopping";
-  if (["netflix","spotify","disney","youtube premium","now tv","amazon prime","microsoft","adobe","google","playstation","xbox game","nintendo","hulu","paramount","discovery","apple"].some(s => desc.includes(s)))                                                                               return "Subscriptions";
+  // Subscriptions checked BEFORE shopping so "amazon prime" beats "amazon"
+  if (["netflix","spotify","disney","youtube premium","now tv","amazon prime","prime video","microsoft 365","microsoft office","adobe","creative cloud","google one","playstation plus","ps plus","xbox game pass","nintendo online","audible","kindle unlimited","duolingo","headspace","calm","dropbox","icloud","onedrive","linkedin premium","deliveroo plus","uber one"].some(s => desc.includes(s))) return "Subscriptions";
+  if (["amazon","amzn","asos","ebay","primark","next","h&m","zara","argos","currys","john lewis","ikea","b&q","jd sport","nike","adidas","boohoo","pretty little thing","shein","very","littlewoods","ao.com","apple store"].some(s => desc.includes(s)))                                      return "Shopping";
   if (["british gas","octopus","eon","edf","bulb","ovo energy","scottish power","npower","thames water","severn trent","anglian water","council tax","bt ","virgin media","sky ","vodafone","o2","ee ","three","talktalk","insurance","aviva","axa","legal general","direct line"].some(s => desc.includes(s))) return "Bills & Utilities";
   if (["mortgage","rent","landlord","letting"].some(s => desc.includes(s)))                                                                                                                                                                                                                        return "Rent & Mortgage";
   if (["pharmacy","boots","lloyds pharmacy","chemist","dentist","doctor","nhs","gym","fitness","puregym","david lloyd","virgin active","health","medical","hospital","specsavers","vision express"].some(s => desc.includes(s)))                                                                    return "Health & Fitness";
@@ -441,7 +513,6 @@ function categoriseTransaction(description, amount, type) {
   if (["atm","cash","cashpoint","withdrawal"].some(s => desc.includes(s)))                                                                                                                                                                                                                         return "Cash";
   if (["transfer","paypal","revolut","monzo","starling","wise","western union","currency","loan","credit card","standing order"].some(s => desc.includes(s)))                                                                                                                                      return "Transfers";
   if (["fee","charge","interest","overdraft","bank charge"].some(s => desc.includes(s)))                                                                                                                                                                                                           return "Bank Fees";
-  if (["amzn","amazon"].some(s => desc.includes(s)))                                                                                                                                                                                                                                               return "Shopping";
   if (["standing order","faster payment","fp ","sent to","received from","bank transfer"].some(s => desc.includes(s)))                                                                                                                                                                             return "Transfers";
   if (["financial","services","rci","lloyds","barclays","hsbc","natwest","halifax","nationwide","santander","monzo","starling","revolut"].some(s => desc.includes(s)))                                                                                                                              return "Finance & Transfers";
 

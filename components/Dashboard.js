@@ -501,20 +501,26 @@ function FinancialSnapshot({ transactions, income, expenses, net, categoryBreakd
         </div>
 
         {/* Subscription spotlight */}
-        {subList.length > 0 && (
-          <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
-            <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: "0.85rem", color: "#92400e" }}>🔄 Subscription Spotlight</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", marginBottom: 8 }}>
-              {subList.slice(0, 8).map((s, i) => (
-                <span key={i} style={{ fontSize: "0.78rem", color: "#78350f" }}>• {s}</span>
-              ))}
-            </div>
-            <div style={{ borderTop: "1px solid #fde68a", paddingTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-              <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#78350f" }}>£{subTotal.toFixed(2)}/month</span>
-              <span style={{ fontSize: "0.78rem", color: "#92400e" }}>= £{(subTotal * 12).toFixed(2)}/year</span>
-            </div>
-          </div>
-        )}
+        <div style={{ background: subList.length > 0 ? "#fffbeb" : "#f0fdf4", border: `1px solid ${subList.length > 0 ? "#fde68a" : "#bbf7d0"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+          <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: "0.85rem", color: subList.length > 0 ? "#92400e" : "#166534" }}>
+            {subList.length > 0 ? "🔄 Subscription Spotlight" : "✅ Subscriptions"}
+          </p>
+          {subList.length > 0 ? (
+            <>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", marginBottom: 8 }}>
+                {subList.slice(0, 8).map((s, i) => (
+                  <span key={i} style={{ fontSize: "0.78rem", color: "#78350f" }}>• {s}</span>
+                ))}
+              </div>
+              <div style={{ borderTop: "1px solid #fde68a", paddingTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+                <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#78350f" }}>£{subTotal.toFixed(2)}/month</span>
+                <span style={{ fontSize: "0.78rem", color: "#92400e" }}>= £{(subTotal * 12).toFixed(2)}/year</span>
+              </div>
+            </>
+          ) : (
+            <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534" }}>No recurring subscriptions detected this month</p>
+          )}
+        </div>
 
         {/* Biggest opportunity */}
         {biggestExpCat && (
@@ -918,12 +924,33 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     return [...rest, ...unknown];
   }, [transactions]);
 
-  // ── Subscription detection (merchants appearing 2+ times) ──
+  // ── Subscription detection for transaction table indicator ──
   const subscriptionMerchants = useMemo(() => {
-    const counts = {};
-    transactions.forEach(t => { counts[t.description] = (counts[t.description] || 0) + 1; });
-    return new Set(Object.entries(counts).filter(([, c]) => c >= 2).map(([name]) => name));
-  }, [transactions]);
+    // Use backend-detected subscriptions if available; otherwise fall back to pattern detection
+    if (insights?.subscriptions?.list?.length > 0) {
+      // Backend list items are "Merchant Name £amount" — extract just the merchant portion
+      return new Set(
+        insights.subscriptions.list.map(s => s.replace(/\s+£[\d.]+$/, "").trim())
+      );
+    }
+    // Pattern fallback: same merchant, same exact amount, 2+ times, exclude common shops
+    const NEVER_SUBS = ["tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi","co-op","m&s","iceland","amazon","amzn","ebay","argos","currys","mcdonald","kfc","subway","greggs","costa","starbucks","deliveroo","just eat","uber","tfl","petrol","bp","shell","boots","atm","cash","paypal","transfer"];
+    const amountCounts = {};
+    transactions.forEach(t => {
+      if (t.type !== "debit") return;
+      const key = `${t.description}||${Math.abs(t.amount).toFixed(2)}`;
+      amountCounts[key] = (amountCounts[key] || 0) + 1;
+    });
+    return new Set(
+      Object.entries(amountCounts)
+        .filter(([key, count]) => {
+          if (count < 2) return false;
+          const name = key.split("||")[0].toLowerCase();
+          return !NEVER_SUBS.some(s => name.includes(s));
+        })
+        .map(([key]) => key.split("||")[0])
+    );
+  }, [transactions, insights]);
 
   const pieData = useMemo(() =>
     categoryBreakdown.map((c) => ({ name: c.name, value: c.total, fill: catHex(c.name) })),
