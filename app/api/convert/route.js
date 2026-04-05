@@ -505,29 +505,36 @@ function normaliseDate(raw) {
 function categoriseTransaction(description, amount, type) {
   const desc = (description || "").toLowerCase();
 
-  if (type === "credit" || amount > 0) {
-    if (["salary","wages","payroll","bacs","employer","hmrc","universal credit","benefits","pension","dividend"].some(s => desc.includes(s))) return "Income";
-    if (["refund","cashback","reversal","chargeback"].some(s => desc.includes(s)))                                                             return "Refunds";
-    if (["transfer","faster payment","fpay","sent from"].some(s => desc.includes(s)))                                                         return "Transfers In";
-    return "Income";
+  // Detect person-to-person payments: "First Last" or "First Middle Last"
+  function looksLikePersonName(d) {
+    const words = (d || "").trim().split(/\s+/);
+    return words.length >= 2 && words.length <= 3 && words.every(w => /^[A-Z][a-z]+$/.test(w));
   }
 
-  if (["tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi","co-op","m&s food","marks","iceland","farmfoods","ocado","booths"].some(s => desc.includes(s)))                                                                                                                              return "Groceries";
-  if (["mcdonald","kfc","subway","pizza","nandos","wagamama","greggs","pret","costa","starbucks","cafe","restaurant","deliveroo","just eat","uber eat","domino","burger king","five guys","itsu","wasabi","leon"].some(s => desc.includes(s)))                                                       return "Eating Out";
-  if (["tfl","trainline","national rail","gwr","lner","avanti","southeastern","thameslink","great western","parking","bp","shell","esso","texaco","petrol","fuel","bus","taxi","black cab","addison lee"].some(s => desc.includes(s)))                                                              return "Transport";
-  if (["uber"].some(s => desc.includes(s)) && !["uber eat"].some(s => desc.includes(s)))                                                                                                                                                                                                          return "Transport";
+  if (type === "credit" || amount > 0) {
+    if (looksLikePersonName(description))                                                                                                      return "Bank Transfers";
+    if (["salary","wages","payroll","bacs","employer","hmrc","universal credit","benefits","pension","dividend"].some(s => desc.includes(s))) return "Income & Salary";
+    if (["refund","cashback","reversal","chargeback"].some(s => desc.includes(s)))                                                             return "Refunds";
+    if (["transfer","faster payment","fpay","sent from"].some(s => desc.includes(s)))                                                         return "Bank Transfers";
+    return "Income & Salary";
+  }
+
+  if (["tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi","co-op","m&s food","marks","iceland","farmfoods","ocado","booths"].some(s => desc.includes(s)))                                                                                                                              return "Supermarkets & Food";
+  if (["mcdonald","kfc","subway","pizza","nandos","wagamama","greggs","pret","costa","starbucks","cafe","restaurant","deliveroo","just eat","uber eat","domino","burger king","five guys","itsu","wasabi","leon"].some(s => desc.includes(s)))                                                       return "Eating & Drinking";
+  if (["tfl","trainline","national rail","gwr","lner","avanti","southeastern","thameslink","great western","parking","bp","shell","esso","texaco","petrol","fuel","bus","taxi","black cab","addison lee"].some(s => desc.includes(s)))                                                              return "Travel & Transport";
+  if (["uber"].some(s => desc.includes(s)) && !["uber eat"].some(s => desc.includes(s)))                                                                                                                                                                                                          return "Travel & Transport";
   // Subscriptions checked BEFORE shopping so "amazon prime" beats "amazon"
-  if (["netflix","spotify","disney","youtube premium","now tv","amazon prime","prime video","microsoft 365","microsoft office","adobe","creative cloud","google one","playstation plus","ps plus","xbox game pass","nintendo online","audible","kindle unlimited","duolingo","headspace","calm","dropbox","icloud","onedrive","linkedin premium","deliveroo plus","uber one"].some(s => desc.includes(s))) return "Subscriptions";
-  if (["amazon","amzn","asos","ebay","primark","next","h&m","zara","argos","currys","john lewis","ikea","b&q","jd sport","nike","adidas","boohoo","pretty little thing","shein","very","littlewoods","ao.com","apple store"].some(s => desc.includes(s)))                                      return "Shopping";
-  if (["british gas","octopus","eon","edf","bulb","ovo energy","scottish power","npower","thames water","severn trent","anglian water","council tax","bt ","virgin media","sky ","vodafone","o2","ee ","three","talktalk","insurance","aviva","axa","legal general","direct line"].some(s => desc.includes(s))) return "Bills & Utilities";
+  if (["netflix","spotify","disney","youtube premium","now tv","amazon prime","prime video","microsoft 365","microsoft office","adobe","creative cloud","google one","playstation plus","ps plus","xbox game pass","nintendo online","audible","kindle unlimited","duolingo","headspace","calm","dropbox","icloud","onedrive","linkedin premium","deliveroo plus","uber one"].some(s => desc.includes(s))) return "Subscriptions & Streaming";
+  if (["amazon","amzn","asos","ebay","primark","next","h&m","zara","argos","currys","john lewis","ikea","b&q","jd sport","nike","adidas","boohoo","pretty little thing","shein","very","littlewoods","ao.com","apple store"].some(s => desc.includes(s)))                                      return "Online & High Street";
+  if (["british gas","octopus","eon","edf","bulb","ovo energy","scottish power","npower","thames water","severn trent","anglian water","council tax","bt ","virgin media","sky ","vodafone","o2","ee ","three","talktalk","insurance","aviva","axa","legal general","direct line"].some(s => desc.includes(s))) return "Household Bills";
   if (["mortgage","rent","landlord","letting"].some(s => desc.includes(s)))                                                                                                                                                                                                                        return "Rent & Mortgage";
   if (["pharmacy","boots","lloyds pharmacy","chemist","dentist","doctor","nhs","gym","fitness","puregym","david lloyd","virgin active","health","medical","hospital","specsavers","vision express"].some(s => desc.includes(s)))                                                                    return "Health & Fitness";
-  if (["cinema","odeon","vue","cineworld","showcase","theatre","ticketmaster","eventbrite","steam","playstation store","xbox","game ","bowling","laser","escape room"].some(s => desc.includes(s)))                                                                                                return "Entertainment";
-  if (["atm","cash","cashpoint","withdrawal"].some(s => desc.includes(s)))                                                                                                                                                                                                                         return "Cash";
-  if (["transfer","paypal","revolut","monzo","starling","wise","western union","currency","loan","credit card","standing order"].some(s => desc.includes(s)))                                                                                                                                      return "Transfers";
+  if (["cinema","odeon","vue","cineworld","showcase","theatre","ticketmaster","eventbrite","steam","playstation store","xbox","game ","bowling","laser","escape room"].some(s => desc.includes(s)))                                                                                                return "Entertainment & Leisure";
+  if (["atm","cash","cashpoint","withdrawal"].some(s => desc.includes(s)))                                                                                                                                                                                                                         return "Cash & ATM";
+  if (["transfer","paypal","revolut","monzo","starling","wise","western union","currency","loan","credit card","standing order"].some(s => desc.includes(s)))                                                                                                                                      return "Bank Transfers";
   if (["fee","charge","interest","overdraft","bank charge"].some(s => desc.includes(s)))                                                                                                                                                                                                           return "Bank Fees";
-  if (["standing order","faster payment","fp ","sent to","received from","bank transfer"].some(s => desc.includes(s)))                                                                                                                                                                             return "Transfers";
-  if (["financial","services","rci","lloyds","barclays","hsbc","natwest","halifax","nationwide","santander","monzo","starling","revolut"].some(s => desc.includes(s)))                                                                                                                              return "Finance & Transfers";
+  if (["standing order","faster payment","fp ","sent to","received from","bank transfer"].some(s => desc.includes(s)))                                                                                                                                                                             return "Bank Transfers";
+  if (["financial","services","rci","lloyds","barclays","hsbc","natwest","halifax","nationwide","santander","monzo","starling","revolut"].some(s => desc.includes(s)))                                                                                                                              return "Finance & Bills";
 
-  return "Other";
+  return "Uncategorised";
 }

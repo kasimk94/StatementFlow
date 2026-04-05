@@ -19,43 +19,74 @@ function fmtShort(amount) {
 const UNKNOWN_CAT = "Unknown ⚠️";
 
 const CAT_CONFIG = {
-  "Income":              { hex: "#10b981", badge: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
-  "Refunds":             { hex: "#14b8a6", badge: "bg-teal-100 text-teal-800 ring-teal-200" },
-  "Groceries":           { hex: "#22c55e", badge: "bg-green-100 text-green-800 ring-green-200" },
-  "Shopping":            { hex: "#3b82f6", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
-  "Fast Food":           { hex: "#f97316", badge: "bg-orange-100 text-orange-800 ring-orange-200" },
-  "Eating Out":          { hex: "#f59e0b", badge: "bg-amber-100 text-amber-800 ring-amber-200" },
-  "Transport":           { hex: "#0ea5e9", badge: "bg-sky-100 text-sky-800 ring-sky-200" },
-  "Entertainment":       { hex: "#8b5cf6", badge: "bg-violet-100 text-violet-800 ring-violet-200" },
-  "Health & Beauty":     { hex: "#ec4899", badge: "bg-pink-100 text-pink-800 ring-pink-200" },
-  "Bills & Finance":     { hex: "#64748b", badge: "bg-slate-100 text-slate-700 ring-slate-200" },
-  "ATM & Cash":          { hex: "#eab308", badge: "bg-yellow-100 text-yellow-800 ring-yellow-200" },
-  "Charity & Donations": { hex: "#a855f7", badge: "bg-purple-100 text-purple-800 ring-purple-200" },
-  "Transfers":           { hex: "#6366f1", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
-  "Vaping & Tobacco":    { hex: "#84cc16", badge: "bg-lime-100 text-lime-800 ring-lime-200" },
-  [UNKNOWN_CAT]:         { hex: "#f87171", badge: "bg-red-100 text-red-700 ring-red-200" },
+  "Income & Salary":           { hex: "#10b981", badge: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
+  "Refunds":                   { hex: "#14b8a6", badge: "bg-teal-100 text-teal-800 ring-teal-200" },
+  "Supermarkets & Food":       { hex: "#22c55e", badge: "bg-green-100 text-green-800 ring-green-200" },
+  "Online & High Street":      { hex: "#3b82f6", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
+  "Eating & Drinking":         { hex: "#f59e0b", badge: "bg-amber-100 text-amber-800 ring-amber-200" },
+  "Travel & Transport":        { hex: "#0ea5e9", badge: "bg-sky-100 text-sky-800 ring-sky-200" },
+  "Entertainment & Leisure":   { hex: "#8b5cf6", badge: "bg-violet-100 text-violet-800 ring-violet-200" },
+  "Health & Fitness":          { hex: "#ec4899", badge: "bg-pink-100 text-pink-800 ring-pink-200" },
+  "Household Bills":           { hex: "#64748b", badge: "bg-slate-100 text-slate-700 ring-slate-200" },
+  "Cash & ATM":                { hex: "#eab308", badge: "bg-yellow-100 text-yellow-800 ring-yellow-200" },
+  "Subscriptions & Streaming": { hex: "#a855f7", badge: "bg-purple-100 text-purple-800 ring-purple-200" },
+  "Bank Transfers":            { hex: "#6366f1", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
+  "Finance & Bills":           { hex: "#475569", badge: "bg-slate-100 text-slate-600 ring-slate-200" },
+  "Bank Fees":                 { hex: "#94a3b8", badge: "bg-slate-100 text-slate-500 ring-slate-200" },
+  "Rent & Mortgage":           { hex: "#1e293b", badge: "bg-slate-200 text-slate-900 ring-slate-300" },
+  "Uncategorised":             { hex: "#f87171", badge: "bg-red-100 text-red-700 ring-red-200" },
+  "Charity & Donations":       { hex: "#a855f7", badge: "bg-purple-100 text-purple-800 ring-purple-200" },
+  "Vaping & Tobacco":          { hex: "#84cc16", badge: "bg-lime-100 text-lime-800 ring-lime-200" },
+  [UNKNOWN_CAT]:               { hex: "#f87171", badge: "bg-red-100 text-red-700 ring-red-200" },
+};
+
+const CAT_EMOJI = {
+  "Income & Salary":           "💰",
+  "Refunds":                   "↩️",
+  "Supermarkets & Food":       "🛒",
+  "Online & High Street":      "🛍️",
+  "Eating & Drinking":         "🍽️",
+  "Travel & Transport":        "🚇",
+  "Entertainment & Leisure":   "🎭",
+  "Health & Fitness":          "💊",
+  "Household Bills":           "🏠",
+  "Cash & ATM":                "🏧",
+  "Subscriptions & Streaming": "📺",
+  "Bank Transfers":            "🔄",
+  "Finance & Bills":           "💳",
+  "Bank Fees":                 "🏦",
+  "Rent & Mortgage":           "🏡",
+  "Uncategorised":             "❓",
+  "Charity & Donations":       "❤️",
+  "Vaping & Tobacco":          "💨",
+  [UNKNOWN_CAT]:               "❓",
 };
 
 const CAT_TIPS = {
-  "Income":              "Salary, wages, benefits, and other incoming money",
-  "Refunds":             "Refunds and cashbacks from retailers",
-  "Groceries":           "Supermarkets, food stores, and online grocery delivery",
-  "Shopping":            "Clothing, electronics, home goods, and online retail",
-  "Fast Food":           "Fast food chains, cafés, and coffee shops",
-  "Eating Out":          "Restaurants, pubs, and dining",
-  "Transport":           "Trains, buses, taxis, Uber, and fuel",
-  "Entertainment":       "Streaming, gaming, cinema, events, and hobbies",
-  "Health & Beauty":     "Pharmacy, gym, haircut, and personal care",
-  "Bills & Finance":     "Utilities, insurance, bank charges, and subscriptions",
-  "ATM & Cash":          "ATM withdrawals and cash transactions",
-  "Charity & Donations": "Charitable giving and donations",
-  "Transfers":           "Bank transfers and payments to individuals",
-  "Vaping & Tobacco":    "Vape shops, tobacconists, and related purchases",
-  [UNKNOWN_CAT]:         "Transactions that couldn't be automatically categorised",
+  "Income & Salary":           "Salary, wages, benefits, and other incoming money",
+  "Refunds":                   "Refunds and cashbacks from retailers",
+  "Supermarkets & Food":       "Supermarkets, food stores, and online grocery delivery",
+  "Online & High Street":      "Clothing, electronics, home goods, and online retail",
+  "Eating & Drinking":         "Restaurants, cafés, takeaways, pubs, and fast food",
+  "Travel & Transport":        "Trains, buses, taxis, Uber, fuel, and parking",
+  "Entertainment & Leisure":   "Cinema, theatre, gaming, events, and hobbies",
+  "Health & Fitness":          "Pharmacy, gym, medical, dentist, and personal care",
+  "Household Bills":           "Utilities, insurance, broadband, phone, and council tax",
+  "Cash & ATM":                "ATM withdrawals and cash transactions",
+  "Subscriptions & Streaming": "Netflix, Spotify, Disney+, and other recurring services",
+  "Bank Transfers":            "Bank transfers and payments to individuals",
+  "Finance & Bills":           "Financial services, bank charges, and miscellaneous bills",
+  "Bank Fees":                 "Bank charges, interest, and overdraft fees",
+  "Rent & Mortgage":           "Rent payments and mortgage repayments",
+  "Uncategorised":             "Transactions that couldn't be automatically categorised",
+  "Charity & Donations":       "Charitable giving and donations",
+  "Vaping & Tobacco":          "Vape shops, tobacconists, and related purchases",
+  [UNKNOWN_CAT]:               "Transactions that couldn't be automatically categorised",
 };
 
 function catHex(name)   { return (CAT_CONFIG[name] ?? CAT_CONFIG[UNKNOWN_CAT]).hex; }
 function catBadge(name) { return (CAT_CONFIG[name] ?? CAT_CONFIG[UNKNOWN_CAT]).badge; }
+function catEmoji(name) { return CAT_EMOJI[name] ?? "❓"; }
 
 // ─── Count-up animation hook ──────────────────────────────────────────────────
 function useCountUp(target, duration, triggered) {
@@ -119,7 +150,7 @@ function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarge
       </div>
       <div className="relative min-w-0 flex-1">
         <p className="text-xs font-bold text-white/60 uppercase tracking-widest">{label}</p>
-        <p className="font-extrabold text-white mt-1 leading-none" style={{ fontSize: "1.6rem", whiteSpace: "nowrap" }}>{displayValue}</p>
+        <p className="font-extrabold text-white mt-1 leading-none" style={{ fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)", whiteSpace: "nowrap" }}>{displayValue}</p>
         {sub && <p className="text-sm text-white/60 mt-1.5">{sub}</p>}
       </div>
     </div>
@@ -381,18 +412,18 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   const biggestDebit = transactions.filter(t => t.amount < 0).sort((a, b) => a.amount - b.amount)[0];
 
   // ── Spending personality ──
-  const SKIP_CATS = new Set(["Income","Transfers In","Transfers","Refunds","Finance & Transfers","Bank Fees"]);
+  const SKIP_CATS = new Set(["Income & Salary","Bank Transfers","Refunds","Finance & Bills","Bank Fees"]);
   const topCat = categoryBreakdown.find(c => !SKIP_CATS.has(c.name));
   let personality = { emoji: "⚖️", name: "The Balanced Budgeter" };
   if (topCat) {
     const n = topCat.name;
-    if (["Groceries","Bills & Utilities","Rent & Mortgage","Bills & Finance"].includes(n)) personality = { emoji: "🏠", name: "The Homebody"          };
-    else if (n === "Eating Out")                                                            personality = { emoji: "🍕", name: "The Foodie"             };
-    else if (n === "Subscriptions")                                                         personality = { emoji: "📺", name: "The Streamer"            };
-    else if (n === "Shopping")                                                              personality = { emoji: "🛍️", name: "The Shopper"             };
-    else if (n === "Transport")                                                             personality = { emoji: "🚇", name: "The Commuter"            };
-    else if (n === "Entertainment")                                                         personality = { emoji: "🎭", name: "The Entertainer"         };
-    else if (["Health & Fitness","Health & Beauty"].includes(n))                            personality = { emoji: "💪", name: "The Wellness Warrior"    };
+    if (["Supermarkets & Food","Household Bills","Rent & Mortgage"].includes(n)) personality = { emoji: "🏠", name: "The Homebody"          };
+    else if (n === "Eating & Drinking")                                           personality = { emoji: "🍕", name: "The Foodie"             };
+    else if (n === "Subscriptions & Streaming")                                   personality = { emoji: "📺", name: "The Streamer"            };
+    else if (n === "Online & High Street")                                        personality = { emoji: "🛍️", name: "The Shopper"             };
+    else if (n === "Travel & Transport")                                          personality = { emoji: "🚇", name: "The Commuter"            };
+    else if (n === "Entertainment & Leisure")                                     personality = { emoji: "🎭", name: "The Entertainer"         };
+    else if (n === "Health & Fitness")                                            personality = { emoji: "💪", name: "The Wellness Warrior"    };
   }
 
   // ── Financial health ──
@@ -410,9 +441,8 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   const scoreLabel = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention";
   const alerts     = (insights?.alerts ?? []).slice(0, 3);
 
-  // ── Mini donut — top 4 expense categories ──
-  const top4        = categoryBreakdown.filter(c => !SKIP_CATS.has(c.name)).slice(0, 4);
-  const miniPieData = top4.map(c => ({ name: c.name, value: c.total, fill: catHex(c.name) }));
+  // ── Top 5 expense categories for legend ──
+  const top5 = categoryBreakdown.filter(c => !SKIP_CATS.has(c.name)).slice(0, 5);
 
   return (
     <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 20px rgba(0,0,0,0.08)", overflow: "hidden", border: "1px solid #e8e4f8", borderLeft: "4px solid #6c5ce7" }}>
@@ -443,28 +473,25 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
         <div style={{ padding: "18px 22px", borderRight: "1px solid #f1f5f9" }}>
           <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Money at a Glance</p>
 
-          {/* Mini donut */}
-          {miniPieData.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ height: 150 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-                    <Pie data={miniPieData} cx="50%" cy="50%" innerRadius={42} outerRadius={62} paddingAngle={2} dataKey="value" strokeWidth={0}>
-                      {miniPieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                    </Pie>
-                    <ReTooltip content={<ChartTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {miniPieData.map(d => {
-                  const pct = expenses > 0 ? ((d.value / expenses) * 100).toFixed(0) : "0";
+          {/* Top categories legend */}
+          {top5.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <p style={{ margin: "0 0 8px", fontSize: "0.68rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Top Spending Categories</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {top5.map(c => {
+                  const pct = expenses > 0 ? ((c.total / expenses) * 100).toFixed(0) : "0";
+                  const hex = catHex(c.name);
                   return (
-                    <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: d.fill, flexShrink: 0, display: "inline-block" }} />
-                      <span style={{ fontSize: "0.73rem", color: "#475569", flex: 1 }}>{d.name}</span>
-                      <span style={{ fontSize: "0.73rem", fontWeight: 700, color: "#1e293b" }}>{fmtShort(d.value)}</span>
-                      <span style={{ fontSize: "0.68rem", background: d.fill, color: "#fff", fontWeight: 700, padding: "1px 6px", borderRadius: 10, minWidth: "2.2rem", textAlign: "center" }}>{pct}%</span>
+                    <div key={c.name}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                        <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>{catEmoji(c.name)}</span>
+                        <span style={{ fontSize: "0.76rem", color: "#475569", flex: 1 }}>{c.name}</span>
+                        <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1e293b" }}>{fmtShort(c.total)}</span>
+                        <span style={{ fontSize: "0.66rem", background: hex, color: "#fff", fontWeight: 700, padding: "1px 5px", borderRadius: 8, minWidth: "2rem", textAlign: "center" }}>{pct}%</span>
+                      </div>
+                      <div style={{ height: 3, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${pct}%`, background: hex, borderRadius: 2 }} />
+                      </div>
                     </div>
                   );
                 })}
@@ -927,8 +954,75 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         </div>
       )}
 
+      {/* ── STATEMENT HEADING ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em" }}>
+            {demoMode ? "📊 Example Statement" : "📊 Your Statement"}
+          </h2>
+          <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
+            {transactions.length} transactions analysed{dateRange ? ` · ${dateRange}` : ""}
+            {bankName ? ` · ${bankName}` : ""}
+          </p>
+        </div>
+      </div>
+
       {/* ── EXPORT TOOLBAR ── */}
       <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />
+
+      {/* ── STAT CARDS ── */}
+      <div ref={demoRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatCard
+          label="Total Money In"
+          value={fmt(income)}
+          sub={`${incomeCount} credit${incomeCount !== 1 ? "s" : ""}`}
+          gradient="linear-gradient(135deg, #00b894 0%, #00cec9 100%)"
+          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
+          loaded={loaded}
+          delay={100}
+          countTarget={income}
+          countTriggered={demoMode ? demoTriggered : loaded}
+          countFormat={(v) => fmt(v)}
+        />
+        <StatCard
+          label="Total Money Out"
+          value={fmt(expenses)}
+          sub={`${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`}
+          gradient="linear-gradient(135deg, #e17055 0%, #d63031 100%)"
+          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
+          loaded={loaded}
+          delay={200}
+          countTarget={expenses}
+          countTriggered={demoMode ? demoTriggered : loaded}
+          countFormat={(v) => fmt(v)}
+        />
+        <StatCard
+          label="Net Balance"
+          value={fmt(net)}
+          sub={net >= 0 ? "✓ Positive cash flow" : "⚠ Negative cash flow"}
+          gradient={net >= 0
+            ? "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)"
+            : "linear-gradient(135deg, #d63031 0%, #e17055 100%)"}
+          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+          loaded={loaded}
+          delay={300}
+          countTarget={Math.abs(net)}
+          countTriggered={demoMode ? demoTriggered : loaded}
+          countFormat={(v) => fmt(net >= 0 ? v : -v)}
+        />
+        <StatCard
+          label="Transactions"
+          value={`${transactions.length}`}
+          sub={`${incomeCount} in · ${expenseCount} out`}
+          gradient="linear-gradient(135deg, #fd79a8 0%, #e84393 100%)"
+          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
+          loaded={loaded}
+          delay={400}
+          countTarget={transactions.length}
+          countTriggered={demoMode ? demoTriggered : loaded}
+          countFormat={(v) => Math.round(v).toString()}
+        />
+      </div>
 
       {/* ── UNIFIED FINANCIAL SUMMARY ── */}
       {transactions.length > 0 && (
@@ -942,60 +1036,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           insights={insights}
         />
       )}
-
-      {/* ── STAT CARDS ── */}
-      <div ref={demoRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard
-          label="Total Money In"
-          value={fmt(income)}
-          sub={`${incomeCount} credit${incomeCount !== 1 ? "s" : ""}`}
-          gradient="linear-gradient(135deg, #00b894 0%, #00cec9 100%)"
-          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
-          loaded={loaded}
-          delay={100}
-          countTarget={demoMode ? income : undefined}
-          countTriggered={demoTriggered}
-          countFormat={(v) => fmt(v)}
-        />
-        <StatCard
-          label="Total Money Out"
-          value={fmt(expenses)}
-          sub={`${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`}
-          gradient="linear-gradient(135deg, #e17055 0%, #d63031 100%)"
-          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
-          loaded={loaded}
-          delay={200}
-          countTarget={demoMode ? expenses : undefined}
-          countTriggered={demoTriggered}
-          countFormat={(v) => fmt(v)}
-        />
-        <StatCard
-          label="Net Balance"
-          value={fmt(net)}
-          sub={net >= 0 ? "✓ Positive cash flow" : "⚠ Negative cash flow"}
-          gradient={net >= 0
-            ? "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)"
-            : "linear-gradient(135deg, #d63031 0%, #e17055 100%)"}
-          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-          loaded={loaded}
-          delay={300}
-          countTarget={demoMode ? Math.abs(net) : undefined}
-          countTriggered={demoTriggered}
-          countFormat={(v) => fmt(net >= 0 ? v : -v)}
-        />
-        <StatCard
-          label="Transactions"
-          value={`${transactions.length}`}
-          sub={`${incomeCount} in · ${expenseCount} out`}
-          gradient="linear-gradient(135deg, #fd79a8 0%, #e84393 100%)"
-          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
-          loaded={loaded}
-          delay={400}
-          countTarget={demoMode ? transactions.length : undefined}
-          countTriggered={demoTriggered}
-          countFormat={(v) => Math.round(v).toString()}
-        />
-      </div>
 
       {/* ── CHARTS ── */}
       <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
@@ -1133,10 +1173,10 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                 />
 
                 <div className="pl-3">
-                  {/* Top row: name + tooltip + pct badge */}
+                  {/* Top row: emoji + name + tooltip + pct badge */}
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hex }} />
+                      <span style={{ fontSize: "1.05rem", flexShrink: 0 }}>{catEmoji(name)}</span>
                       <p className="text-sm font-semibold text-slate-700 truncate">{name}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">

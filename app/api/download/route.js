@@ -27,20 +27,24 @@ const KPI = {
 
 // Category accent strip colours (narrow col A)
 const CAT_ACCENT_MAP = {
-  "Income":              "FF00b894",
-  "Refunds":             "FF00cec9",
-  "Groceries":           "FF00b894",
-  "Shopping":            "FF6c5ce7",
-  "Fast Food":           "FFfdcb6e",
-  "Eating Out":          "FFf39c12",
-  "Transport":           "FF74b9ff",
-  "Entertainment":       "FFa29bfe",
-  "Health & Beauty":     "FFfd79a8",
-  "Bills & Finance":     "FFe17055",
-  "ATM & Cash":          "FFffeaa7",
-  "Charity & Donations": "FFfd79a8",
-  "Transfers":           "FFfdcb6e",
-  "Vaping & Tobacco":    "FFa8e063",
+  "Income & Salary":           "FF00b894",
+  "Refunds":                   "FF14b8a6",
+  "Supermarkets & Food":       "FF22c55e",
+  "Online & High Street":      "FF3b82f6",
+  "Eating & Drinking":         "FFf59e0b",
+  "Travel & Transport":        "FF0ea5e9",
+  "Entertainment & Leisure":   "FF8b5cf6",
+  "Health & Fitness":          "FFec4899",
+  "Household Bills":           "FF64748b",
+  "Cash & ATM":                "FFeab308",
+  "Subscriptions & Streaming": "FFa855f7",
+  "Bank Transfers":            "FF6366f1",
+  "Finance & Bills":           "FF475569",
+  "Bank Fees":                 "FF94a3b8",
+  "Rent & Mortgage":           "FF1e293b",
+  "Uncategorised":             "FFf87171",
+  "Charity & Donations":       "FFa855f7",
+  "Vaping & Tobacco":          "FF84cc16",
 };
 function catAccent(name) { return CAT_ACCENT_MAP[name] || "FF74b9ff"; }
 
