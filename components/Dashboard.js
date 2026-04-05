@@ -360,41 +360,9 @@ function DebugPanel({ debug }) {
   );
 }
 
-// ─── Financial Snapshot ──────────────────────────────────────────────────────
-function FinancialSnapshot({ transactions, income, expenses, net, categoryBreakdown, dateRange, insights }) {
-  // Category map for quick lookup
-  const catMap = {};
-  categoryBreakdown.forEach(c => { catMap[c.name] = c.total; });
-
-  // Top merchant by spend
-  const merchantTotals = {};
-  transactions.filter(t => t.amount < 0).forEach(t => {
-    merchantTotals[t.description] = (merchantTotals[t.description] || 0) + Math.abs(t.amount);
-  });
-  const topMerchantEntry = Object.entries(merchantTotals).sort((a, b) => b[1] - a[1])[0];
-  const topMerchant = topMerchantEntry ? { name: topMerchantEntry[0], amount: topMerchantEntry[1] } : null;
-
-  const cashTotal = (catMap["Cash"] ?? 0);
-  const eatingOut = (catMap["Eating Out"] ?? 0);
-  const groceries = (catMap["Groceries"] ?? 0);
-  const subTotal  = insights?.subscriptions?.total ?? 0;
-  const subList   = insights?.subscriptions?.list  ?? [];
-
-  // ── Headline stat ──
-  let headline = null;
-  if (subTotal > 50) {
-    headline = `You spend £${subTotal.toFixed(2)} every month on subscriptions alone`;
-  } else if (topMerchant && expenses > 0 && topMerchant.amount / expenses > 0.3) {
-    headline = `£${topMerchant.amount.toFixed(2)} of your money went to just one place — ${topMerchant.name}`;
-  } else if (cashTotal > 100) {
-    headline = `You withdrew £${cashTotal.toFixed(2)} cash — do you know where it went?`;
-  } else if (eatingOut > groceries && groceries > 0) {
-    headline = `You spent more eating out (£${eatingOut.toFixed(2)}) than on groceries (£${groceries.toFixed(2)})`;
-  } else if (topMerchant) {
-    headline = `Your biggest spend was £${topMerchant.amount.toFixed(2)} at ${topMerchant.name}`;
-  }
-
-  // ── Days in statement ──
+// ─── Unified Financial Summary ────────────────────────────────────────────────
+function FinancialSummary({ transactions, income, expenses, net, categoryBreakdown, dateRange, insights }) {
+  // ── Date range (correctly parsed for avg-per-day) ──
   const MONTH_IDX = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
   function parseDMY(s) {
     if (!s) return null;
@@ -402,314 +370,207 @@ function FinancialSnapshot({ transactions, income, expenses, net, categoryBreakd
     if (m) return new Date(+m[3], MONTH_IDX[m[2]] ?? 0, +m[1]);
     return null;
   }
-  const sortedDates = transactions.map(t => t.date).filter(Boolean).sort();
-  let dayCount = 30;
-  if (sortedDates.length >= 2) {
-    const d0 = parseDMY(sortedDates[0]);
-    const d1 = parseDMY(sortedDates[sortedDates.length - 1]);
-    if (d0 && d1 && !isNaN(d0) && !isNaN(d1)) {
-      dayCount = Math.max(1, Math.round((d1 - d0) / 86400000) + 1);
-    }
-  }
+  const parsedDates = transactions.map(t => parseDMY(t.date)).filter(d => d && !isNaN(d));
+  parsedDates.sort((a, b) => a - b);
+  const dayCount  = parsedDates.length >= 2
+    ? Math.max(1, Math.round((parsedDates[parsedDates.length - 1] - parsedDates[0]) / 86400000) + 1)
+    : 30;
   const avgPerDay = expenses / dayCount;
 
-  // ── Biggest single purchase ──
+  // ── Biggest single debit ──
   const biggestDebit = transactions.filter(t => t.amount < 0).sort((a, b) => a.amount - b.amount)[0];
 
   // ── Spending personality ──
   const SKIP_CATS = new Set(["Income","Transfers In","Transfers","Refunds","Finance & Transfers","Bank Fees"]);
   const topCat = categoryBreakdown.find(c => !SKIP_CATS.has(c.name));
-  let personality = { emoji: "⚖️", name: "The Balanced Budgeter", desc: "Nice and steady spending habits" };
+  let personality = { emoji: "⚖️", name: "The Balanced Budgeter" };
   if (topCat) {
     const n = topCat.name;
-    if (["Groceries","Bills & Utilities","Rent & Mortgage"].includes(n)) personality = { emoji: "🏠", name: "The Homebody",          desc: "You keep it practical and grounded"     };
-    else if (n === "Eating Out")    personality = { emoji: "🍕", name: "The Foodie",             desc: "You love dining out and new experiences" };
-    else if (n === "Subscriptions") personality = { emoji: "📺", name: "The Streamer",            desc: "You love your digital services"          };
-    else if (n === "Shopping")      personality = { emoji: "🛍️", name: "The Shopper",             desc: "Retail therapy is your thing"             };
-    else if (n === "Transport")     personality = { emoji: "🚇", name: "The Commuter",            desc: "Always on the move"                       };
-    else if (n === "Entertainment") personality = { emoji: "🎭", name: "The Entertainer",         desc: "Making the most of free time"             };
-    else if (n === "Health & Fitness") personality = { emoji: "💪", name: "The Wellness Warrior", desc: "Investing in your health"                 };
+    if (["Groceries","Bills & Utilities","Rent & Mortgage","Bills & Finance"].includes(n)) personality = { emoji: "🏠", name: "The Homebody"          };
+    else if (n === "Eating Out")                                                            personality = { emoji: "🍕", name: "The Foodie"             };
+    else if (n === "Subscriptions")                                                         personality = { emoji: "📺", name: "The Streamer"            };
+    else if (n === "Shopping")                                                              personality = { emoji: "🛍️", name: "The Shopper"             };
+    else if (n === "Transport")                                                             personality = { emoji: "🚇", name: "The Commuter"            };
+    else if (n === "Entertainment")                                                         personality = { emoji: "🎭", name: "The Entertainer"         };
+    else if (["Health & Fitness","Health & Beauty"].includes(n))                            personality = { emoji: "💪", name: "The Wellness Warrior"    };
   }
 
-  // ── Month health ──
+  // ── Financial health ──
   const savingRate = income > 0 ? (net / income) * 100 : -1;
-  let health;
-  if      (savingRate >= 20) health = { label: "Excellent",       color: "#10b981", bg: "#d1fae5", pct: 100 };
-  else if (savingRate >= 10) health = { label: "Good",            color: "#3b82f6", bg: "#dbeafe", pct: 70  };
-  else if (savingRate >= 0)  health = { label: "Fair",            color: "#f59e0b", bg: "#fef3c7", pct: 40  };
-  else                       health = { label: "Needs Attention", color: "#ef4444", bg: "#fee2e2", pct: 10  };
+  const health = savingRate >= 20 ? { label: "Excellent",       color: "#10b981", bg: "#d1fae5", pct: 100 }
+               : savingRate >= 10 ? { label: "Good",            color: "#3b82f6", bg: "#dbeafe", pct: 70  }
+               : savingRate >= 0  ? { label: "Fair",            color: "#f59e0b", bg: "#fef3c7", pct: 40  }
+               :                    { label: "Needs Attention", color: "#ef4444", bg: "#fee2e2", pct: 10  };
 
-  // ── Biggest opportunity ──
-  const biggestExpCat = categoryBreakdown.find(c => !SKIP_CATS.has(c.name));
+  // ── AI insights ──
+  const subTotal   = insights?.subscriptions?.total ?? 0;
+  const subList    = insights?.subscriptions?.list  ?? [];
+  const score      = insights?.spendingScore ?? 0;
+  const scoreColor = score >= 80 ? "#10b981" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
+  const scoreLabel = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention";
+  const alerts     = (insights?.alerts ?? []).slice(0, 3);
+
+  // ── Mini donut — top 4 expense categories ──
+  const top4        = categoryBreakdown.filter(c => !SKIP_CATS.has(c.name)).slice(0, 4);
+  const miniPieData = top4.map(c => ({ name: c.name, value: c.total, fill: catHex(c.name) }));
 
   return (
-    <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.07)", overflow: "hidden", position: "relative" }}>
-      {/* Left gradient border */}
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: "linear-gradient(180deg, #6c5ce7 0%, #00d4ff 100%)" }} />
+    <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 20px rgba(0,0,0,0.08)", overflow: "hidden", border: "1px solid #e8e4f8", borderLeft: "4px solid #6c5ce7" }}>
 
-      <div style={{ padding: "22px 22px 22px 26px" }}>
-        <h3 style={{ margin: "0 0 18px", fontSize: "0.95rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.01em" }}>
-          💡 Your Money at a Glance
-        </h3>
-
-        {/* ROW 1 — Headline stat */}
-        {headline && (
-          <div style={{ textAlign: "center", marginBottom: 18, padding: "14px 18px", background: "linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%)", borderRadius: 12 }}>
-            <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#6c5ce7", lineHeight: 1.35 }}>{headline}</p>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 22px 13px 22px", borderBottom: "1px solid #f1f5f9", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontWeight: 800, fontSize: "0.98rem", color: "#1e293b" }}>📊 Financial Summary</span>
+          <span style={{ fontSize: "0.68rem", fontWeight: 700, background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", color: "#fff", padding: "3px 10px", borderRadius: 20, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>✨ StatementFlow AI</span>
+        </div>
+        {insights && score > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <div style={{ textAlign: "right" }}>
+              <p style={{ margin: 0, fontSize: "0.65rem", fontWeight: 700, color: scoreColor, textTransform: "uppercase", letterSpacing: "0.05em" }}>Score</p>
+              <p style={{ margin: 0, fontSize: "0.72rem", fontWeight: 600, color: "#64748b" }}>{scoreLabel}</p>
+            </div>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 3px 14px ${scoreColor}44`, flexShrink: 0 }}>
+              <span style={{ fontSize: "1.05rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{score}</span>
+            </div>
           </div>
         )}
+      </div>
 
-        {/* ROW 2 — Three quick facts */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginBottom: 16 }}>
-          {[
-            { emoji: "📅", label: "Transactions", value: `${transactions.length} · ${dateRange ?? "this period"}` },
-            { emoji: "💳", label: "Avg spend/day", value: fmt(avgPerDay) },
-            { emoji: "🏆", label: "Biggest purchase", value: biggestDebit
-                ? `${fmt(Math.abs(biggestDebit.amount))} · ${biggestDebit.description.length > 16 ? biggestDebit.description.slice(0,16)+"…" : biggestDebit.description}`
-                : "—" },
-          ].map(({ emoji, label, value }) => (
-            <div key={label} style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>{emoji}</span>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: "0.67rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
-                <p style={{ margin: 0, fontSize: "0.82rem", fontWeight: 700, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
+      {/* ── Two columns ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ borderBottom: alerts.length > 0 ? "1px solid #f1f5f9" : "none" }}>
+
+        {/* LEFT — Money at a Glance */}
+        <div style={{ padding: "18px 22px", borderRight: "1px solid #f1f5f9" }}>
+          <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Money at a Glance</p>
+
+          {/* Mini donut */}
+          {miniPieData.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ height: 150 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+                    <Pie data={miniPieData} cx="50%" cy="50%" innerRadius={42} outerRadius={62} paddingAngle={2} dataKey="value" strokeWidth={0}>
+                      {miniPieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                    </Pie>
+                    <ReTooltip content={<ChartTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {miniPieData.map(d => {
+                  const pct = expenses > 0 ? ((d.value / expenses) * 100).toFixed(0) : "0";
+                  return (
+                    <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: d.fill, flexShrink: 0, display: "inline-block" }} />
+                      <span style={{ fontSize: "0.73rem", color: "#475569", flex: 1 }}>{d.name}</span>
+                      <span style={{ fontSize: "0.73rem", fontWeight: 700, color: "#1e293b" }}>{fmtShort(d.value)}</span>
+                      <span style={{ fontSize: "0.68rem", background: d.fill, color: "#fff", fontWeight: 700, padding: "1px 6px", borderRadius: 10, minWidth: "2.2rem", textAlign: "center" }}>{pct}%</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Stat rows */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
+            {dateRange && (
+              <div style={{ display: "flex", gap: 6 }}>
+                <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>📅</span>
+                <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Period: <strong style={{ color: "#1e293b" }}>{dateRange}</strong></span>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 6 }}>
+              <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>📊</span>
+              <span style={{ fontSize: "0.78rem", color: "#64748b" }}><strong style={{ color: "#1e293b" }}>{transactions.length}</strong> transactions analysed</span>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>💳</span>
+              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Avg per day: <strong style={{ color: "#1e293b" }}>{fmt(avgPerDay)}</strong></span>
+            </div>
+            {biggestDebit && (
+              <div style={{ display: "flex", gap: 6 }}>
+                <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>🏆</span>
+                <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                  Biggest: <strong style={{ color: "#1e293b" }}>{fmt(Math.abs(biggestDebit.amount))}</strong>{" "}
+                  <span style={{ color: "#94a3b8" }}>{biggestDebit.description.length > 22 ? biggestDebit.description.slice(0, 22) + "…" : biggestDebit.description}</span>
+                </span>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 6 }}>
+              <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>🏷️</span>
+              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                Spending type: <strong style={{ color: "#6c5ce7" }}>{personality.emoji} {personality.name}</strong>
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* ROW 3 — Personality + Health side by side */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-          {/* Spending personality */}
-          <div style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%)", border: "1px solid #e9d5ff", borderRadius: 12, padding: "14px 14px" }}>
-            <p style={{ margin: "0 0 4px", fontSize: "1.3rem" }}>{personality.emoji}</p>
-            <p style={{ margin: "0 0 2px", fontWeight: 800, fontSize: "0.85rem", color: "#6c5ce7" }}>{personality.name}</p>
-            <p style={{ margin: 0, fontSize: "0.73rem", color: "#7c3aed" }}>{personality.desc}</p>
+        {/* RIGHT — Key Insights */}
+        <div style={{ padding: "18px 22px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <p style={{ margin: "0 0 2px", fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Key Insights</p>
+
+          {/* Card 1 — Subscriptions */}
+          <div style={{ background: subList.length > 0 ? "#fffbeb" : "#f0fdf4", border: `1px solid ${subList.length > 0 ? "#fde68a" : "#bbf7d0"}`, borderRadius: 10, padding: "10px 12px" }}>
+            {subList.length > 0 ? (
+              <>
+                <p style={{ margin: "0 0 4px", fontWeight: 700, fontSize: "0.82rem", color: "#92400e" }}>
+                  🔄 Subscriptions: £{subTotal.toFixed(2)}/mo · £{(subTotal * 12).toFixed(2)}/yr
+                </p>
+                <p style={{ margin: 0, fontSize: "0.73rem", color: "#78350f", lineHeight: 1.55 }}>
+                  {subList.slice(0, 5).join(" · ")}
+                </p>
+              </>
+            ) : (
+              <p style={{ margin: 0, fontWeight: 700, fontSize: "0.82rem", color: "#166534" }}>✅ No subscriptions detected</p>
+            )}
           </div>
 
-          {/* Month health */}
-          <div style={{ background: health.bg, borderRadius: 12, padding: "14px 14px", border: `1px solid ${health.color}44` }}>
-            <p style={{ margin: "0 0 2px", fontSize: "0.67rem", fontWeight: 700, color: health.color, textTransform: "uppercase", letterSpacing: "0.06em" }}>Month Health</p>
-            <p style={{ margin: "0 0 8px", fontWeight: 800, fontSize: "0.95rem", color: health.color }}>{health.label}</p>
-            <div style={{ height: 6, background: "#e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+          {/* Card 2 — Top Insight */}
+          {insights?.topInsight && (
+            <div style={{ background: "#ede9fe", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: 1 }}>💡</span>
+              <p style={{ margin: 0, fontSize: "0.82rem", fontWeight: 600, color: "#4c1d95", lineHeight: 1.45 }}>{insights.topInsight}</p>
+            </div>
+          )}
+
+          {/* Card 3 — Savings Tip */}
+          {insights?.savingsOpportunity?.message && (
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: 1 }}>💰</span>
+              <div>
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534", lineHeight: 1.45 }}>{insights.savingsOpportunity.message}</p>
+                {insights.savingsOpportunity.potentialSaving && (
+                  <p style={{ margin: "3px 0 0", fontSize: "0.78rem", fontWeight: 800, color: "#15803d" }}>Potential saving: {insights.savingsOpportunity.potentialSaving}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Card 4 — Health Check */}
+          <div style={{ background: health.bg, borderRadius: 10, padding: "10px 12px", border: `1px solid ${health.color}33` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: "0.78rem", fontWeight: 700, color: health.color }}>📈 Financial Health</span>
+              <span style={{ fontSize: "0.78rem", fontWeight: 800, color: health.color }}>{health.label}</span>
+            </div>
+            <div style={{ height: 6, background: `${health.color}33`, borderRadius: 4, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${health.pct}%`, background: health.color, borderRadius: 4 }} />
             </div>
-            <p style={{ margin: "4px 0 0", fontSize: "0.68rem", color: health.color }}>
+            <p style={{ margin: "4px 0 0", fontSize: "0.72rem", color: health.color }}>
               {income > 0 ? `Saving ${Math.max(0, savingRate).toFixed(0)}% of income` : "No income recorded"}
             </p>
           </div>
         </div>
-
-        {/* Subscription spotlight */}
-        <div style={{ background: subList.length > 0 ? "#fffbeb" : "#f0fdf4", border: `1px solid ${subList.length > 0 ? "#fde68a" : "#bbf7d0"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
-          <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: "0.85rem", color: subList.length > 0 ? "#92400e" : "#166534" }}>
-            {subList.length > 0 ? "🔄 Subscription Spotlight" : "✅ Subscriptions"}
-          </p>
-          {subList.length > 0 ? (
-            <>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", marginBottom: 8 }}>
-                {subList.slice(0, 8).map((s, i) => (
-                  <span key={i} style={{ fontSize: "0.78rem", color: "#78350f" }}>• {s}</span>
-                ))}
-              </div>
-              <div style={{ borderTop: "1px solid #fde68a", paddingTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-                <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#78350f" }}>£{subTotal.toFixed(2)}/month</span>
-                <span style={{ fontSize: "0.78rem", color: "#92400e" }}>= £{(subTotal * 12).toFixed(2)}/year</span>
-              </div>
-            </>
-          ) : (
-            <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534" }}>No recurring subscriptions detected this month</p>
-          )}
-        </div>
-
-        {/* Biggest opportunity */}
-        {biggestExpCat && (
-          <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "11px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: "1rem", flexShrink: 0 }}>💰</span>
-            <p style={{ margin: 0, fontSize: "0.83rem", fontWeight: 700, color: "#15803d", lineHeight: 1.4 }}>
-              If you reduced <strong>{biggestExpCat.name}</strong> by 20%, you&apos;d save <strong>{fmt(biggestExpCat.total * 0.2)}</strong> per month
-            </p>
-          </div>
-        )}
       </div>
-    </div>
-  );
-}
 
-// ─── AI Insights Popup ────────────────────────────────────────────────────────
-function InsightsPopup({ insights, onClose, totalIncome, totalExpenses }) {
-  const score      = insights.spendingScore ?? 0;
-  const scoreColor = score >= 80 ? "#10b981" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
-  const scoreLabel = score >= 80 ? "Excellent 🌟" : score >= 60 ? "Good 👍" : score >= 40 ? "Fair ⚠️" : "Needs Attention 🔴";
-  const subTotal   = insights.subscriptions?.total ?? 0;
-  const saved      = (totalIncome ?? 0) - (totalExpenses ?? 0);
-  const alerts     = (insights.alerts ?? []).slice(0, 2);
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", backdropFilter: "blur(4px)" }}>
-      <div style={{ background: "#fff", borderRadius: 20, maxWidth: 480, width: "100%", boxShadow: "0 25px 60px rgba(0,0,0,0.3)", position: "relative" }}>
-        {/* Header */}
-        <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#1e293b", margin: 0 }}>✨ Your Money Summary</h2>
-          <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, width: 30, height: 30, cursor: "pointer", fontSize: "0.9rem", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
-        </div>
-
-        <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-
-          {/* 1. Score Row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#f8fafc", borderRadius: 12, padding: "12px 14px" }}>
-            <div style={{ width: 56, height: 56, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 3px 14px ${scoreColor}55` }}>
-              <span style={{ fontSize: "1.3rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{score}</span>
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: "0.9rem", color: "#1e293b" }}>{scoreLabel}</p>
-              {insights.summary && (
-                <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#64748b", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{insights.summary}</p>
-              )}
-            </div>
-          </div>
-
-          {/* 2. Three Key Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            <div style={{ background: "#fff1f2", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
-              <p style={{ margin: "0 0 2px" }}>💰</p>
-              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: "#9f1239", textTransform: "uppercase", letterSpacing: "0.04em" }}>Spent</p>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#be123c" }}>{fmt(totalExpenses ?? 0)}</p>
-            </div>
-            <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
-              <p style={{ margin: "0 0 2px" }}>📈</p>
-              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: saved >= 0 ? "#166534" : "#9a3412", textTransform: "uppercase", letterSpacing: "0.04em" }}>Saved</p>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: saved >= 0 ? "#15803d" : "#c2410c" }}>{fmt(saved)}</p>
-            </div>
-            <div style={{ background: "#fffbeb", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
-              <p style={{ margin: "0 0 2px" }}>🔄</p>
-              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: "0.04em" }}>Subs/mo</p>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#78350f" }}>£{subTotal.toFixed(2)}</p>
-            </div>
-          </div>
-
-          {/* 3. Top Insight */}
-          {insights.topInsight && (
-            <div style={{ background: "#ede9fe", borderRadius: 10, padding: "12px 14px", display: "flex", gap: 8 }}>
-              <span style={{ fontSize: "1rem", flexShrink: 0 }}>💡</span>
-              <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#4c1d95", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{insights.topInsight}</p>
-            </div>
-          )}
-
-          {/* 4. Top 2 Alerts */}
-          {alerts.length > 0 && alerts.map((alert, i) => (
-            <div key={i} style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8 }}>
-              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>⚠️</span>
-              <p style={{ margin: 0, fontSize: "0.82rem", color: "#9a3412", lineHeight: 1.4 }}>{alert}</p>
-            </div>
-          ))}
-
-          {/* 5. Savings Tip */}
-          {insights.savingsOpportunity && (
-            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8 }}>
-              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>💰</span>
-              <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534", lineHeight: 1.4 }}>
-                {insights.savingsOpportunity.message}
-                {insights.savingsOpportunity.potentialSaving ? ` — save ${insights.savingsOpportunity.potentialSaving}` : ""}
-              </p>
-            </div>
-          )}
-
-          {/* 6. CTA */}
-          <button
-            onClick={onClose}
-            style={{ background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", color: "#fff", fontWeight: 700, fontSize: "0.95rem", padding: "13px", borderRadius: 12, border: "none", cursor: "pointer", marginTop: 2, boxShadow: "0 4px 20px rgba(108,92,231,0.4)" }}
-          >
-            View Full Dashboard →
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── AI Insights Panel ────────────────────────────────────────────────────────
-function InsightsPanel({ insights, totalIncome, totalExpenses }) {
-  const [open, setOpen] = useState(false);
-  const score      = insights.spendingScore ?? 0;
-  const scoreColor = score >= 80 ? "#10b981" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
-  const scoreLabel = score >= 80 ? "Excellent 🌟" : score >= 60 ? "Good 👍" : score >= 40 ? "Fair ⚠️" : "Needs Attention 🔴";
-  const subTotal   = insights.subscriptions?.total ?? 0;
-  const saved      = (totalIncome ?? 0) - (totalExpenses ?? 0);
-  const alerts     = (insights.alerts ?? []).slice(0, 2);
-
-  return (
-    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e8e4f8", borderLeft: "4px solid #6c5ce7", boxShadow: "0 2px 12px rgba(108,92,231,0.07)", overflow: "hidden" }}>
-      {/* Toggle header */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{ width: "100%", display: "flex", alignItems: "center", padding: "14px 18px 14px 20px", background: "transparent", border: "none", cursor: "pointer", gap: 10 }}
-      >
-        <span style={{ fontSize: "1.1rem" }}>✨</span>
-        <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1e293b", flex: 1, textAlign: "left" }}>AI Insights</span>
-        <span style={{ fontSize: "0.7rem", fontWeight: 600, background: "linear-gradient(135deg, #6c5ce7, #a29bfe)", color: "#fff", padding: "2px 8px", borderRadius: 20 }}>StatementFlow AI</span>
-        <span style={{ fontSize: "0.8rem", color: "#94a3b8", marginLeft: 8 }}>{open ? "▲ Hide" : "▼ Show"} insights</span>
-      </button>
-
-      {open && (
-        <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-
-          {/* Score row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#f8fafc", borderRadius: 12, padding: "12px 14px" }}>
-            <div style={{ width: 44, height: 44, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 3px 12px ${scoreColor}44` }}>
-              <span style={{ fontSize: "0.95rem", fontWeight: 900, color: "#fff" }}>{score}</span>
-            </div>
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: "0.85rem", color: "#1e293b" }}>{scoreLabel}</p>
-              {insights.summary && <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#64748b" }}>{insights.summary}</p>}
-            </div>
-          </div>
-
-          {/* 3 key stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            <div style={{ background: "#fff1f2", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
-              <p style={{ margin: "0 0 2px" }}>💰</p>
-              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: "#9f1239", textTransform: "uppercase" }}>Spent</p>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#be123c" }}>{fmt(totalExpenses ?? 0)}</p>
-            </div>
-            <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
-              <p style={{ margin: "0 0 2px" }}>📈</p>
-              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: saved >= 0 ? "#166534" : "#9a3412", textTransform: "uppercase" }}>Saved</p>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: saved >= 0 ? "#15803d" : "#c2410c" }}>{fmt(saved)}</p>
-            </div>
-            <div style={{ background: "#fffbeb", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
-              <p style={{ margin: "0 0 2px" }}>🔄</p>
-              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>Subs/mo</p>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#78350f" }}>£{subTotal.toFixed(2)}</p>
-            </div>
-          </div>
-
-          {/* Top insight */}
-          {insights.topInsight && (
-            <div style={{ background: "#ede9fe", borderRadius: 10, padding: "12px 14px", display: "flex", gap: 8 }}>
-              <span style={{ fontSize: "1rem", flexShrink: 0 }}>💡</span>
-              <p style={{ margin: 0, fontSize: "0.83rem", fontWeight: 700, color: "#4c1d95", lineHeight: 1.4 }}>{insights.topInsight}</p>
-            </div>
-          )}
-
-          {/* Top 2 alerts */}
+      {/* ── Alert pills ── */}
+      {alerts.length > 0 && (
+        <div style={{ padding: "12px 22px 14px", display: "flex", flexWrap: "wrap", gap: 8 }}>
           {alerts.map((alert, i) => (
-            <div key={i} style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8 }}>
-              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>⚠️</span>
-              <p style={{ margin: 0, fontSize: "0.8rem", color: "#9a3412", lineHeight: 1.4 }}>{alert}</p>
-            </div>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: "0.77rem", fontWeight: 600, padding: "5px 12px", borderRadius: 20, lineHeight: 1.4 }}>
+              <span>⚠️</span> {alert}
+            </span>
           ))}
-
-          {/* Savings tip */}
-          {insights.savingsOpportunity && (
-            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8 }}>
-              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>💰</span>
-              <p style={{ margin: 0, fontSize: "0.8rem", color: "#166534", lineHeight: 1.4 }}>
-                {insights.savingsOpportunity.message}
-                {insights.savingsOpportunity.potentialSaving ? ` — save ${insights.savingsOpportunity.potentialSaving}` : ""}
-              </p>
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -736,7 +597,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const [rowFadeKey,      setRowFadeKey]      = useState(0);
   const [demoTriggered,   setDemoTriggered]   = useState(false);
   const [chartsTriggered, setChartsTriggered] = useState(false);
-  const [showPopup,       setShowPopup]       = useState(!demoMode && !!insights);
 
   useEffect(() => {
     if (!demoMode) window.scrollTo(0, 0);
@@ -768,12 +628,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         if (entry.target === demoRef.current) {
           setLoaded(true);
           setDemoTriggered(true);
-          if (insights && !sessionStorage.getItem("sf_demo_popup_shown")) {
-            setTimeout(() => {
-              sessionStorage.setItem("sf_demo_popup_shown", "1");
-              setShowPopup(true);
-            }, 2000);
-          }
         }
         if (entry.target === chartsRef.current) {
           setBarsVisible(true);
@@ -1073,22 +927,12 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         </div>
       )}
 
-      {/* ── AI INSIGHTS POPUP ── */}
-      {showPopup && insights && (
-        <InsightsPopup insights={insights} onClose={() => setShowPopup(false)} totalIncome={income} totalExpenses={expenses} />
-      )}
-
-      {/* ── EXPORT TOOLBAR (above KPI cards — both real and demo) ── */}
+      {/* ── EXPORT TOOLBAR ── */}
       <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />
 
-      {/* ── AI INSIGHTS PANEL ── */}
-      {insights && (
-        <InsightsPanel insights={insights} totalIncome={income} totalExpenses={expenses} />
-      )}
-
-      {/* ── FINANCIAL SNAPSHOT ── */}
+      {/* ── UNIFIED FINANCIAL SUMMARY ── */}
       {transactions.length > 0 && (
-        <FinancialSnapshot
+        <FinancialSummary
           transactions={transactions}
           income={income}
           expenses={expenses}

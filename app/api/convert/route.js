@@ -308,10 +308,23 @@ function detectSubscriptions(transactions) {
   const subscriptions = [];
   const debitTransactions = transactions.filter(t => t.type === "debit");
 
+  // Returns true if description looks like a person's name (e.g. "John Smith")
+  function looksLikePersonName(name) {
+    const words = name.trim().split(/\s+/);
+    if (words.length < 2 || words.length > 3) return false;
+    return words.every(w => /^[A-Z][a-z]+$/.test(w));
+  }
+
   debitTransactions.forEach(t => {
     const desc = t.description.toLowerCase();
     const isKnownSub      = knownSubscriptions.some(sub  => desc.includes(sub));
     const isRegularShop   = neverSubscriptions.some(shop => desc.includes(shop));
+
+    // Skip person-to-person payments (e.g. "John Smith")
+    if (looksLikePersonName(t.description)) return;
+
+    // Skip finance/mortgage/rent payments
+    if (["financial services","rci","loan","mortgage","rent","landlord","letting"].some(s => desc.includes(s))) return;
 
     // Special case: "amazon" alone = shopping, "amazon prime" = subscription (handled by knownSubscriptions)
     const isAmazonRegular = /\bamazon\b/.test(desc) && !desc.includes("amazon prime") && !desc.includes("prime video");
