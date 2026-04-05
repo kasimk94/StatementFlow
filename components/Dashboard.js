@@ -129,6 +129,9 @@ function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarge
     ? (countFormat ? countFormat(_counted) : Math.round(_counted).toString())
     : value;
 
+  const numLen = (displayValue?.toString() ?? "").length;
+  const numFontSize = numLen <= 6 ? "2rem" : numLen <= 8 ? "1.75rem" : numLen <= 10 ? "1.5rem" : "1.25rem";
+
   return (
     <div
       className="relative rounded-2xl p-5 flex items-center gap-3 overflow-hidden"
@@ -150,7 +153,7 @@ function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarge
       </div>
       <div className="relative min-w-0 flex-1">
         <p className="text-xs font-bold text-white/60 uppercase tracking-widest">{label}</p>
-        <p className="font-extrabold text-white mt-1 leading-none" style={{ fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)", whiteSpace: "nowrap" }}>{displayValue}</p>
+        <p className="font-extrabold text-white mt-1 leading-none" style={{ fontSize: numFontSize, whiteSpace: "nowrap" }}>{displayValue}</p>
         {sub && <p className="text-sm text-white/60 mt-1.5">{sub}</p>}
       </div>
     </div>
@@ -428,10 +431,10 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
 
   // ── Financial health ──
   const savingRate = income > 0 ? (net / income) * 100 : -1;
-  const health = savingRate >= 20 ? { label: "Excellent",       color: "#10b981", bg: "#d1fae5", pct: 100 }
-               : savingRate >= 10 ? { label: "Good",            color: "#3b82f6", bg: "#dbeafe", pct: 70  }
-               : savingRate >= 0  ? { label: "Fair",            color: "#f59e0b", bg: "#fef3c7", pct: 40  }
-               :                    { label: "Needs Attention", color: "#ef4444", bg: "#fee2e2", pct: 10  };
+  const health = savingRate >= 20 ? { label: "Excellent",       color: "#10b981", pct: 100 }
+               : savingRate >= 10 ? { label: "Good",            color: "#3b82f6", pct: 70  }
+               : savingRate >= 0  ? { label: "Fair",            color: "#f59e0b", pct: 40  }
+               :                    { label: "Needs Attention", color: "#ef4444", pct: 10  };
 
   // ── AI insights ──
   const subTotal   = insights?.subscriptions?.total ?? 0;
@@ -441,158 +444,123 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   const scoreLabel = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention";
   const alerts     = (insights?.alerts ?? []).slice(0, 3);
 
-  // ── Top 5 expense categories for legend ──
-  const top5 = categoryBreakdown.filter(c => !SKIP_CATS.has(c.name)).slice(0, 5);
+  const pillRow = (icon, label, value) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#f8fafc", borderRadius: 8, padding: "7px 10px" }}>
+      <span style={{ fontSize: "1rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: "0.78rem", color: "#64748b", flex: 1 }}>{label}</span>
+      <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1e293b", textAlign: "right" }}>{value}</span>
+    </div>
+  );
+
+  const insightCard = (borderColor, bg, children) => (
+    <div style={{ border: "1px solid #e2e8f0", borderLeft: `4px solid ${borderColor}`, borderRadius: 8, padding: "10px 12px", background: bg }}>
+      {children}
+    </div>
+  );
 
   return (
-    <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 20px rgba(0,0,0,0.08)", overflow: "hidden", border: "1px solid #e8e4f8", borderLeft: "4px solid #6c5ce7" }}>
+    <>
+      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 20px rgba(0,0,0,0.08)", overflow: "hidden", border: "1px solid #e8e4f8", borderLeft: "4px solid #6c5ce7" }}>
 
-      {/* ── Header ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 22px 13px 22px", borderBottom: "1px solid #f1f5f9", flexWrap: "wrap", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontWeight: 800, fontSize: "0.98rem", color: "#1e293b" }}>📊 Financial Summary</span>
-          <span style={{ fontSize: "0.68rem", fontWeight: 700, background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", color: "#fff", padding: "3px 10px", borderRadius: 20, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>✨ StatementFlow AI</span>
-        </div>
-        {insights && score > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <div style={{ textAlign: "right" }}>
-              <p style={{ margin: 0, fontSize: "0.65rem", fontWeight: 700, color: scoreColor, textTransform: "uppercase", letterSpacing: "0.05em" }}>Score</p>
-              <p style={{ margin: 0, fontSize: "0.72rem", fontWeight: 600, color: "#64748b" }}>{scoreLabel}</p>
-            </div>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 3px 14px ${scoreColor}44`, flexShrink: 0 }}>
-              <span style={{ fontSize: "1.05rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{score}</span>
-            </div>
+        {/* ── Header ── */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 22px 13px 22px", borderBottom: "1px solid #f1f5f9", flexWrap: "wrap", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontWeight: 800, fontSize: "0.98rem", color: "#1e293b" }}>📊 Financial Summary</span>
+            <span style={{ fontSize: "0.68rem", fontWeight: 700, background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", color: "#fff", padding: "3px 10px", borderRadius: 20, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>✨ StatementFlow AI</span>
           </div>
-        )}
-      </div>
-
-      {/* ── Two columns ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{ borderBottom: alerts.length > 0 ? "1px solid #f1f5f9" : "none" }}>
-
-        {/* LEFT — Money at a Glance */}
-        <div style={{ padding: "18px 22px", borderRight: "1px solid #f1f5f9" }}>
-          <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Money at a Glance</p>
-
-          {/* Top categories legend */}
-          {top5.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <p style={{ margin: "0 0 8px", fontSize: "0.68rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Top Spending Categories</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {top5.map(c => {
-                  const pct = expenses > 0 ? ((c.total / expenses) * 100).toFixed(0) : "0";
-                  const hex = catHex(c.name);
-                  return (
-                    <div key={c.name}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                        <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>{catEmoji(c.name)}</span>
-                        <span style={{ fontSize: "0.76rem", color: "#475569", flex: 1 }}>{c.name}</span>
-                        <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1e293b" }}>{fmtShort(c.total)}</span>
-                        <span style={{ fontSize: "0.66rem", background: hex, color: "#fff", fontWeight: 700, padding: "1px 5px", borderRadius: 8, minWidth: "2rem", textAlign: "center" }}>{pct}%</span>
-                      </div>
-                      <div style={{ height: 3, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${pct}%`, background: hex, borderRadius: 2 }} />
-                      </div>
-                    </div>
-                  );
-                })}
+          {insights && score > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ margin: 0, fontSize: "0.65rem", fontWeight: 700, color: scoreColor, textTransform: "uppercase", letterSpacing: "0.05em" }}>Score</p>
+                <p style={{ margin: 0, fontSize: "0.72rem", fontWeight: 600, color: "#64748b" }}>{scoreLabel}</p>
+              </div>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 3px 14px ${scoreColor}44`, flexShrink: 0 }}>
+                <span style={{ fontSize: "1.05rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{score}</span>
               </div>
             </div>
           )}
-
-          {/* Stat rows */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
-            {dateRange && (
-              <div style={{ display: "flex", gap: 6 }}>
-                <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>📅</span>
-                <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Period: <strong style={{ color: "#1e293b" }}>{dateRange}</strong></span>
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 6 }}>
-              <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>📊</span>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}><strong style={{ color: "#1e293b" }}>{transactions.length}</strong> transactions analysed</span>
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>💳</span>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Avg per day: <strong style={{ color: "#1e293b" }}>{fmt(avgPerDay)}</strong></span>
-            </div>
-            {biggestDebit && (
-              <div style={{ display: "flex", gap: 6 }}>
-                <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>🏆</span>
-                <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                  Biggest: <strong style={{ color: "#1e293b" }}>{fmt(Math.abs(biggestDebit.amount))}</strong>{" "}
-                  <span style={{ color: "#94a3b8" }}>{biggestDebit.description.length > 22 ? biggestDebit.description.slice(0, 22) + "…" : biggestDebit.description}</span>
-                </span>
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 6 }}>
-              <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>🏷️</span>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                Spending type: <strong style={{ color: "#6c5ce7" }}>{personality.emoji} {personality.name}</strong>
-              </span>
-            </div>
-          </div>
         </div>
 
-        {/* RIGHT — Key Insights */}
-        <div style={{ padding: "18px 22px", display: "flex", flexDirection: "column", gap: 10 }}>
-          <p style={{ margin: "0 0 2px", fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Key Insights</p>
+        {/* ── Two columns ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2">
 
-          {/* Card 1 — Subscriptions */}
-          <div style={{ background: subList.length > 0 ? "#fffbeb" : "#f0fdf4", border: `1px solid ${subList.length > 0 ? "#fde68a" : "#bbf7d0"}`, borderRadius: 10, padding: "10px 12px" }}>
-            {subList.length > 0 ? (
+          {/* LEFT — At a Glance */}
+          <div style={{ padding: "18px 22px", borderRight: "1px solid #f1f5f9" }}>
+            <p style={{ margin: "0 0 10px", fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>At a Glance</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {dateRange && pillRow("📅", "Period", dateRange)}
+              {pillRow("📊", "Transactions", `${transactions.length} analysed`)}
+              {pillRow("💳", "Avg per day", fmt(avgPerDay))}
+              {biggestDebit && pillRow("🏆", "Biggest spend", `${fmt(Math.abs(biggestDebit.amount))} · ${biggestDebit.description.length > 18 ? biggestDebit.description.slice(0, 18) + "…" : biggestDebit.description}`)}
+              {pillRow("🏷️", "Spending type", `${personality.emoji} ${personality.name}`)}
+            </div>
+          </div>
+
+          {/* RIGHT — Key Insights */}
+          <div style={{ padding: "18px 22px", display: "flex", flexDirection: "column", gap: 8 }}>
+            <p style={{ margin: "0 0 2px", fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Key Insights</p>
+
+            {/* Subscriptions */}
+            {insightCard(
+              subList.length > 0 ? "#f59e0b" : "#10b981",
+              subList.length > 0 ? "#fffdf5" : "#f0fdf4",
+              subList.length > 0 ? (
+                <>
+                  <p style={{ margin: "0 0 4px", fontWeight: 700, fontSize: "0.82rem", color: "#92400e" }}>
+                    🔄 {fmt(subTotal)}/mo · {fmt(subTotal * 12)}/yr in subscriptions
+                  </p>
+                  <p style={{ margin: 0, fontSize: "0.73rem", color: "#78350f", lineHeight: 1.55 }}>
+                    {subList.slice(0, 5).join(" · ")}
+                  </p>
+                </>
+              ) : (
+                <p style={{ margin: 0, fontWeight: 600, fontSize: "0.82rem", color: "#166534" }}>✅ No recurring subscriptions detected</p>
+              )
+            )}
+
+            {/* Top Insight */}
+            {insights?.topInsight && insightCard("#8b5cf6", "#faf8ff",
+              <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: 1 }}>💡</span>
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "#4c1d95", lineHeight: 1.5 }}>{insights.topInsight}</p>
+              </div>
+            )}
+
+            {/* Savings Tip */}
+            {insights?.savingsOpportunity?.message && insightCard("#10b981", "#f5fdf8",
+              <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: 1 }}>💰</span>
+                <div>
+                  <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534", lineHeight: 1.5 }}>{insights.savingsOpportunity.message}</p>
+                  {insights.savingsOpportunity.potentialSaving && (
+                    <p style={{ margin: "3px 0 0", fontSize: "0.78rem", fontWeight: 800, color: "#15803d" }}>Potential saving: {insights.savingsOpportunity.potentialSaving}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Financial Health bar */}
+            {insightCard(health.color, "#fafafa",
               <>
-                <p style={{ margin: "0 0 4px", fontWeight: 700, fontSize: "0.82rem", color: "#92400e" }}>
-                  🔄 Subscriptions: £{subTotal.toFixed(2)}/mo · £{(subTotal * 12).toFixed(2)}/yr
-                </p>
-                <p style={{ margin: 0, fontSize: "0.73rem", color: "#78350f", lineHeight: 1.55 }}>
-                  {subList.slice(0, 5).join(" · ")}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
+                  <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#334155" }}>📈 Financial Health</span>
+                  <span style={{ fontSize: "0.76rem", fontWeight: 800, color: health.color }}>{health.label}</span>
+                </div>
+                <div style={{ height: 6, background: "#e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${health.pct}%`, background: health.color, borderRadius: 4 }} />
+                </div>
+                <p style={{ margin: "5px 0 0", fontSize: "0.72rem", color: "#64748b" }}>
+                  {income > 0 ? `Saving ${Math.max(0, savingRate).toFixed(0)}% of income` : "No income recorded"}
                 </p>
               </>
-            ) : (
-              <p style={{ margin: 0, fontWeight: 700, fontSize: "0.82rem", color: "#166534" }}>✅ No subscriptions detected</p>
             )}
-          </div>
-
-          {/* Card 2 — Top Insight */}
-          {insights?.topInsight && (
-            <div style={{ background: "#ede9fe", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8, alignItems: "flex-start" }}>
-              <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: 1 }}>💡</span>
-              <p style={{ margin: 0, fontSize: "0.82rem", fontWeight: 600, color: "#4c1d95", lineHeight: 1.45 }}>{insights.topInsight}</p>
-            </div>
-          )}
-
-          {/* Card 3 — Savings Tip */}
-          {insights?.savingsOpportunity?.message && (
-            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8, alignItems: "flex-start" }}>
-              <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: 1 }}>💰</span>
-              <div>
-                <p style={{ margin: 0, fontSize: "0.82rem", color: "#166534", lineHeight: 1.45 }}>{insights.savingsOpportunity.message}</p>
-                {insights.savingsOpportunity.potentialSaving && (
-                  <p style={{ margin: "3px 0 0", fontSize: "0.78rem", fontWeight: 800, color: "#15803d" }}>Potential saving: {insights.savingsOpportunity.potentialSaving}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Card 4 — Health Check */}
-          <div style={{ background: health.bg, borderRadius: 10, padding: "10px 12px", border: `1px solid ${health.color}33` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <span style={{ fontSize: "0.78rem", fontWeight: 700, color: health.color }}>📈 Financial Health</span>
-              <span style={{ fontSize: "0.78rem", fontWeight: 800, color: health.color }}>{health.label}</span>
-            </div>
-            <div style={{ height: 6, background: `${health.color}33`, borderRadius: 4, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${health.pct}%`, background: health.color, borderRadius: 4 }} />
-            </div>
-            <p style={{ margin: "4px 0 0", fontSize: "0.72rem", color: health.color }}>
-              {income > 0 ? `Saving ${Math.max(0, savingRate).toFixed(0)}% of income` : "No income recorded"}
-            </p>
           </div>
         </div>
       </div>
 
-      {/* ── Alert pills ── */}
+      {/* ── Alert pills — below the card ── */}
       {alerts.length > 0 && (
-        <div style={{ padding: "12px 22px 14px", display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
           {alerts.map((alert, i) => (
             <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: "0.77rem", fontWeight: 600, padding: "5px 12px", borderRadius: 20, lineHeight: 1.4 }}>
               <span>⚠️</span> {alert}
@@ -600,7 +568,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
