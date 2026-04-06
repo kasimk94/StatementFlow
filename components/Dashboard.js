@@ -62,6 +62,27 @@ const CAT_EMOJI = {
   [UNKNOWN_CAT]:               "❓",
 };
 
+// ─── Category pill colours (Upgrade 3) ───────────────────────────────────────
+const CAT_PILL_STYLE = {
+  "Supermarkets & Food":       { bg: "#dcfce7", color: "#166534" },
+  "Eating & Drinking":         { bg: "#ffedd5", color: "#9a3412" },
+  "Travel & Transport":        { bg: "#dbeafe", color: "#1e40af" },
+  "Household Bills":           { bg: "#f1f5f9", color: "#334155" },
+  "Subscriptions & Streaming": { bg: "#f3e8ff", color: "#6b21a8" },
+  "Entertainment & Leisure":   { bg: "#fce7f3", color: "#9d174d" },
+  "Health & Fitness":          { bg: "#ccfbf1", color: "#134e4a" },
+  "Online & High Street":      { bg: "#fef9c3", color: "#854d0e" },
+  "Bank Transfers":            { bg: "#f3f4f6", color: "#374151" },
+  "Income & Salary":           { bg: "#d1fae5", color: "#065f46" },
+  "Rent & Mortgage":           { bg: "#fee2e2", color: "#991b1b" },
+  "Cash & ATM":                { bg: "#f5f5f4", color: "#57534e" },
+  "Finance & Bills":           { bg: "#e0e7ff", color: "#3730a3" },
+  "Refunds":                   { bg: "#ccfbf1", color: "#134e4a" },
+  "Bank Fees":                 { bg: "#f3f4f6", color: "#374151" },
+  "Uncategorised":             { bg: "#f9fafb", color: "#6b7280" },
+  [UNKNOWN_CAT]:               { bg: "#f9fafb", color: "#6b7280" },
+};
+
 const CAT_TIPS = {
   "Income & Salary":           "Salary, wages, benefits, and other incoming money",
   "Refunds":                   "Refunds and cashbacks from retailers",
@@ -108,18 +129,28 @@ function useCountUp(target, duration, triggered) {
   return value;
 }
 
+// ─── Module-level date parser (shared by FinancialSummary + Dashboard) ───────
+const _DMI = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+function parseDateStr(s) {
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})/);
+  if (m) return new Date(+m[3], _DMI[m[2]] ?? 0, +m[1]);
+  return null;
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function CategoryBadge({ name }) {
+  const pill = CAT_PILL_STYLE[name] ?? { bg: "#f9fafb", color: "#6b7280" };
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 whitespace-nowrap ${catBadge(name)}`}>
-      {name}
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: pill.bg, color: pill.color, padding: "4px 10px", borderRadius: 999, fontSize: "0.72rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+      {catEmoji(name)} {name}
     </span>
   );
 }
 
 // Vibrant gradient stat card
-function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarget, countTriggered, countFormat }) {
+function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge }) {
   const _counted = useCountUp(
     countTarget ?? 0,
     1500,
@@ -155,6 +186,14 @@ function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarge
         <p className="text-xs font-bold text-white/60 uppercase tracking-widest">{label}</p>
         <p className="font-extrabold text-white mt-1 leading-none" style={{ fontSize: numFontSize, whiteSpace: "nowrap" }}>{displayValue}</p>
         {sub && <p className="text-sm text-white/60 mt-1.5">{sub}</p>}
+        {gauge && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${gauge.pct}%`, background: gauge.color, borderRadius: 3, transition: "width 1s ease 0.6s" }} />
+            </div>
+            <p style={{ margin: "3px 0 0", fontSize: "0.68rem", color: "rgba(255,255,255,0.72)" }}>{gauge.label}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -395,18 +434,11 @@ function DebugPanel({ debug }) {
 }
 
 // ─── Unified Financial Summary ────────────────────────────────────────────────
-function FinancialSummary({ transactions, income, expenses, net, categoryBreakdown, dateRange, insights }) {
+function FinancialSummary({ transactions, income, expenses, net, categoryBreakdown, dateRange, insights, onWeekClick, activeWeek }) {
+  const [showWhy, setShowWhy] = useState(false);
 
-  // ── Shared date parser ──
-  const MONTH_IDX = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
   const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  function parseDMY(s) {
-    if (!s) return null;
-    const m = s.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})/);
-    if (m) return new Date(+m[3], MONTH_IDX[m[2]] ?? 0, +m[1]);
-    return null;
-  }
-  const parsedDates = transactions.map(t => parseDMY(t.date)).filter(d => d && !isNaN(d));
+  const parsedDates = transactions.map(t => parseDateStr(t.date)).filter(d => d && !isNaN(d));
   parsedDates.sort((a, b) => a - b);
   const dayCount = parsedDates.length >= 2
     ? Math.max(1, Math.round((parsedDates[parsedDates.length - 1] - parsedDates[0]) / 86400000) + 1)
@@ -418,32 +450,58 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   const SKIP_CATS = new Set(["Income & Salary","Bank Transfers","Refunds","Finance & Bills","Bank Fees"]);
   const topCat = categoryBreakdown.find(c => !SKIP_CATS.has(c.name));
   const PERSONALITIES = {
-    default:   { emoji: "⚖️", name: "The Balanced Budgeter",  desc: "You spread your spending evenly — no obvious weak spots",              gradient: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)" },
-    homebody:  { emoji: "🏠", name: "The Homebody",           desc: "Home & essentials are your biggest priority this month",               gradient: "linear-gradient(135deg,#4facfe 0%,#00c9ff 100%)" },
-    foodie:    { emoji: "🍕", name: "The Foodie",             desc: "Restaurants & cafes take the top spot — you love eating out",          gradient: "linear-gradient(135deg,#f6d365 0%,#fda085 100%)" },
-    streamer:  { emoji: "📺", name: "The Streamer",           desc: "Subscriptions & streaming services dominate your spending",            gradient: "linear-gradient(135deg,#a18cd1 0%,#fbc2eb 100%)" },
-    shopper:   { emoji: "🛍️", name: "The Shopper",            desc: "Retail therapy is real — shopping leads your spending this month",     gradient: "linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)" },
-    commuter:  { emoji: "🚇", name: "The Commuter",           desc: "Getting around costs you the most — transport is your #1 category",   gradient: "linear-gradient(135deg,#30cfd0 0%,#5f72bd 100%)" },
-    entertainer:{ emoji: "🎭",name: "The Entertainer",        desc: "Entertainment & leisure is where you splash out the most",             gradient: "linear-gradient(135deg,#cd9cf2 0%,#8b5cf6 100%)" },
-    wellness:  { emoji: "💪", name: "The Wellness Warrior",   desc: "Health & fitness is a clear priority — you invest in yourself",        gradient: "linear-gradient(135deg,#f093fb 0%,#f5576c 100%)" },
+    default:     { emoji: "⚖️", name: "The Balanced Budgeter",  desc: "You spread your spending evenly — no obvious weak spots",              gradient: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)" },
+    homebody:    { emoji: "🏠", name: "The Homebody",           desc: "Home & essentials are your biggest priority this month",               gradient: "linear-gradient(135deg,#4facfe 0%,#00c9ff 100%)" },
+    foodie:      { emoji: "🍕", name: "The Foodie",             desc: "Restaurants & cafes take the top spot — you love eating out",          gradient: "linear-gradient(135deg,#f6d365 0%,#fda085 100%)" },
+    streamer:    { emoji: "📺", name: "The Streamer",           desc: "Subscriptions & streaming services dominate your spending",            gradient: "linear-gradient(135deg,#a18cd1 0%,#fbc2eb 100%)" },
+    shopper:     { emoji: "🛍️", name: "The Shopper",            desc: "Retail therapy is real — shopping leads your spending this month",     gradient: "linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)" },
+    commuter:    { emoji: "🚇", name: "The Commuter",           desc: "Getting around costs you the most — transport is your #1 category",   gradient: "linear-gradient(135deg,#30cfd0 0%,#5f72bd 100%)" },
+    entertainer: { emoji: "🎭", name: "The Entertainer",        desc: "Entertainment & leisure is where you splash out the most",             gradient: "linear-gradient(135deg,#cd9cf2 0%,#8b5cf6 100%)" },
+    wellness:    { emoji: "💪", name: "The Wellness Warrior",   desc: "Health & fitness is a clear priority — you invest in yourself",        gradient: "linear-gradient(135deg,#f093fb 0%,#f5576c 100%)" },
   };
   let personality = PERSONALITIES.default;
   if (topCat) {
     const n = topCat.name;
     if (["Supermarkets & Food","Household Bills","Rent & Mortgage"].includes(n)) personality = PERSONALITIES.homebody;
-    else if (n === "Eating & Drinking")        personality = PERSONALITIES.foodie;
+    else if (n === "Eating & Drinking")         personality = PERSONALITIES.foodie;
     else if (n === "Subscriptions & Streaming") personality = PERSONALITIES.streamer;
-    else if (n === "Online & High Street")     personality = PERSONALITIES.shopper;
-    else if (n === "Travel & Transport")       personality = PERSONALITIES.commuter;
-    else if (n === "Entertainment & Leisure")  personality = PERSONALITIES.entertainer;
-    else if (n === "Health & Fitness")         personality = PERSONALITIES.wellness;
+    else if (n === "Online & High Street")      personality = PERSONALITIES.shopper;
+    else if (n === "Travel & Transport")        personality = PERSONALITIES.commuter;
+    else if (n === "Entertainment & Leisure")   personality = PERSONALITIES.entertainer;
+    else if (n === "Health & Fitness")          personality = PERSONALITIES.wellness;
   }
+
+  // ── Top 5 merchants (used in why text + card C) ──
+  const merchantMap = {};
+  debits.forEach(t => {
+    const n = t.description;
+    if (!merchantMap[n]) merchantMap[n] = { name: n, total: 0, count: 0 };
+    merchantMap[n].total += Math.abs(t.amount);
+    merchantMap[n].count++;
+  });
+  const top5Merchants = Object.values(merchantMap).sort((a,b) => b.total - a.total).slice(0, 5);
+  const maxMerchantTotal = top5Merchants[0]?.total ?? 1;
+
+  // ── Why explanation (Upgrade 4) ──
+  const topCatPct  = topCat && expenses > 0 ? ((topCat.total / expenses) * 100).toFixed(0) : "0";
+  const topCatName = topCat?.name ?? "various categories";
+  const top3Total  = top5Merchants.slice(0,3).reduce((s,m) => s + m.total, 0);
+  const numSpendCats = categoryBreakdown.filter(c => !SKIP_CATS.has(c.name)).length;
+  const pn = personality.name;
+  let whyText = `Your spending is evenly spread — ${topCatName} was your biggest area at ${topCatPct}%, but no single category dominates. You spread spend across ${numSpendCats} different categories.`;
+  if      (pn === "The Homebody")          whyText = `${topCatPct}% of your spending went on ${topCatName}. Home essentials and bills lead your budget — a solid foundation. Your top 3 merchants account for ${fmt(top3Total)} combined.`;
+  else if (pn === "The Foodie")            whyText = `${topCatPct}% of your money went to ${topCatName}. Eating out and cafes are clearly a lifestyle choice. Your top 3 food merchants account for ${fmt(top3Total)}.`;
+  else if (pn === "The Streamer")          whyText = `${topCatPct}% of your spending is on ${topCatName}. Recurring services add up fast — your top 3 merchants alone total ${fmt(top3Total)}. Check if all are still in use.`;
+  else if (pn === "The Shopper")           whyText = `${topCatPct}% of your budget went to ${topCatName}. Online and high street shopping leads your spending. Your top 3 retailers account for ${fmt(top3Total)} this period.`;
+  else if (pn === "The Commuter")          whyText = `${topCatPct}% of your spending is on ${topCatName}. Travel costs are your biggest outgoing. Your top 3 transport merchants total ${fmt(top3Total)} for the period.`;
+  else if (pn === "The Entertainer")       whyText = `${topCatPct}% of your spending is on ${topCatName}. You invest heavily in experiences. Your top 3 entertainment merchants account for ${fmt(top3Total)}.`;
+  else if (pn === "The Wellness Warrior")  whyText = `${topCatPct}% of your budget is on ${topCatName}. Health is your priority — gym memberships, pharmacies, and wellness services lead your spend. Top 3 merchants: ${fmt(top3Total)}.`;
 
   // ── Busiest day of week ──
   const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const dayTotals = {};
   debits.forEach(t => {
-    const d = parseDMY(t.date);
+    const d = parseDateStr(t.date);
     if (!d) return;
     const day = DAY_NAMES[d.getDay()];
     dayTotals[day] = (dayTotals[day] || 0) + Math.abs(t.amount);
@@ -457,7 +515,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   let heaviestWeekLabel = null;
   if (parsedDates.length >= 2) {
     const datedDebits = debits
-      .map(t => ({ date: parseDMY(t.date), amount: Math.abs(t.amount) }))
+      .map(t => ({ date: parseDateStr(t.date), amount: Math.abs(t.amount) }))
       .filter(t => t.date)
       .sort((a,b) => a.date - b.date);
     let bestTotal = 0, bestStart = null;
@@ -472,33 +530,30 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
     }
   }
 
-  // ── Top 5 merchants ──
-  const merchantMap = {};
-  debits.forEach(t => {
-    const n = t.description;
-    if (!merchantMap[n]) merchantMap[n] = { name: n, total: 0, count: 0 };
-    merchantMap[n].total += Math.abs(t.amount);
-    merchantMap[n].count++;
-  });
-  const top5Merchants = Object.values(merchantMap).sort((a,b) => b.total - a.total).slice(0, 5);
-  const maxMerchantTotal = top5Merchants[0]?.total ?? 1;
+  // ── Recurring badge ──
   const RANK_EMOJI = ["🥇","🥈","🥉","4️⃣","5️⃣"];
   const RECURRING_KEYWORDS = ["netflix","spotify","apple","google one","amazon prime","prime video","disney","sky","now tv","nowtv","gym","pure gym","planet fitness","headspace","duolingo","adobe","microsoft","icloud","youtube","audible","deliveroo plus","uber one","just eat"];
   const isRecurring = (name) => RECURRING_KEYWORDS.some(k => name.toLowerCase().includes(k));
 
-  // ── Weekly spend breakdown (4 equal slices of the statement period) ──
+  // ── Weekly spend breakdown (Upgrade 2 — clickable bars) ──
   const weekTotals = [0, 0, 0, 0];
   if (parsedDates.length >= 1) {
     debits.forEach(t => {
-      const d = parseDMY(t.date);
+      const d = parseDateStr(t.date);
       if (!d) return;
       const dayOffset = Math.round((d - parsedDates[0]) / 86400000);
       const wIdx = Math.min(3, Math.floor(dayOffset / (dayCount / 4)));
       weekTotals[wIdx] += Math.abs(t.amount);
     });
   }
-  const maxWeekIdx = weekTotals.indexOf(Math.max(...weekTotals));
-  const weekBarData = weekTotals.map((total, i) => ({ name: `Week ${i+1}`, total, fill: i === maxWeekIdx ? "#6c5ce7" : "#ddd6fe" }));
+  const maxWeekIdx  = weekTotals.indexOf(Math.max(...weekTotals));
+  const weekBarData = weekTotals.map((total, i) => ({
+    name: `Week ${i+1}`,
+    total,
+    fill: activeWeek != null
+      ? (i === activeWeek ? "#6c5ce7" : "#ddd6fe")
+      : (i === maxWeekIdx ? "#6c5ce7" : "#ddd6fe"),
+  }));
 
   // ── Computed alerts ──
   const computedAlerts = [];
@@ -520,14 +575,12 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   // ── Score ──
   const score      = insights?.spendingScore ?? 0;
   const scoreColor = score >= 80 ? "#10b981" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
-  const scoreLabel = score >= 80 ? "Excellent"        : score >= 60 ? "Good"  : score >= 40 ? "Fair" : "Needs Attention";
+  const scoreLabel = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention";
 
-  // ── Alert style helpers ──
   const ALERT_BORDER = { danger: "#ef4444", warning: "#f59e0b", info: "#3b82f6" };
   const ALERT_BG     = { danger: "#fff1f1", warning: "#fffbeb", info: "#eff6ff" };
   const ALERT_RING   = { danger: "#fecaca", warning: "#fde68a", info: "#bfdbfe" };
 
-  // ── Shared label ──
   const sectionLabel = (text) => (
     <p style={{ margin: "0 0 14px", fontSize: "0.62rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>{text}</p>
   );
@@ -560,14 +613,27 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
       {/* ── ROW 1: Personality + Money Moments ── */}
       <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 14 }}>
 
-        {/* Card A — Spending Personality */}
-        <div style={{ borderRadius: 12, boxShadow: "0 2px 16px rgba(0,0,0,0.12)", padding: 24, background: personality.gradient, minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -24, right: -24, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
-          <div style={{ position: "absolute", bottom: -28, left: -12, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-          <p style={{ margin: "0 0 8px", fontSize: "0.62rem", fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Spending Personality</p>
-          <div style={{ fontSize: "3rem", lineHeight: 1, marginBottom: 10 }}>{personality.emoji}</div>
-          <p style={{ margin: "0 0 5px", fontSize: "1.22rem", fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{personality.name}</p>
-          <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.78)", lineHeight: 1.45 }}>{personality.desc}</p>
+        {/* Card A — Spending Personality with "Why?" toggle (Upgrade 4) */}
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ borderRadius: showWhy ? "12px 12px 0 0" : 12, boxShadow: "0 2px 16px rgba(0,0,0,0.12)", padding: 24, background: personality.gradient, minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: -24, right: -24, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
+            <div style={{ position: "absolute", bottom: -28, left: -12, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+            <p style={{ margin: "0 0 8px", fontSize: "0.62rem", fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Spending Personality</p>
+            <div style={{ fontSize: "3rem", lineHeight: 1, marginBottom: 10 }}>{personality.emoji}</div>
+            <p style={{ margin: "0 0 4px", fontSize: "1.22rem", fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{personality.name}</p>
+            <button
+              onClick={() => setShowWhy(v => !v)}
+              style={{ display: "inline-block", background: "none", border: "none", padding: "0 0 8px", cursor: "pointer", fontSize: "0.75rem", color: "rgba(255,255,255,0.72)", textAlign: "left" }}
+            >
+              {showWhy ? "Close ✕" : "Why? →"}
+            </button>
+            <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.78)", lineHeight: 1.45 }}>{personality.desc}</p>
+          </div>
+          {showWhy && (
+            <div style={{ background: "#f8f7ff", borderTop: "1px solid #ede9fe", borderRadius: "0 0 12px 12px", padding: "14px 20px", boxShadow: "0 4px 12px rgba(108,92,231,0.08)" }}>
+              <p style={{ margin: 0, fontSize: "0.82rem", color: "#334155", lineHeight: 1.6 }}>{whyText}</p>
+            </div>
+          )}
         </div>
 
         {/* Card B — Money Moments */}
@@ -619,7 +685,6 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
             const barPct = (m.total / maxMerchantTotal) * 100;
             return (
               <div key={m.name} style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: "#fafafa" }}>
-                {/* Proportional background bar */}
                 <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${barPct}%`, background: i === 0 ? "#f3f0ff" : "#f8fafc", borderRadius: 8, zIndex: 0 }} />
                 <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 10, padding: "10px 14px" }}>
                   <span style={{ fontSize: "1.1rem", flexShrink: 0, lineHeight: 1 }}>{RANK_EMOJI[i]}</span>
@@ -636,28 +701,37 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
         </div>
       </div>
 
-      {/* ── ROW 3: Spending Rhythm + Alerts ── */}
+      {/* ── ROW 3: Spending Rhythm (clickable) + Alerts ── */}
       <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 14 }}>
 
-        {/* Card D — Spending Rhythm (full width if no alerts) */}
+        {/* Card D — Spending Rhythm (Upgrade 2) */}
         <div className={alerts.length === 0 ? "md:col-span-2" : ""} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: 24, border: "1px solid #f1f5f9" }}>
           {sectionLabel("Spending Rhythm")}
-          <p style={{ margin: "0 0 12px", fontSize: "0.82rem", color: "#64748b" }}>When you spent most</p>
+          <p style={{ margin: "0 0 8px", fontSize: "0.82rem", color: "#64748b" }}>
+            {onWeekClick ? "Tap a bar to filter transactions by week" : "When you spent most"}
+          </p>
           <ResponsiveContainer width="100%" height={120}>
             <BarChart data={weekBarData} barSize={38} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
               <YAxis hide />
-              <Bar dataKey="total" radius={[4,4,0,0]}>
+              <Bar
+                dataKey="total"
+                radius={[4,4,0,0]}
+                cursor={onWeekClick ? "pointer" : "default"}
+                onClick={(data, index) => onWeekClick && onWeekClick(index)}
+              >
                 {weekBarData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
           <p style={{ margin: "6px 0 0", fontSize: "0.73rem", fontWeight: 600, color: "#6c5ce7", textAlign: "center" }}>
-            Week {maxWeekIdx + 1} was your biggest spending week
+            {activeWeek != null
+              ? `Showing Week ${activeWeek + 1} — click bar again to clear`
+              : `Week ${maxWeekIdx + 1} was your biggest spending week`}
           </p>
         </div>
 
-        {/* Card E — Key Alerts (only rendered when alerts exist) */}
+        {/* Card E — Key Alerts */}
         {alerts.length > 0 && (
           <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: 24, border: "1px solid #f1f5f9" }}>
             {sectionLabel("Key Alerts")}
@@ -688,6 +762,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const [copied, setCopied]                   = useState(false);
   const [demoToast, setDemoToast]             = useState(false);
   const [txExpanded, setTxExpanded]           = useState(false);
+  const [weekFilter, setWeekFilter]           = useState(null);
 
   // Animation states
   const [loaded,          setLoaded]          = useState(false);
@@ -717,8 +792,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   }, [demoMode]);
 
   // IntersectionObserver — scroll-triggered animations for demo mode
-  const demoRef   = useRef(null);
-  const chartsRef = useRef(null);
+  const demoRef    = useRef(null);
+  const chartsRef  = useRef(null);
+  const txTableRef = useRef(null);
   useEffect(() => {
     if (!demoMode) return;
     const obs = new IntersectionObserver((entries) => {
@@ -751,6 +827,22 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       : `${dates[0]} – ${dates[dates.length - 1]}`;
   }, [transactions]);
 
+  // ── Week ranges for click-to-filter (Upgrade 2) ──
+  const weekRanges = useMemo(() => {
+    const dates = transactions.map(t => parseDateStr(t.date)).filter(d => d && !isNaN(d));
+    dates.sort((a,b) => a - b);
+    if (dates.length < 2) return null;
+    const dc = Math.max(1, Math.round((dates[dates.length-1] - dates[0]) / 86400000) + 1);
+    const MS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return [0,1,2,3].map(i => {
+      const startOff = Math.round(i * dc / 4);
+      const endOff   = Math.round((i+1) * dc / 4) - 1;
+      const start = new Date(dates[0].getTime() + startOff * 86400000);
+      const end   = new Date(dates[0].getTime() + endOff   * 86400000);
+      return { start, end, label: `${start.getDate()} ${MS[start.getMonth()]} – ${end.getDate()} ${MS[end.getMonth()]}` };
+    });
+  }, [transactions]);
+
   // ── Bank name detection ──
   const bankName = useMemo(() => {
     const blob = transactions.map((t) => (t.description || "").toUpperCase()).join(" ");
@@ -776,11 +868,30 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     return { income, expenses, net: income - expenses, incomeCount, expenseCount };
   }, [transactions]);
 
+  // ── Net balance liquidity gauge (Upgrade 1) ──
+  const netGauge = useMemo(() => {
+    const pct = Math.max(0, Math.min(100, ((net + 500) / 1000) * 100));
+    if (net >= 500) return { pct, color: "#4ade80", label: `${fmt(net)} positive balance` };
+    if (net >= 0)   return { pct, color: "#fbbf24", label: `${fmt(500 - net)} until overdraft` };
+    return { pct, color: "#f87171", label: `${fmt(Math.abs(net))} overdrawn` };
+  }, [net]);
+
   // ── Demo toast helper ──
   const showDemoToast = useCallback(() => {
     setDemoToast(true);
     setTimeout(() => setDemoToast(false), 3000);
   }, []);
+
+  // ── Week click → filter + scroll (Upgrade 2) ──
+  const handleWeekClick = useCallback((idx) => {
+    const next = weekFilter === idx ? null : idx;
+    setWeekFilter(next);
+    setPage(1);
+    if (next !== null) {
+      setTxExpanded(true);
+      setTimeout(() => txTableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    }
+  }, [weekFilter]);
 
   // ── Row fade-out → fade-in animation ──
   const triggerRowAnim = useCallback(() => {
@@ -938,9 +1049,15 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         filterType === "All" ||
         (filterType === "Income"  && t.amount > 0) ||
         (filterType === "Expense" && t.amount < 0);
-      return matchSearch && matchCat && matchType;
+      let matchWeek = true;
+      if (weekFilter !== null && weekRanges) {
+        const wr = weekRanges[weekFilter];
+        const d  = parseDateStr(t.date);
+        if (d) matchWeek = d >= wr.start && d <= wr.end;
+      }
+      return matchSearch && matchCat && matchType && matchWeek;
     });
-  }, [transactions, search, filterCat, filterType]);
+  }, [transactions, search, filterCat, filterType, weekFilter, weekRanges]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -1081,6 +1198,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           countTarget={Math.abs(net)}
           countTriggered={demoMode ? demoTriggered : loaded}
           countFormat={(v) => fmt(net >= 0 ? v : -v)}
+          gauge={netGauge}
         />
         <StatCard
           label="Transactions"
@@ -1106,6 +1224,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           categoryBreakdown={categoryBreakdown}
           dateRange={dateRange}
           insights={insights}
+          onWeekClick={handleWeekClick}
+          activeWeek={weekFilter}
         />
       )}
 
@@ -1298,7 +1418,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── TRANSACTIONS TABLE ── */}
-      <div style={sectionStyle(550)}>
+      <div ref={txTableRef} style={sectionStyle(550)}>
         {/* Collapse toggle */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: txExpanded ? 12 : 0 }}>
           <button
@@ -1320,6 +1440,19 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
             <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>Full list available in your Excel export</span>
           )}
         </div>
+
+        {/* Week filter pill (Upgrade 2) */}
+        {weekFilter !== null && weekRanges && (
+          <div style={{ marginTop: 10, marginBottom: 2 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#6c5ce7", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 600 }}>
+              📅 Showing Week {weekFilter + 1} ({weekRanges[weekFilter].label})
+              <button
+                onClick={() => { setWeekFilter(null); setPage(1); }}
+                style={{ background: "none", border: "none", color: "rgba(255,255,255,0.82)", cursor: "pointer", padding: 0, fontSize: "1rem", lineHeight: 1, fontWeight: 700 }}
+              >✕</button>
+            </span>
+          </div>
+        )}
 
       <div
         style={{
