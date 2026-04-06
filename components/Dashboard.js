@@ -750,7 +750,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   );
 }
 
-export default function Dashboard({ transactions, demoMode = false, confidence, bank, debug, insights }) {
+export default function Dashboard({ transactions, demoMode = false, confidence, bank, debug, insights, overdraftLimit = 500, internalTransferTotal = 0, reversalsCount = 0 }) {
   const [search, setSearch]                   = useState("");
   const [sortKey, setSortKey]                 = useState("date");
   const [sortDir, setSortDir]                 = useState("desc");
@@ -862,6 +862,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const { income, expenses, net, incomeCount, expenseCount } = useMemo(() => {
     let income = 0, expenses = 0, incomeCount = 0, expenseCount = 0;
     for (const t of transactions) {
+      if (t.exclude || t.excludeFromTotals) continue;
       if (t.amount > 0) { income += t.amount; incomeCount++; }
       else { expenses += Math.abs(t.amount); expenseCount++; }
     }
@@ -870,11 +871,13 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
   // ── Net balance liquidity gauge (Upgrade 1) ──
   const netGauge = useMemo(() => {
-    const pct = Math.max(0, Math.min(100, ((net + 500) / 1000) * 100));
-    if (net >= 500) return { pct, color: "#4ade80", label: `${fmt(net)} positive balance` };
-    if (net >= 0)   return { pct, color: "#fbbf24", label: `${fmt(500 - net)} until overdraft` };
+    const limit = overdraftLimit || 500;
+    const range = limit * 2;
+    const pct = Math.max(0, Math.min(100, ((net + limit) / range) * 100));
+    if (net >= limit) return { pct, color: "#4ade80", label: `${fmt(net)} positive balance` };
+    if (net >= 0)     return { pct, color: "#fbbf24", label: `${fmt(limit - net)} until overdraft` };
     return { pct, color: "#f87171", label: `${fmt(Math.abs(net))} overdrawn` };
-  }, [net]);
+  }, [net, overdraftLimit]);
 
   // ── Demo toast helper ──
   const showDemoToast = useCallback(() => {
@@ -976,6 +979,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const categoryBreakdown = useMemo(() => {
     const map = {};
     for (const t of transactions) {
+      if (t.exclude || t.excludeFromTotals) continue;
       if (t.amount >= 0) continue;
       const cat = t.category || UNKNOWN_CAT;
       if (!map[cat]) map[cat] = { total: 0, count: 0 };
@@ -1176,7 +1180,13 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         <StatCard
           label="Total Money Out"
           value={fmt(expenses)}
-          sub={`${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`}
+          sub={
+            internalTransferTotal > 0
+              ? `Excl. ${fmt(internalTransferTotal)} internal transfers${reversalsCount > 0 ? ` · ${reversalsCount} refund${reversalsCount !== 1 ? "s" : ""} netted` : ""}`
+              : reversalsCount > 0
+                ? `${reversalsCount} refund${reversalsCount !== 1 ? "s" : ""} netted out automatically`
+                : `${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`
+          }
           gradient="linear-gradient(135deg, #e17055 0%, #d63031 100%)"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
           loaded={loaded}

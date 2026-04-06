@@ -297,7 +297,15 @@ export default function Home() {
     if (!data) return;
     pendingDataRef.current = null;
     setTransactions(data.transactions);
-    setParseResult({ confidence: data.confidence, bank: data.bank, debug: data.debug ?? null, insights: data.insights ?? null });
+    setParseResult({
+      confidence: data.confidence,
+      bank: data.bank,
+      debug: data.debug ?? null,
+      insights: data.insights ?? null,
+      overdraftLimit: data.overdraftLimit ?? 500,
+      internalTransferTotal: data.internalTransferTotal ?? 0,
+      reversalsCount: data.reversalsCount ?? 0,
+    });
     setLoading(false);
     setApiDone(false);
     window.scrollTo(0, 0);
@@ -364,6 +372,9 @@ export default function Home() {
             bank={parseResult?.bank}
             debug={parseResult?.debug}
             insights={parseResult?.insights}
+            overdraftLimit={parseResult?.overdraftLimit ?? 500}
+            internalTransferTotal={parseResult?.internalTransferTotal ?? 0}
+            reversalsCount={parseResult?.reversalsCount ?? 0}
           />
         </main>
         {showFeedback && <FeedbackPopup onClose={closeFeedback} />}

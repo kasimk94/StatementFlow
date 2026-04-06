@@ -65,10 +65,14 @@ export async function POST(req) {
     }
     console.log("API key present:", apiKey.substring(0, 10) + "...");
 
+    // ── 5. Detect overdraft limit from raw text ─────────────────────────────
+    const overdraftLimit = detectOverdraftLimit(rawText);
+    console.log("Overdraft limit detected:", overdraftLimit);
+
     // Truncate very large statements before sending to AI
     const textForParsing = rawText.length > 50000 ? rawText.substring(0, 50000) : rawText;
 
-    // ── 5. Parse with Claude ────────────────────────────────────────────────
+    // ── 6. Parse with Claude (text extraction only — no categorisation) ─────
     let parsed = [];
     try {
       parsed = await parseWithClaude(textForParsing, apiKey);
@@ -88,35 +92,54 @@ export async function POST(req) {
       );
     }
 
-    // ── 6. Normalise + categorise ───────────────────────────────────────────
-    const transactions = parsed
+    // ── 7. Normalise + apply regex categorisation engine ───────────────────
+    const rawTransactions = parsed
       .map((t) => {
         const amount =
           typeof t.amount === "number"
             ? t.amount
             : parseFloat(String(t.amount).replace(/[^0-9.\-]/g, "")) || 0;
+        const type = t.type || (amount >= 0 ? "credit" : "debit");
+        const { category, exclude } = categoriseTransaction(t.description, amount, type);
         return {
-          date:        normaliseDate(t.date),
-          description: (t.description || "Transaction").trim(),
+          date:              normaliseDate(t.date),
+          description:       cleanDescription(t.description || "Transaction"),
           amount,
-          type:        t.type || (amount >= 0 ? "credit" : "debit"),
-          category:    categoriseTransaction(t.description, amount, t.type),
+          type,
+          category,
+          exclude,
+          excludeFromTotals: false,
+          reversalLinked:    false,
+          reversalNote:      null,
         };
       })
       .filter((t) => t.date && !isNaN(t.amount));
 
-    if (transactions.length === 0) {
+    if (rawTransactions.length === 0) {
       return NextResponse.json(
         { error: "Could not normalise any transactions from the parsed data. Please try again." },
         { status: 400 }
       );
     }
 
-    const totalIncome   = transactions.filter(t => t.type === "credit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    const totalExpenses = transactions.filter(t => t.type === "debit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    // ── 8. Apply reversal / refund netting engine ───────────────────────────
+    const transactions = applyReversals(rawTransactions);
+
+    // ── 9. Calculate totals ─────────────────────────────────────────────────
+    const internalTransferTotal = transactions
+      .filter(t => t.exclude && t.type === "debit")
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const reversalsCount = transactions.filter(t => t.reversalLinked && t.type === "credit").length;
+
+    const totalIncome   = transactions.filter(t => t.type === "credit" && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const totalExpenses = transactions.filter(t => t.type === "debit"  && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const netBalance    = totalIncome - totalExpenses;
 
-    // ── 7. Generate AI insights (separate cheap call) ───────────────────────
+    const { trueSpending, trueIncome, categories, liquidity } =
+      calculateTrueSpending(transactions, netBalance, overdraftLimit);
+
+    // ── 10. Generate AI insights (score + tips — no categorisation) ─────────
     let insights = null;
     try {
       insights = await generateInsights(transactions, apiKey);
@@ -136,6 +159,14 @@ export async function POST(req) {
       confidence: "high",
       bank: "ai-parsed",
       insights,
+      // Extended engine fields
+      trueSpending,
+      trueIncome,
+      overdraftLimit,
+      liquidity,
+      internalTransferTotal,
+      reversalsCount,
+      categoryBreakdown: categories,
     });
 
   } catch (err) {
@@ -148,213 +179,251 @@ export async function POST(req) {
 }
 
 // ---------------------------------------------------------------------------
-// Claude AI parser
+// PART 1 — Text cleaner / pre-processor
 // ---------------------------------------------------------------------------
-function extractTransactionLines(rawText) {
-  const lines = rawText.split("\n");
-  const filtered = lines.filter((line) => {
-    const t = line.trim();
-    if (t.length < 3) return false;
-    const hasAmount  = /[£$]?\d+[.,]\d{2}/.test(t);
-    const hasDate    = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]?\d{0,4}|\d{1,2}\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(t);
-    const hasKeyword = /(debit|credit|payment|transfer|balance|paid|received|purchase|withdrawal|deposit)/i.test(t);
-    return hasAmount || hasDate || hasKeyword;
-  });
-  return filtered.join("\n").substring(0, 8000);
-}
-
-function extractJSON(text) {
-  // Strip markdown code fences
-  const cleaned = text
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
+function cleanDescription(desc) {
+  return (desc || "")
+    .replace(/^\)\)\)\s*/g, "")
+    .replace(/^☐\s*/g, "")
+    .replace(/^Card Payment to\s*/i, "")
+    .replace(/^Purchase at\s*/i, "")
+    .replace(/^Payment to\s*/i, "")
+    .replace(/^Direct Debit to\s*/i, "")
+    .replace(/^DD\s+/i, "")
+    .replace(/^BGC\s+/i, "")
+    .replace(/^FPI\s+/i, "")
+    .replace(/^TFR\s+/i, "")
+    .replace(/\s+/g, " ")
     .trim();
-
-  const start = cleaned.indexOf("[");
-  if (start === -1) {
-    throw new Error("No JSON array found in response: " + cleaned.substring(0, 100));
-  }
-
-  // Try full array first
-  const end = cleaned.lastIndexOf("]");
-  if (end !== -1 && end > start) {
-    try {
-      return JSON.parse(cleaned.substring(start, end + 1));
-    } catch (e) {
-      console.log("Full parse failed, trying repair...");
-    }
-  }
-
-  // Truncated response — repair by finding last complete object
-  let jsonStr = cleaned.substring(start);
-  const lastComma = jsonStr.lastIndexOf("},");
-  if (lastComma !== -1) {
-    try {
-      return JSON.parse(jsonStr.substring(0, lastComma + 1) + "]");
-    } catch (e) {
-      console.log("Repair (},) failed:", e.message);
-    }
-  }
-
-  // Last resort — last closing brace
-  const lastBrace = jsonStr.lastIndexOf("}");
-  if (lastBrace !== -1) {
-    try {
-      return JSON.parse(jsonStr.substring(0, lastBrace + 1) + "]");
-    } catch (e) {
-      throw new Error("Could not parse JSON: " + e.message);
-    }
-  }
-
-  throw new Error("No valid JSON found");
 }
 
-async function parseWithClaude(rawText, apiKey) {
-  const processedText = extractTransactionLines(rawText);
-  console.log("Sending to Claude, text length:", processedText.length);
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type":      "application/json",
-      "x-api-key":         apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model:      "claude-haiku-4-5-20251001",
-      max_tokens: 4000,
-      messages: [{
-        role: "user",
-        content: `CRITICAL: You MUST return complete valid JSON only. No markdown backticks. No explanation. Start response with [ and end with ]
-
-You are an expert UK bank statement parser. Extract ALL transactions accurately.
-
-CRITICAL RULES:
-1. Debits (money OUT) = NEGATIVE amount + type "debit"
-2. Credits (money IN) = POSITIVE amount + type "credit"
-3. NEVER miss a transaction
-4. Clean merchant names: remove reference numbers, convert to readable names
-5. Date format: DD/MM/YYYY always
-
-Return ONLY valid JSON array:
-[{"date":"DD/MM/YYYY","description":"Merchant Name","amount":-45.50,"type":"debit","balance":null}]
-
-IMPORTANT: Return raw JSON only. No markdown. No backticks. Start with [ end with ]
-
-Statement data:
-${processedText}`,
-      }],
-    }),
-  });
-
-  console.log("Claude response status:", response.status);
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Anthropic API ${response.status}: ${errText}`);
-  }
-
-  const data = await response.json();
-  console.log("Claude response:", JSON.stringify(data).substring(0, 200));
-
-  if (data.error) {
-    throw new Error(`Claude API: ${data.error.type} - ${data.error.message}`);
-  }
-
-  const text = data.content?.[0]?.text?.trim() ?? "";
-  console.log("Claude text response:", text.substring(0, 300));
-
-  return extractJSON(text);
+function extractActualMerchant(desc) {
+  const cleaned = cleanDescription(desc);
+  const paypalMatch = cleaned.match(/^PayPal\s*\*?\s*(.+)/i);
+  if (paypalMatch) return { merchant: paypalMatch[1].trim(), viaPaypal: true };
+  return { merchant: cleaned, viaPaypal: false };
 }
 
 // ---------------------------------------------------------------------------
-// Subscription detector
+// PART 2 — Internal transfer detection
+// ---------------------------------------------------------------------------
+function isInternalTransfer(desc) {
+  const d = desc.toLowerCase();
+  const patterns = [
+    "kasim khalid", "kasam khalid", "k khalid",
+    "ref: monzo", "monzo",
+    "savings pot", "save the change",
+    "transfer to", "transfer from",
+    "own transfer", "between accounts",
+    "self transfer", "pot transfer",
+    "flex saver",
+  ];
+  return patterns.some(p => d.includes(p));
+}
+
+// ---------------------------------------------------------------------------
+// PART 3 — Regex categorisation engine (first match wins)
+// ---------------------------------------------------------------------------
+function categoriseTransaction(description, amount, type) {
+  const desc = cleanDescription(description || "").toLowerCase();
+
+  // Internal transfers — excluded from spending totals
+  if (isInternalTransfer(desc)) return { category: "Bank Transfers", exclude: true };
+
+  // ── Credits ────────────────────────────────────────────────────────────────
+  if (type === "credit" || amount > 0) {
+    if (/salary|payroll|wages|bacs credit|employer|hmrc|tax credit|universal credit|dwp|state pension|dividend|interest paid/i.test(desc))
+      return { category: "Income & Salary", exclude: false };
+    if (/refund|reversal|reversed|cashback|chargeback/i.test(desc))
+      return { category: "Refunds", exclude: false };
+    return { category: "Bank Transfers", exclude: false };
+  }
+
+  // ── Cash & ATM ─────────────────────────────────────────────────────────────
+  if (/\batm\b|cash machine|cashpoint|cash withdrawal|link atm/i.test(desc))
+    return { category: "Cash & ATM", exclude: false };
+
+  // ── Supermarkets & Food ────────────────────────────────────────────────────
+  if (/tesco|sainsbury|sainsburys|asda|morrisons|waitrose|aldi|lidl|marks\s*&\s*spencer|m&s food|co-op|coop|iceland\b|ocado|farmfoods|budgens|\bspar\b|booths|whole foods|costco/i.test(desc))
+    return { category: "Supermarkets & Food", exclude: false };
+
+  // ── Eating & Drinking ──────────────────────────────────────────────────────
+  if (/mcdonald|burger king|\bkfc\b|subway|nando|pizza hut|domino|deliveroo|uber eats|just eat|greggs|costa coffee|starbucks|caffe nero|pret a manger|pret\b|itsu|wagamama|wetherspoon|restaurant|bistro|takeaway|leon\b|wasabi|five guys|franco manca|honest burger|bill's|carluccio|zizzi|pizza express|nando/i.test(desc))
+    return { category: "Eating & Drinking", exclude: false };
+
+  // ── Travel & Transport ─────────────────────────────────────────────────────
+  if (/\btfl\b|transport for london|trainline|national rail|avanti west|great western|gwr\b|lner\b|southeastern|southern rail|thameslink|crossrail|elizabeth line|oyster card|\bbolt\b|addison lee|\bparking\b|ncp\b|ringo\b|just park|petrol|bp\b|shell\b|esso\b|texaco|jet2|easyjet|ryanair|british airways|luton airport|gatwick|heathrow|stansted|eurostar|\bbus\b|national express|coach\b|arriva|stagecoach|first group|go ahead/i.test(desc))
+    return { category: "Travel & Transport", exclude: false };
+
+  // Uber — transport only (not Uber Eats)
+  if (/\buber\b/i.test(desc) && !/uber\s*eats/i.test(desc))
+    return { category: "Travel & Transport", exclude: false };
+
+  // ── Subscriptions & Streaming — before shopping so Amazon Prime beats Amazon
+  if (/netflix|spotify|amazon prime|prime video|disney\+|disney plus|apple tv\+?|now tv|now ent|sky cinema|sky sports|sky q|paramount\+?|britbox|apple music|youtube premium|google one|icloud\+?|adobe cc|creative cloud|microsoft 365|office 365|xbox game pass|playstation plus|ps plus|\bpsn\b|nintendo online|headspace|calm\b|duolingo|audible|kindle unlimited|medium\.com|substack/i.test(desc))
+    return { category: "Subscriptions & Streaming", exclude: false };
+
+  // ── Online & High Street Shopping ──────────────────────────────────────────
+  if (/amazon|amznmktplace|\bamzn\b|ebay|asos|\bnext\b|primark|zara|h&m|topshop|argos|currys|pc world|john lewis|harvey nichols|selfridges|tkmaxx|tk maxx|sports direct|jd sports|nike|adidas|apple store|paypal|shein|very\.co|boohoo|pretty little thing|ao\.com|wayfair|ikea|b&q|screwfix|wickes/i.test(desc))
+    return { category: "Online & High Street", exclude: false };
+
+  // ── Household Bills ────────────────────────────────────────────────────────
+  if (/british gas|ovo energy|octopus energy|edf energy|e\.on|npower|bulb|thames water|severn trent|anglian water|\bbt\b|virgin media|sky broadband|talktalk|vodafone|\bee\b|\bo2\b|\bthree\b|council tax|tv licence|broadband/i.test(desc))
+    return { category: "Household Bills", exclude: false };
+
+  // ── Health & Fitness ───────────────────────────────────────────────────────
+  if (/boots\b|lloyds pharmacy|superdrug|chemist|pharmacy|nhs\b|dentist|optician|specsavers|vision express|puregym|pure gym|\bgym\b|anytime fitness|david lloyd|nuffield health|bupa|axa health|holland barrett/i.test(desc))
+    return { category: "Health & Fitness", exclude: false };
+
+  // ── Entertainment & Leisure ────────────────────────────────────────────────
+  if (/cinema|odeon|vue\b|cineworld|picturehouse|theatre|museum|gallery|english heritage|national trust|bowling|laser quest|escape room|go ape|legoland|alton towers|thorpe park|\bzoo\b|aquarium|concert|ticketmaster|see tickets|eventbrite|airbnb|travelodge|premier inn|holiday inn|booking\.com|expedia|hotels\.com/i.test(desc))
+    return { category: "Entertainment & Leisure", exclude: false };
+
+  // ── Rent & Mortgage ────────────────────────────────────────────────────────
+  if (/\brent\b|landlord|letting|estate agent|rightmove|zoopla|foxton|connells|purple bricks/i.test(desc))
+    return { category: "Rent & Mortgage", exclude: false };
+
+  // ── Finance & Bills ────────────────────────────────────────────────────────
+  if (/\bloan\b|mortgage|insurance|aviva|legal & general|admiral|comparethemarket|clearscore|experian|barclaycard|\bamex\b|american express|payplan|stepchange|debt management|\brci\b|black horse|hire purchase/i.test(desc))
+    return { category: "Finance & Bills", exclude: false };
+
+  // ── Bank Fees ──────────────────────────────────────────────────────────────
+  if (/\bfee\b|bank charge|overdraft fee|monthly charge|account fee|interest charged/i.test(desc))
+    return { category: "Bank Fees", exclude: false };
+
+  // ── Bank Transfers (remaining) ─────────────────────────────────────────────
+  if (/standing order|faster payment|\bfp\b|sent to|bank transfer|payment reference/i.test(desc))
+    return { category: "Bank Transfers", exclude: false };
+
+  return { category: "Uncategorised", exclude: false };
+}
+
+// ---------------------------------------------------------------------------
+// PART 4 — Reversal / refund netting engine
+// ---------------------------------------------------------------------------
+function applyReversals(transactions) {
+  const processed = [...transactions];
+
+  processed.forEach((tx, i) => {
+    if (tx.reversalLinked) return;
+    const isReversal = /refund|reversal|reversed|unpaid|returned|chargeback|cashback/i.test(tx.description);
+
+    if (isReversal && tx.type === "credit") {
+      const matchIndex = processed.findIndex((other, j) =>
+        j !== i &&
+        other.type === "debit" &&
+        Math.abs(Math.abs(other.amount) - Math.abs(tx.amount)) < 0.01 &&
+        !other.reversalLinked
+      );
+
+      if (matchIndex !== -1) {
+        processed[i].reversalLinked          = true;
+        processed[matchIndex].reversalLinked = true;
+        processed[i].excludeFromTotals          = true;
+        processed[matchIndex].excludeFromTotals = true;
+        processed[i].reversalNote = `Reversal of: ${processed[matchIndex].description}`;
+      }
+    }
+  });
+
+  return processed;
+}
+
+// ---------------------------------------------------------------------------
+// PART 5 — Overdraft limit detector
+// ---------------------------------------------------------------------------
+function detectOverdraftLimit(rawText) {
+  const patterns = [
+    /arranged overdraft limit[:\s]+£?([\d,]+)/i,
+    /overdraft limit[:\s]+£?([\d,]+)/i,
+    /your arranged limit[:\s]+£?([\d,]+)/i,
+    /available overdraft[:\s]+£?([\d,]+)/i,
+    /arranged limit[:\s]+£?([\d,]+)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = rawText.match(pattern);
+    if (match) return parseFloat(match[1].replace(/,/g, ""));
+  }
+  return 500; // Default assumption
+}
+
+// ---------------------------------------------------------------------------
+// PART 6 — True spending calculation
+// ---------------------------------------------------------------------------
+function calculateTrueSpending(transactions, endBalance, overdraftLimit) {
+  const eligible = transactions.filter(tx => !tx.exclude && !tx.excludeFromTotals);
+
+  const trueSpending = eligible
+    .filter(tx => tx.type === "debit")
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+  const trueIncome = eligible
+    .filter(tx => tx.type === "credit")
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+  const categories = {};
+  eligible.filter(tx => tx.type === "debit").forEach(tx => {
+    categories[tx.category] = (categories[tx.category] || 0) + Math.abs(tx.amount);
+  });
+
+  const liquidity = endBalance + overdraftLimit;
+
+  return { trueSpending, trueIncome, categories, liquidity };
+}
+
+// ---------------------------------------------------------------------------
+// Subscription detector (used by insights generator)
 // ---------------------------------------------------------------------------
 function detectSubscriptions(transactions) {
-  const knownSubscriptions = [
-    "netflix","spotify","disney","disney+","apple music","apple tv",
+  const knownSubs = [
+    "netflix","spotify","disney","apple music","apple tv",
     "amazon prime","prime video","now tv","nowtv","sky cinema","sky sports",
     "microsoft 365","microsoft office","adobe","creative cloud",
-    "youtube premium","google one","google storage",
+    "youtube premium","google one","icloud",
     "playstation plus","ps plus","xbox game pass","nintendo online",
     "audible","kindle unlimited",
-    "gym","puregym","david lloyd","virgin active","anytime fitness","the gym",
+    "puregym","pure gym","david lloyd","virgin active","anytime fitness",
     "duolingo","headspace","calm",
-    "dropbox","icloud","onedrive",
-    "linkedin premium","indeed","canva",
+    "dropbox","onedrive",
     "deliveroo plus","uber one",
-    "times","telegraph","guardian","ft.com","financial times",
     "insurance","aviva","axa","direct line","admiral",
-    "aa membership","rac membership",
     "vodafone","o2","ee","three","bt","sky broadband","virgin media","talktalk",
     "council tax","tv licence",
   ];
-
-  const neverSubscriptions = [
-    "tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi",
-    "co-op","marks spencer","m&s","iceland","farmfoods","ocado",
-    "amazon marketplace","amzn",
-    "argos","currys","john lewis","ikea","next","primark","asos",
-    "mcdonald","kfc","subway","burger king","greggs","pret",
-    "costa","starbucks","cafe","restaurant",
-    "deliveroo","just eat","uber eats",
-    "uber","bolt","taxi","tfl","trainline",
-    "petrol","bp","shell","esso",
-    "boots","pharmacy","chemist",
-    "atm","cash","withdrawal",
-    "paypal","transfer","faster payment",
+  const neverSubs = [
+    "tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi","co-op","iceland","farmfoods","ocado",
+    "amazon marketplace","amzn","ebay","argos","currys","primark","asos",
+    "mcdonald","kfc","subway","greggs","costa","starbucks","deliveroo","just eat","uber",
+    "tfl","trainline","petrol","bp","shell","esso","boots","pharmacy","atm","cash","paypal","transfer",
   ];
 
-  const subscriptions = [];
-  const debitTransactions = transactions.filter(t => t.type === "debit");
-
-  // Returns true if description looks like a person's name (e.g. "John Smith")
   function looksLikePersonName(name) {
     const words = name.trim().split(/\s+/);
-    if (words.length < 2 || words.length > 3) return false;
-    return words.every(w => /^[A-Z][a-z]+$/.test(w));
+    return words.length >= 2 && words.length <= 3 && words.every(w => /^[A-Z][a-z]+$/.test(w));
   }
 
-  debitTransactions.forEach(t => {
+  const subscriptions = [];
+  const eligibleDebits = transactions.filter(t => t.type === "debit" && !t.exclude && !t.excludeFromTotals);
+
+  eligibleDebits.forEach(t => {
     const desc = t.description.toLowerCase();
-    const isKnownSub      = knownSubscriptions.some(sub  => desc.includes(sub));
-    const isRegularShop   = neverSubscriptions.some(shop => desc.includes(shop));
-
-    // Skip person-to-person payments (e.g. "John Smith")
+    const isKnown  = knownSubs.some(s => desc.includes(s));
+    const isNever  = neverSubs.some(s => desc.includes(s));
     if (looksLikePersonName(t.description)) return;
-
-    // Skip finance/mortgage/rent payments
     if (["financial services","rci","loan","mortgage","rent","landlord","letting"].some(s => desc.includes(s))) return;
+    if (/\bamazon\b/.test(desc) && !desc.includes("amazon prime") && !desc.includes("prime video")) return;
 
-    // Special case: "amazon" alone = shopping, "amazon prime" = subscription (handled by knownSubscriptions)
-    const isAmazonRegular = /\bamazon\b/.test(desc) && !desc.includes("amazon prime") && !desc.includes("prime video");
-    if (isAmazonRegular) return;
-
-    if (isKnownSub && !isRegularShop) {
+    if (isKnown && !isNever) {
       const existing = subscriptions.find(s => s.name === t.description);
-      if (existing) {
-        existing.total += Math.abs(t.amount);
-        existing.count++;
-      } else {
-        subscriptions.push({ name: t.description, amount: Math.abs(t.amount), total: Math.abs(t.amount), count: 1 });
-      }
+      if (existing) { existing.total += Math.abs(t.amount); existing.count++; }
+      else subscriptions.push({ name: t.description, amount: Math.abs(t.amount), total: Math.abs(t.amount), count: 1 });
       return;
     }
-
-    // Pattern detection: same merchant, exact same amount, 2+ times — but not regular shopping
-    if (!isRegularShop && !isKnownSub) {
-      const sameAmountSameMerchant = debitTransactions.filter(
-        t2 => t2.description === t.description && Math.abs(Math.abs(t2.amount) - Math.abs(t.amount)) < 0.01
-      );
-      if (sameAmountSameMerchant.length >= 2 && !subscriptions.find(s => s.name === t.description)) {
-        subscriptions.push({
-          name:     t.description,
-          amount:   Math.abs(t.amount),
-          total:    Math.abs(t.amount) * sameAmountSameMerchant.length,
-          count:    sameAmountSameMerchant.length,
-          detected: "pattern",
-        });
-      }
+    if (!isNever && !isKnown) {
+      const same = eligibleDebits.filter(t2 => t2.description === t.description && Math.abs(Math.abs(t2.amount) - Math.abs(t.amount)) < 0.01);
+      if (same.length >= 2 && !subscriptions.find(s => s.name === t.description))
+        subscriptions.push({ name: t.description, amount: Math.abs(t.amount), total: Math.abs(t.amount) * same.length, count: same.length, detected: "pattern" });
     }
   });
 
@@ -363,62 +432,47 @@ function detectSubscriptions(transactions) {
 }
 
 // ---------------------------------------------------------------------------
-// AI Insights generator
+// AI Insights generator (score + tips only — NOT categorisation)
 // ---------------------------------------------------------------------------
 async function generateInsights(transactions, apiKey) {
-  const totalIncome   = transactions.filter(t => t.type === "credit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
-  const totalExpenses = transactions.filter(t => t.type === "debit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const eligible = transactions.filter(t => !t.exclude && !t.excludeFromTotals);
+  const totalIncome   = eligible.filter(t => t.type === "credit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const totalExpenses = eligible.filter(t => t.type === "debit").reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
   const categories = {};
-  transactions.filter(t => t.type === "debit").forEach(t => {
+  eligible.filter(t => t.type === "debit").forEach(t => {
     categories[t.category] = (categories[t.category] || 0) + Math.abs(t.amount);
   });
 
   const detected = detectSubscriptions(transactions);
-  const subscriptionTotal = detected.total;
 
   const merchantTotals = {};
-  transactions.filter(t => t.type === "debit").forEach(t => {
+  eligible.filter(t => t.type === "debit").forEach(t => {
     merchantTotals[t.description] = (merchantTotals[t.description] || 0) + Math.abs(t.amount);
   });
   const topMerchants = Object.entries(merchantTotals)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5)
     .map(([name, amount]) => ({ name, amount }));
 
   const summaryData = {
-    totalIncome,
-    totalExpenses,
-    netBalance: totalIncome - totalExpenses,
-    transactionCount: transactions.length,
-    categories,
-    subscriptions: {
-      total: subscriptionTotal,
-      list:  detected.list.map(s => `${s.name} £${s.amount.toFixed(2)}`),
-      count: detected.count,
-    },
+    totalIncome, totalExpenses, netBalance: totalIncome - totalExpenses,
+    transactionCount: eligible.length, categories,
+    subscriptions: { total: detected.total, list: detected.list.map(s => `${s.name} £${s.amount.toFixed(2)}`), count: detected.count },
     topMerchants,
-    dateRange: {
-      first: transactions[transactions.length - 1]?.date,
-      last:  transactions[0]?.date,
-    },
+    dateRange: { first: transactions[transactions.length - 1]?.date, last: transactions[0]?.date },
   };
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "Content-Type":      "application/json",
-      "x-api-key":         apiKey,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
-      model:      "claude-haiku-4-5-20251001",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 1000,
       messages: [{
         role: "user",
         content: `You are a friendly UK personal finance assistant. Analyse this spending summary and return a JSON object with insights.
 
-IMPORTANT - SUBSCRIPTIONS: The subscriptions list has already been accurately detected. Use ONLY the provided subscriptions data. Do NOT reclassify Amazon, Tesco, Deliveroo or any shopping/food as subscriptions — those are regular purchases, not recurring fixed-fee services. Subscriptions are ONLY fixed recurring services like Netflix, Spotify, gym memberships, phone bills, insurance etc.
+IMPORTANT: Categorisation has already been done accurately by our rule engine. Use the provided data as-is — do NOT reclassify any spending. Focus on observations, tips, and the spending score only.
 
 Spending data: ${JSON.stringify(summaryData)}
 
@@ -458,12 +512,98 @@ Be friendly, specific with £ amounts, and genuinely helpful. Use British Englis
 
   const data = await response.json();
   if (data.error) return null;
-
   const text  = data.content?.[0]?.text?.trim() ?? "";
   const start = text.indexOf("{");
   const end   = text.lastIndexOf("}");
   if (start === -1 || end === -1) return null;
   return JSON.parse(text.substring(start, end + 1));
+}
+
+// ---------------------------------------------------------------------------
+// Claude AI parser — PDF text → raw transaction list (no categorisation)
+// ---------------------------------------------------------------------------
+function extractTransactionLines(rawText) {
+  const lines = rawText.split("\n");
+  const filtered = lines.filter((line) => {
+    const t = line.trim();
+    if (t.length < 3) return false;
+    const hasAmount  = /[£$]?\d+[.,]\d{2}/.test(t);
+    const hasDate    = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]?\d{0,4}|\d{1,2}\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(t);
+    const hasKeyword = /(debit|credit|payment|transfer|balance|paid|received|purchase|withdrawal|deposit)/i.test(t);
+    return hasAmount || hasDate || hasKeyword;
+  });
+  return filtered.join("\n").substring(0, 8000);
+}
+
+function extractJSON(text) {
+  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start   = cleaned.indexOf("[");
+  if (start === -1) throw new Error("No JSON array found: " + cleaned.substring(0, 100));
+
+  const end = cleaned.lastIndexOf("]");
+  if (end !== -1 && end > start) {
+    try { return JSON.parse(cleaned.substring(start, end + 1)); } catch (_) { console.log("Full parse failed, repairing..."); }
+  }
+
+  const jsonStr   = cleaned.substring(start);
+  const lastComma = jsonStr.lastIndexOf("},");
+  if (lastComma !== -1) {
+    try { return JSON.parse(jsonStr.substring(0, lastComma + 1) + "]"); } catch (e) { console.log("Repair failed:", e.message); }
+  }
+
+  const lastBrace = jsonStr.lastIndexOf("}");
+  if (lastBrace !== -1) {
+    try { return JSON.parse(jsonStr.substring(0, lastBrace + 1) + "]"); } catch (e) { throw new Error("Could not parse JSON: " + e.message); }
+  }
+
+  throw new Error("No valid JSON found");
+}
+
+async function parseWithClaude(rawText, apiKey) {
+  const processedText = extractTransactionLines(rawText);
+  console.log("Sending to Claude, text length:", processedText.length);
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 4000,
+      messages: [{
+        role: "user",
+        content: `CRITICAL: Return complete valid JSON only. No markdown. No explanation. Start with [ end with ]
+
+You are an expert UK bank statement parser. Extract ALL transactions accurately.
+
+RULES:
+1. Debits (money OUT) = NEGATIVE amount + type "debit"
+2. Credits (money IN) = POSITIVE amount + type "credit"
+3. Keep merchant names exactly as they appear in the statement — do NOT clean or modify them
+4. Date format: DD/MM/YYYY always
+5. NEVER skip a transaction
+
+Return ONLY valid JSON array:
+[{"date":"DD/MM/YYYY","description":"Original Description","amount":-45.50,"type":"debit","balance":null}]
+
+Statement data:
+${processedText}`,
+      }],
+    }),
+  });
+
+  console.log("Claude response status:", response.status);
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Anthropic API ${response.status}: ${errText}`);
+  }
+
+  const data = await response.json();
+  console.log("Claude response:", JSON.stringify(data).substring(0, 200));
+  if (data.error) throw new Error(`Claude API: ${data.error.type} - ${data.error.message}`);
+
+  const text = data.content?.[0]?.text?.trim() ?? "";
+  console.log("Claude text response:", text.substring(0, 300));
+  return extractJSON(text);
 }
 
 // ---------------------------------------------------------------------------
@@ -475,7 +615,6 @@ function normaliseDate(raw) {
   if (!raw) return "";
   const s = String(raw).trim();
 
-  // DD/MM/YYYY
   const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
   if (m1) {
     const d  = m1[1].padStart(2, "0");
@@ -484,7 +623,6 @@ function normaliseDate(raw) {
     if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
   }
 
-  // YYYY-MM-DD (ISO)
   const m2 = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
   if (m2) {
     const y  = m2[1];
@@ -493,48 +631,6 @@ function normaliseDate(raw) {
     if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
   }
 
-  // Already readable (e.g. "15 Mar 2026")
   if (/\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/.test(s)) return s;
-
   return s;
-}
-
-// ---------------------------------------------------------------------------
-// Categorisation
-// ---------------------------------------------------------------------------
-function categoriseTransaction(description, amount, type) {
-  const desc = (description || "").toLowerCase();
-
-  // Detect person-to-person payments: "First Last" or "First Middle Last"
-  function looksLikePersonName(d) {
-    const words = (d || "").trim().split(/\s+/);
-    return words.length >= 2 && words.length <= 3 && words.every(w => /^[A-Z][a-z]+$/.test(w));
-  }
-
-  if (type === "credit" || amount > 0) {
-    if (looksLikePersonName(description))                                                                                                      return "Bank Transfers";
-    if (["salary","wages","payroll","bacs","employer","hmrc","universal credit","benefits","pension","dividend"].some(s => desc.includes(s))) return "Income & Salary";
-    if (["refund","cashback","reversal","chargeback"].some(s => desc.includes(s)))                                                             return "Refunds";
-    if (["transfer","faster payment","fpay","sent from"].some(s => desc.includes(s)))                                                         return "Bank Transfers";
-    return "Income & Salary";
-  }
-
-  if (["tesco","sainsbury","asda","morrisons","waitrose","lidl","aldi","co-op","m&s food","marks","iceland","farmfoods","ocado","booths"].some(s => desc.includes(s)))                                                                                                                              return "Supermarkets & Food";
-  if (["mcdonald","kfc","subway","pizza","nandos","wagamama","greggs","pret","costa","starbucks","cafe","restaurant","deliveroo","just eat","uber eat","domino","burger king","five guys","itsu","wasabi","leon"].some(s => desc.includes(s)))                                                       return "Eating & Drinking";
-  if (["tfl","trainline","national rail","gwr","lner","avanti","southeastern","thameslink","great western","parking","bp","shell","esso","texaco","petrol","fuel","bus","taxi","black cab","addison lee"].some(s => desc.includes(s)))                                                              return "Travel & Transport";
-  if (["uber"].some(s => desc.includes(s)) && !["uber eat"].some(s => desc.includes(s)))                                                                                                                                                                                                          return "Travel & Transport";
-  // Subscriptions checked BEFORE shopping so "amazon prime" beats "amazon"
-  if (["netflix","spotify","disney","youtube premium","now tv","amazon prime","prime video","microsoft 365","microsoft office","adobe","creative cloud","google one","playstation plus","ps plus","xbox game pass","nintendo online","audible","kindle unlimited","duolingo","headspace","calm","dropbox","icloud","onedrive","linkedin premium","deliveroo plus","uber one"].some(s => desc.includes(s))) return "Subscriptions & Streaming";
-  if (["amazon","amzn","asos","ebay","primark","next","h&m","zara","argos","currys","john lewis","ikea","b&q","jd sport","nike","adidas","boohoo","pretty little thing","shein","very","littlewoods","ao.com","apple store"].some(s => desc.includes(s)))                                      return "Online & High Street";
-  if (["british gas","octopus","eon","edf","bulb","ovo energy","scottish power","npower","thames water","severn trent","anglian water","council tax","bt ","virgin media","sky ","vodafone","o2","ee ","three","talktalk","insurance","aviva","axa","legal general","direct line"].some(s => desc.includes(s))) return "Household Bills";
-  if (["mortgage","rent","landlord","letting"].some(s => desc.includes(s)))                                                                                                                                                                                                                        return "Rent & Mortgage";
-  if (["pharmacy","boots","lloyds pharmacy","chemist","dentist","doctor","nhs","gym","fitness","puregym","david lloyd","virgin active","health","medical","hospital","specsavers","vision express"].some(s => desc.includes(s)))                                                                    return "Health & Fitness";
-  if (["cinema","odeon","vue","cineworld","showcase","theatre","ticketmaster","eventbrite","steam","playstation store","xbox","game ","bowling","laser","escape room"].some(s => desc.includes(s)))                                                                                                return "Entertainment & Leisure";
-  if (["atm","cash","cashpoint","withdrawal"].some(s => desc.includes(s)))                                                                                                                                                                                                                         return "Cash & ATM";
-  if (["transfer","paypal","revolut","monzo","starling","wise","western union","currency","loan","credit card","standing order"].some(s => desc.includes(s)))                                                                                                                                      return "Bank Transfers";
-  if (["fee","charge","interest","overdraft","bank charge"].some(s => desc.includes(s)))                                                                                                                                                                                                           return "Bank Fees";
-  if (["standing order","faster payment","fp ","sent to","received from","bank transfer"].some(s => desc.includes(s)))                                                                                                                                                                             return "Bank Transfers";
-  if (["financial","services","rci","lloyds","barclays","hsbc","natwest","halifax","nationwide","santander","monzo","starling","revolut"].some(s => desc.includes(s)))                                                                                                                              return "Finance & Bills";
-
-  return "Uncategorised";
 }
