@@ -231,7 +231,11 @@ function CloudUploadIcon({ size = 72, color = "#6c5ce7", fast = false }) {
 }
 
 // ─── UploadZone ───────────────────────────────────────────────────────────────
-export default function UploadZone({ onFile, loading, apiDone = false, onAnimationDone }) {
+export default function UploadZone({ onFile, loading, apiDone = false, onAnimationDone, error = null }) {
+  const isScannedError =
+    error &&
+    /scanned|image.based|could not read this pdf/i.test(error);
+
   const [dragError,   setDragError]   = useState(null);
   const [progress,    setProgress]    = useState(0);
   const [isComplete,  setIsComplete]  = useState(false);
@@ -417,11 +421,40 @@ export default function UploadZone({ onFile, loading, apiDone = false, onAnimati
           </div>
         </div>
 
-        {/* ── Error ── */}
+        {/* ── Drag/type error ── */}
         {dragError && (
           <p style={{ marginTop: 10, fontSize: "0.85rem", color: "#d63031", textAlign: "center", fontWeight: 500 }}>
             ⚠ {dragError}
           </p>
+        )}
+
+        {/* ── Scanned PDF warning (amber) ── */}
+        {isScannedError && (
+          <div
+            style={{
+              marginTop: 12,
+              background: "#fffbeb",
+              border: "1.5px solid #f59e0b",
+              borderRadius: 12,
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              textAlign: "left",
+            }}
+          >
+            <span style={{ fontSize: "1.2rem", lineHeight: 1.3, flexShrink: 0 }}>📄</span>
+            <div>
+              <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#92400e" }}>
+                Scanned PDF detected
+              </p>
+              <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#b45309", lineHeight: 1.5 }}>
+                This looks like a scanned PDF — we can&apos;t read image-based statements yet.
+                Please download your statement directly from your bank&apos;s app or website as a
+                digital PDF.
+              </p>
+            </div>
+          </div>
         )}
 
         {/* ── Supporting text ── */}
