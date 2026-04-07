@@ -217,7 +217,7 @@ async function structureTransactions(rawText) {
 
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 4000,
+      max_tokens: 8000,
       messages: [
         {
           role: "user",
@@ -253,20 +253,43 @@ ${text}`,
       response.usage.output_tokens, "out"
     );
 
-    const content = response.content[0].text.trim();
+    const content = response.content[0].text;
+    console.log("Claude raw response length:", content.length);
+    console.log("Claude response preview:", content.substring(0, 200));
+
+    // Try to extract JSON array even if response is truncated
     const cleaned = content.replace(/```json|```/g, "").trim();
 
-    // Locate JSON array boundaries
-    const start = cleaned.indexOf("[");
-    const end   = cleaned.lastIndexOf("]");
-    if (start === -1 || end === -1) {
-      console.error("No JSON array in Claude response:", cleaned.substring(0, 200));
+    // Find the JSON array start
+    const arrayStart = cleaned.indexOf("[");
+    if (arrayStart === -1) {
+      console.error("No JSON array in Claude response:", cleaned.substring(0, 500));
       return [];
     }
 
-    const transactions = JSON.parse(cleaned.substring(start, end + 1));
-    console.log("Claude structured transactions:", transactions.length);
-    return transactions;
+    // Try full parse first
+    try {
+      const transactions = JSON.parse(cleaned.substring(arrayStart));
+      console.log("Claude structured transactions:", transactions.length);
+      return transactions;
+    } catch (e) {
+      // If truncated, try to salvage complete objects
+      console.log("Full parse failed, attempting salvage...");
+      const partial = cleaned.substring(arrayStart);
+      // Find last complete object (ends with })
+      const lastComplete = partial.lastIndexOf("},");
+      if (lastComplete > 0) {
+        try {
+          const salvaged = JSON.parse(partial.substring(0, lastComplete + 1) + "]");
+          console.log("Salvaged transactions:", salvaged.length);
+          return salvaged;
+        } catch (e2) {
+          console.error("Salvage also failed:", e2.message);
+          return [];
+        }
+      }
+      return [];
+    }
   } catch (err) {
     console.error("Claude structuring error:", err.message);
     return [];
