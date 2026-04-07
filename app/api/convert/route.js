@@ -65,9 +65,10 @@ export async function POST(req) {
     }
     console.log("API key present:", apiKey.substring(0, 10) + "...");
 
-    // ── 5. Detect overdraft limit from raw text ─────────────────────────────
-    const overdraftLimit = detectOverdraftLimit(rawText);
-    console.log("Overdraft limit detected:", overdraftLimit);
+    // ── 5. Extract statement summary totals from PDF text ──────────────────
+    const pdfSummary = extractStatementTotals(rawText);
+    const overdraftLimit = pdfSummary.overdraftLimit ?? 500;
+    console.log("PDF summary extracted:", pdfSummary);
 
     // Truncate very large statements before sending to AI
     const textForParsing = rawText.length > 50000 ? rawText.substring(0, 50000) : rawText;
@@ -100,7 +101,7 @@ export async function POST(req) {
             ? t.amount
             : parseFloat(String(t.amount).replace(/[^0-9.\-]/g, "")) || 0;
         const type = t.type || (amount >= 0 ? "credit" : "debit");
-        const { category, exclude } = categoriseTransaction(t.description, amount, type);
+        const { category, exclude, isInternal = false, note = null } = categoriseTransaction(t.description, amount, type);
         return {
           date:              normaliseDate(t.date),
           description:       cleanDescription(t.description || "Transaction"),
@@ -108,9 +109,10 @@ export async function POST(req) {
           type,
           category,
           exclude,
+          isInternal,
           excludeFromTotals: false,
           reversalLinked:    false,
-          reversalNote:      null,
+          reversalNote:      note,
         };
       })
       .filter((t) => t.date && !isNaN(t.amount));
@@ -126,18 +128,20 @@ export async function POST(req) {
     const transactions = applyReversals(rawTransactions);
 
     // ── 9. Calculate totals ─────────────────────────────────────────────────
+    // FIX 4 — Internal transfer total from isInternal flag
     const internalTransferTotal = transactions
-      .filter(t => t.exclude && t.type === "debit")
+      .filter(t => t.isInternal && t.type === "debit")
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
     const reversalsCount = transactions.filter(t => t.reversalLinked && t.type === "credit").length;
 
-    // FIX 1A — Use PDF summary totals as canonical; fall back to summing transactions
-    const pdfTotals = extractStatementTotals(rawText);
-    const totalIncome   = pdfTotals.moneyIn  ?? transactions.filter(t => t.type === "credit" && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    const totalExpenses = pdfTotals.moneyOut ?? transactions.filter(t => t.type === "debit"  && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    const netBalance    = totalIncome - totalExpenses;
-    console.log("PDF totals:", pdfTotals, "→ income:", totalIncome, "expenses:", totalExpenses);
+    // FIX 1 — Always use PDF summary totals as canonical; fall back to summing
+    const totalIncome   = pdfSummary.moneyIn  ?? transactions.filter(t => t.type === "credit" && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const totalExpenses = pdfSummary.moneyOut ?? transactions.filter(t => t.type === "debit"  && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const netBalance    = (pdfSummary.endBalance !== null && pdfSummary.endBalance !== undefined)
+      ? pdfSummary.endBalance
+      : totalIncome - totalExpenses;
+    console.log("Totals → income:", totalIncome, "expenses:", totalExpenses, "net:", netBalance);
 
     const { trueSpending, trueIncome, categories, liquidity } =
       calculateTrueSpending(transactions, netBalance, overdraftLimit);
@@ -158,11 +162,12 @@ export async function POST(req) {
       totalIncome,
       totalExpenses,
       netBalance,
+      startBalance: pdfSummary.startBalance,
+      endBalance:   pdfSummary.endBalance,
       transactionCount: transactions.length,
       confidence: "high",
       bank: "ai-parsed",
       insights,
-      // Extended engine fields
       trueSpending,
       trueIncome,
       overdraftLimit,
@@ -182,158 +187,143 @@ export async function POST(req) {
 }
 
 // ---------------------------------------------------------------------------
-// PART 1 — Text cleaner / pre-processor
+// FIX 2 — Text cleaner (handles Barclays truncated merchant names)
 // ---------------------------------------------------------------------------
 function cleanDescription(desc) {
   return (desc || "")
-    .replace(/^\)\)\)\s*/g, "")
-    .replace(/^☐\s*/g, "")
     .replace(/^Card Payment to\s*/i, "")
-    .replace(/^Purchase at\s*/i, "")
-    .replace(/^Payment to\s*/i, "")
+    .replace(/^Bill Payment to\s*/i, "")
     .replace(/^Direct Debit to\s*/i, "")
-    .replace(/^DD\s+/i, "")
-    .replace(/^BGC\s+/i, "")
-    .replace(/^FPI\s+/i, "")
-    .replace(/^TFR\s+/i, "")
+    .replace(/^Cash Machine Withdrawal at\s*/i, "")
+    .replace(/^Cash Withdrawal at\s*/i, "")
+    .replace(/^Received From\s*/i, "")
+    .replace(/^Refund From\s*/i, "")
+    .replace(/\s+On \d{1,2} \w+$/i, "")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function extractActualMerchant(desc) {
-  const cleaned = cleanDescription(desc);
-  const paypalMatch = cleaned.match(/^PayPal\s*\*?\s*(.+)/i);
-  if (paypalMatch) return { merchant: paypalMatch[1].trim(), viaPaypal: true };
-  return { merchant: cleaned, viaPaypal: false };
-}
-
 // ---------------------------------------------------------------------------
-// FIX 1A — Statement summary total extractor
+// FIX 1 — Statement summary extractor (exact Barclays PDF patterns)
 // ---------------------------------------------------------------------------
 function extractStatementTotals(rawText) {
-  const moneyInPatterns = [
-    /total\s+money\s+in[:\s]+£?([\d,]+\.?\d*)/i,
-    /money\s+in[:\s]+£?([\d,]+\.?\d*)/i,
-    /total\s+credits?[:\s]+£?([\d,]+\.?\d*)/i,
-    /\bcredits?\b[:\s]+£?([\d,]+\.?\d*)/i,
-    /total\s+paid\s+in[:\s]+£?([\d,]+\.?\d*)/i,
-    /paid\s+in[:\s]+£?([\d,]+\.?\d*)/i,
-  ];
-  const moneyOutPatterns = [
-    /total\s+money\s+out[:\s]+£?([\d,]+\.?\d*)/i,
-    /money\s+out[:\s]+£?([\d,]+\.?\d*)/i,
-    /total\s+debits?[:\s]+£?([\d,]+\.?\d*)/i,
-    /\bdebits?\b[:\s]+£?([\d,]+\.?\d*)/i,
-    /total\s+paid\s+out[:\s]+£?([\d,]+\.?\d*)/i,
-    /paid\s+out[:\s]+£?([\d,]+\.?\d*)/i,
-  ];
+  const moneyInMatch    = rawText.match(/Money in\s+£?([\d,]+\.?\d*)/i);
+  const moneyOutMatch   = rawText.match(/Money out\s+£?([\d,]+\.?\d*)/i);
+  const startBalMatch   = rawText.match(/Start balance\s+-?£?([\d,]+\.?\d*)/i);
+  const endBalMatch     = rawText.match(/End balance\s+-?£?([\d,]+\.?\d*)/i);
+  const overdraftMatch  = rawText.match(/(?:Arranged )?[Oo]verdraft(?:\s+limit)?\s+£?([\d,]+\.?\d*)/i);
 
-  let moneyIn = null;
-  for (const pat of moneyInPatterns) {
-    const m = rawText.match(pat);
-    if (m) { moneyIn = parseFloat(m[1].replace(/,/g, "")); break; }
-  }
+  const parseAmt = (match, raw, label) => {
+    if (!match) return null;
+    const sign = raw.includes(`${label} -`) ? -1 : 1;
+    return sign * parseFloat(match[1].replace(/,/g, ""));
+  };
 
-  let moneyOut = null;
-  for (const pat of moneyOutPatterns) {
-    const m = rawText.match(pat);
-    if (m) { moneyOut = parseFloat(m[1].replace(/,/g, "")); break; }
-  }
+  // Fallback patterns for other banks
+  const fallbackIn = moneyInMatch ? null :
+    (rawText.match(/total\s+money\s+in[:\s]+£?([\d,]+\.?\d*)/i) ||
+     rawText.match(/total\s+credits?[:\s]+£?([\d,]+\.?\d*)/i) ||
+     rawText.match(/paid\s+in[:\s]+£?([\d,]+\.?\d*)/i));
+  const fallbackOut = moneyOutMatch ? null :
+    (rawText.match(/total\s+money\s+out[:\s]+£?([\d,]+\.?\d*)/i) ||
+     rawText.match(/total\s+debits?[:\s]+£?([\d,]+\.?\d*)/i) ||
+     rawText.match(/paid\s+out[:\s]+£?([\d,]+\.?\d*)/i));
 
-  return { moneyIn, moneyOut };
+  return {
+    moneyIn:       moneyInMatch  ? parseFloat(moneyInMatch[1].replace(/,/g, ""))    : (fallbackIn  ? parseFloat(fallbackIn[1].replace(/,/g, ""))  : null),
+    moneyOut:      moneyOutMatch ? parseFloat(moneyOutMatch[1].replace(/,/g, ""))   : (fallbackOut ? parseFloat(fallbackOut[1].replace(/,/g, "")) : null),
+    startBalance:  parseAmt(startBalMatch,  rawText, "Start balance"),
+    endBalance:    parseAmt(endBalMatch,    rawText, "End balance"),
+    overdraftLimit: overdraftMatch ? parseFloat(overdraftMatch[1].replace(/,/g, "")) : null,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// FIX 1B+1C — Rebuilt categorisation engine
+// FIX 3+4+5 — Rebuilt categorisation engine (exact Barclays patterns)
 // ---------------------------------------------------------------------------
-const CHARITY_KEYWORDS = [
-  "penny appeal", "muslim global", "islamic relief", "human appeal",
-  "map international", "red cross", "oxfam", "cancer research", "british heart",
-  "save the children", "unicef", "shelter", "mind charity",
-  "macmillan", "age uk", "rspca", "wateraid", "comic relief",
-  "sport relief", "justgiving", "localgiving", "charitycheckout",
-  "charity", "foundation", "appeal", "relief", "humanitarian",
-];
+function categoriseTransaction(rawDesc, amount, type) {
+  const raw     = (rawDesc || "").toLowerCase();
+  const cleaned = cleanDescription(rawDesc || "");
 
-function categoriseTransaction(description, amount, type) {
-  const cleaned = cleanDescription(description || "");
-  const desc    = cleaned.toLowerCase();
+  // Step 1 — Refunds / Unpaid DDs (credits with refund keywords)
+  // FIX 5: Unpaid Direct Debits appear as credits — treat as Refunds
+  if (type === "credit" && /refund|reversal|reversed|unpaid|money back|returned/i.test(raw)) {
+    const note = /unpaid/i.test(raw) ? "Unpaid DD returned" : null;
+    return { category: "Refunds", exclude: false, note };
+  }
 
-  // Step 1 — Refunds (first of all)
-  if (/refund|reversal|reversed|cashback|money back|returned payment/i.test(desc) && type === "credit")
-    return { category: "Refunds", exclude: false };
+  // Step 2 — Internal transfers (FIX 4: flag with isInternal)
+  if (/kasam khalid|kasim khalid|k khalid|ref:\s*monzo/i.test(raw))
+    return { category: "Transfers Sent", exclude: false, isInternal: true };
 
-  // Step 2 — Charity (before PayPal stripping)
-  if (CHARITY_KEYWORDS.some(k => desc.includes(k)))
+  // Step 3 — Transfers Received (specific known payees)
+  if (type === "credit" && /received from|ali z\b|hmrc|child benefit|samra kaleem/i.test(raw))
+    return { category: "Transfers Received", exclude: false };
+
+  // Step 4 — Charity (BEFORE PayPal resolution — catches truncated names)
+  if (/penny\s*appea|pennyappea|human\s*appea|humanappea|muslim\s*glob|muslimglob|islamic\s*relief|islamicrelief|islamic relief wor|islamic relief can|map\.org|www\.map|penny appeal|human appeal|muslim global|red cross|oxfam|cancer research|british heart|save the children|unicef|shelter|macmillan|wateraid|comic relief|justgiving|localgiving|charitycheckout/i.test(raw))
     return { category: "Charity", exclude: false };
 
-  // Step 3 — PayPal merchant detection
-  const paypalMatch = cleaned.match(/^PayPal\s*\*?\s*(.+)/i);
+  // Step 5 — PayPal merchant detection (after charity check)
+  const paypalMatch = cleaned.match(/paypal\s*\*?(\w+)/i);
   if (paypalMatch) {
-    const merchant = paypalMatch[1].trim().toLowerCase();
-    if (CHARITY_KEYWORDS.some(k => merchant.includes(k)))
+    const merchant = paypalMatch[1].toLowerCase();
+    if (/pennyappea|humanappea|muslimglob|islamicrel|appeal|relief|charity|found/i.test(merchant))
       return { category: "Charity", exclude: false };
-    if (/tesco|sainsbury|asda|morrisons|waitrose|aldi|lidl|marks & spencer food|m&s food|co-op|coop|iceland food|ocado|farmfoods|budgens|spar|whole foods/i.test(merchant))
-      return { category: "Groceries", exclude: false };
-    if (/mcdonald|burger king|kfc|subway|nando|pizza|domino|deliveroo|uber eats|just eat|greggs|costa coffee|starbucks|caffe nero|pret|restaurant|cafe|takeaway|dessert|ice cream/i.test(merchant))
-      return { category: "Eating Out", exclude: false };
-    if (/superdrug|boots|lloyds pharmacy|primark|next|tkmaxx|tk maxx|argos|wilko|poundland|card factory|salon|barber|hairdress|beauty|nail/i.test(merchant))
-      return { category: "High Street", exclude: false };
+    if (/argos|argosdirec/i.test(merchant))  return { category: "Online Shopping", exclude: false };
+    if (/asda|tesco|sainsbury|morrisons/i.test(merchant)) return { category: "Groceries", exclude: false };
+    if (/ebay/i.test(merchant))              return { category: "Online Shopping", exclude: false };
     return { category: "Online Shopping", exclude: false };
   }
 
-  // Step 4 — Transfers Received
-  if (type === "credit" && /transfer|bank transfer|faster payment|fps|bacs received|standing order received|ref:|payment from/i.test(desc))
-    return { category: "Transfers Received", exclude: false };
-
-  // Step 5 — Transfers Sent
-  if (type === "debit" && /transfer to|sent to|faster payment|standing order|bill payment to|\bbacs\b|kasim khalid|kasam khalid|k khalid|ref: monzo|monzo|pot transfer|\bflex\b/i.test(desc))
-    return { category: "Transfers Sent", exclude: false };
-
-  // Step 6 — Direct Debits
-  if (/amazon prime|amazon membership|rci financial|rci finance|barclays partner|barclays finance|sky |virgin media|\bbt\b|talktalk|vodafone|\bee\b|\bo2\b|three mobile|council tax|tv licence|insurance|aviva|admiral|legal & general|netflix|spotify|disney|apple\.com\/bill|google storage|icloud|microsoft 365|puregym|david lloyd|thames water|ovo energy|british gas|octopus|edf/i.test(desc))
+  // Step 6 — Direct Debits (recurring / known DD merchants)
+  if (/rci financial serv|rci financial|rcifinancial|barclays prtnr fin|barclays partner|barclaysprtnr|amazon prime|amazon.*prime|sky |virgin media|\bbt\b|talktalk|vodafone|\bee\b|\bo2\b|three mobile|council tax|tv licence|netflix|spotify|disney|apple\.com|google storage|icloud|microsoft 365|puregym|david lloyd|ovo energy|british gas|octopus|edf/i.test(raw))
     return { category: "Direct Debits", exclude: false };
 
   // Step 7 — Groceries
-  if (/tesco|sainsbury|asda|morrisons|waitrose|aldi|lidl|marks & spencer food|m&s food|co-op|\bcoop\b|iceland food|ocado|farmfoods|budgens|\bspar\b|whole foods|fresh and local|freshlocal|local farm|village store|corner shop|newsagent/i.test(desc))
+  if (/tesco|sainsbury|asda|morrisons|waitrose|aldi|lidl|marks & spencer food|m&s food|co-op|coop|iceland|ocado|farmfoods|budgens|\bspar\b|whole foods|fresh and local|freshlocal|local farm/i.test(raw))
     return { category: "Groceries", exclude: false };
 
   // Step 8 — Eating Out
-  if (/mcdonald|burger king|\bkfc\b|subway|nando|pizza|domino|deliveroo|uber eats|just eat|greggs|costa coffee|starbucks|caffe nero|pret a manger|itsu|wagamama|wetherspoon|restaurant|\bcafe\b|\bbar\b|bistro|takeaway|heavenly desert|desserts?|ice cream|food delivery|hungry|eat\./i.test(desc))
+  if (/mcdonald|burger king|\bkfc\b|subway|nando|pizza|domino|deliveroo|uber eats|just eat|greggs|costa|starbucks|caffe nero|pret|itsu|wagamama|wetherspoon|heavenly dessert|heavenly desert|restaurant|\bcafe\b|\bbar\b|bistro|takeaway/i.test(raw))
     return { category: "Eating Out", exclude: false };
 
   // Step 9 — High Street
-  if (/superdrug|boots pharmacy|lloyds pharmacy|cloud city vape|\bvape\b|maani couture|\bcouture\b|primark|\bnext\b|tkmaxx|tk maxx|argos|wilko|poundland|home bargains|\bb&m\b|card factory|waterstones|\bsmiths\b|\bhmv\b|barber|salon|hairdress|beauty|\bnail\b/i.test(desc))
+  if (/superdrug|boots|cloud city vape|cloudcityvape|maani couture|primark|tkmaxx|tk maxx|wilko|poundland|home bargains|\bb&m\b|card factory|barber|salon|hairdress|beauty|\bnail\b/i.test(raw))
     return { category: "High Street", exclude: false };
 
-  // Step 10 — Online Shopping
-  if (/amazon(?!.*prime)|ebay|asos|very\.co|littlewoods|boohoo|prettylittlething|shein|etsy|currys|ao\.com|john lewis online|apple store|app store|google play/i.test(desc))
+  // Step 10 — Online Shopping (Amazon including truncated Amznmktplace*XXXXX)
+  if (/amazon|amznmktplace|amazon\.co\.uk|ebay|asos|very\.co|boohoo|shein|etsy|currys|ao\.com|john lewis online|app store|google play/i.test(raw))
     return { category: "Online Shopping", exclude: false };
 
-  // Step 11 — Travel & Transport
-  if (/\btfl\b|transport for london|trainline|national rail|avanti|\bgwr\b|\blner\b|southeastern|thameslink|elizabeth line|oyster|\buber\b(?!.*eats)|bolt taxi|addison lee|\bparking\b|\bncp\b|ringo|petrol|\bbp\b|\bshell\b|\besso\b|jet2|easyjet|ryanair|british airways|\bbus\b|\bcoach\b|arriva|stagecoach/i.test(desc))
-    return { category: "Travel & Transport", exclude: false };
-
-  // Step 12 — Health & Fitness
-  if (/\bboots\b|pharmacy|chemist|\bnhs\b|dentist|optician|specsavers|puregym|\bgym\b|fitness|holland barrett|vitamin|supplement/i.test(desc))
-    return { category: "Health & Fitness", exclude: false };
-
-  // Step 13 — Household Bills
-  if (/council tax|\bwater\b|electric|gas bill|broadband|internet|tv licence/i.test(desc))
-    return { category: "Household Bills", exclude: false };
-
-  // Step 14 — Cash & ATM
-  if (/\batm\b|cash machine|cashpoint|withdraw|link atm/i.test(desc))
+  // Step 11 — Cash & ATM
+  if (/cash machine|cashpoint|\batm\b|cash withdrawal|link post office|cardtronics/i.test(raw))
     return { category: "Cash & ATM", exclude: false };
 
+  // Step 12 — Travel & Transport
+  if (/\btfl\b|trainline|national rail|avanti|\bgwr\b|\blner\b|southeastern|thameslink|elizabeth line|oyster|\buber\b(?!.*eats)|bolt taxi|addison lee|\bparking\b|\bncp\b|ringo|petrol|\bbp\b|\bshell\b|\besso\b|jet2|easyjet|ryanair|british airways|\bbus\b|\bcoach\b|arriva|stagecoach/i.test(raw))
+    return { category: "Travel & Transport", exclude: false };
+
+  // Step 13 — Health & Fitness
+  if (/pharmacy|chemist|\bnhs\b|dentist|optician|specsavers|puregym|\bgym\b|fitness|holland barrett|vitamin|supplement/i.test(raw))
+    return { category: "Health & Fitness", exclude: false };
+
+  // Step 14 — Household Bills
+  if (/council tax|water board|electric|gas bill|broadband|internet|tv licence/i.test(raw))
+    return { category: "Household Bills", exclude: false };
+
   // Step 15 — Rent & Mortgage
-  if (/\brent\b|landlord|letting|mortgage/i.test(desc))
+  if (/\brent\b|landlord|letting|mortgage/i.test(raw))
     return { category: "Rent & Mortgage", exclude: false };
 
-  // Step 16 — Remaining credits
+  // Step 16 — Finance & Bills
+  if (/insurance|aviva|admiral|legal & general|\bloan\b|credit card|barclaycard|\bamex\b/i.test(raw))
+    return { category: "Finance & Bills", exclude: false };
+
+  // Step 17 — Remaining credits → Transfers Received
   if (type === "credit") return { category: "Transfers Received", exclude: false };
 
-  // Step 17 — Fallback
+  // Step 18 — Fallback
   return { category: "Uncategorised", exclude: false };
 }
 
@@ -369,24 +359,6 @@ function applyReversals(transactions) {
 }
 
 // ---------------------------------------------------------------------------
-// PART 5 — Overdraft limit detector
-// ---------------------------------------------------------------------------
-function detectOverdraftLimit(rawText) {
-  const patterns = [
-    /arranged overdraft limit[:\s]+£?([\d,]+)/i,
-    /overdraft limit[:\s]+£?([\d,]+)/i,
-    /your arranged limit[:\s]+£?([\d,]+)/i,
-    /available overdraft[:\s]+£?([\d,]+)/i,
-    /arranged limit[:\s]+£?([\d,]+)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = rawText.match(pattern);
-    if (match) return parseFloat(match[1].replace(/,/g, ""));
-  }
-  return 500; // Default assumption
-}
-
 // ---------------------------------------------------------------------------
 // PART 6 — True spending calculation
 // ---------------------------------------------------------------------------

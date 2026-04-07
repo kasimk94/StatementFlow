@@ -305,6 +305,10 @@ export default function Home() {
       overdraftLimit: data.overdraftLimit ?? 500,
       internalTransferTotal: data.internalTransferTotal ?? 0,
       reversalsCount: data.reversalsCount ?? 0,
+      statementIncome: data.totalIncome ?? null,
+      statementExpenses: data.totalExpenses ?? null,
+      startBalance: data.startBalance ?? null,
+      endBalance: data.endBalance ?? null,
     });
     setLoading(false);
     setApiDone(false);
@@ -375,6 +379,10 @@ export default function Home() {
             overdraftLimit={parseResult?.overdraftLimit ?? 500}
             internalTransferTotal={parseResult?.internalTransferTotal ?? 0}
             reversalsCount={parseResult?.reversalsCount ?? 0}
+            statementIncome={parseResult?.statementIncome ?? null}
+            statementExpenses={parseResult?.statementExpenses ?? null}
+            startBalance={parseResult?.startBalance ?? null}
+            endBalance={parseResult?.endBalance ?? null}
           />
         </main>
         {showFeedback && <FeedbackPopup onClose={closeFeedback} />}

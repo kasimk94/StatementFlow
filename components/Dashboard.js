@@ -21,20 +21,20 @@ const UNKNOWN_CAT = "Unknown ⚠️";
 const CAT_CONFIG = {
   "Groceries":               { hex: "#166534", badge: "bg-green-100 text-green-800 ring-green-200" },
   "Eating Out":              { hex: "#9a3412", badge: "bg-orange-100 text-orange-800 ring-orange-200" },
-  "Online Shopping":         { hex: "#854d0e", badge: "bg-yellow-100 text-yellow-800 ring-yellow-200" },
-  "High Street":             { hex: "#9d174d", badge: "bg-pink-100 text-pink-800 ring-pink-200" },
-  "Travel & Transport":      { hex: "#1e40af", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
+  "Online Shopping":         { hex: "#713f12", badge: "bg-yellow-100 text-yellow-800 ring-yellow-200" },
+  "High Street":             { hex: "#86198f", badge: "bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200" },
+  "Travel & Transport":      { hex: "#1d4ed8", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
   "Household Bills":         { hex: "#334155", badge: "bg-slate-100 text-slate-700 ring-slate-200" },
-  "Direct Debits":           { hex: "#3730a3", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
-  "Health & Fitness":        { hex: "#134e4a", badge: "bg-teal-100 text-teal-800 ring-teal-200" },
-  "Entertainment & Leisure": { hex: "#6b21a8", badge: "bg-purple-100 text-purple-800 ring-purple-200" },
-  "Charity":                 { hex: "#881337", badge: "bg-rose-100 text-rose-800 ring-rose-200" },
+  "Direct Debits":           { hex: "#4338ca", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
+  "Health & Fitness":        { hex: "#0f766e", badge: "bg-teal-100 text-teal-800 ring-teal-200" },
+  "Entertainment & Leisure": { hex: "#7e22ce", badge: "bg-violet-100 text-violet-800 ring-violet-200" },
+  "Charity":                 { hex: "#be123c", badge: "bg-rose-100 text-rose-800 ring-rose-200" },
   "Cash & ATM":              { hex: "#57534e", badge: "bg-stone-100 text-stone-700 ring-stone-200" },
-  "Transfers Received":      { hex: "#065f46", badge: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
-  "Transfers Sent":          { hex: "#991b1b", badge: "bg-red-100 text-red-800 ring-red-200" },
-  "Refunds":                 { hex: "#166534", badge: "bg-green-100 text-green-800 ring-green-200" },
-  "Finance & Bills":         { hex: "#1e40af", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
-  "Rent & Mortgage":         { hex: "#991b1b", badge: "bg-red-100 text-red-800 ring-red-200" },
+  "Transfers Received":      { hex: "#15803d", badge: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
+  "Transfers Sent":          { hex: "#dc2626", badge: "bg-red-100 text-red-800 ring-red-200" },
+  "Refunds":                 { hex: "#059669", badge: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  "Finance & Bills":         { hex: "#3730a3", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
+  "Rent & Mortgage":         { hex: "#c2410c", badge: "bg-orange-100 text-orange-800 ring-orange-200" },
   "Uncategorised":           { hex: "#6b7280", badge: "bg-gray-100 text-gray-700 ring-gray-200" },
   [UNKNOWN_CAT]:             { hex: "#6b7280", badge: "bg-gray-100 text-gray-700 ring-gray-200" },
 };
@@ -60,24 +60,24 @@ const CAT_EMOJI = {
   [UNKNOWN_CAT]:             "❓",
 };
 
-// ─── Category pill colours ────────────────────────────────────────────────────
+// ─── Category pill colours (FIX 6 — visually distinct per category) ──────────
 const CAT_PILL_STYLE = {
   "Groceries":               { bg: "#dcfce7", color: "#166534" },
-  "Eating Out":              { bg: "#ffedd5", color: "#9a3412" },
-  "Online Shopping":         { bg: "#fef9c3", color: "#854d0e" },
-  "High Street":             { bg: "#fce7f3", color: "#9d174d" },
-  "Travel & Transport":      { bg: "#dbeafe", color: "#1e40af" },
-  "Household Bills":         { bg: "#f1f5f9", color: "#334155" },
-  "Direct Debits":           { bg: "#e0e7ff", color: "#3730a3" },
-  "Health & Fitness":        { bg: "#ccfbf1", color: "#134e4a" },
-  "Entertainment & Leisure": { bg: "#f3e8ff", color: "#6b21a8" },
-  "Charity":                 { bg: "#fce7f3", color: "#881337" },
-  "Cash & ATM":              { bg: "#f5f5f4", color: "#57534e" },
-  "Transfers Received":      { bg: "#d1fae5", color: "#065f46" },
-  "Transfers Sent":          { bg: "#fee2e2", color: "#991b1b" },
-  "Refunds":                 { bg: "#dcfce7", color: "#166534" },
-  "Finance & Bills":         { bg: "#e0e7ff", color: "#1e40af" },
-  "Rent & Mortgage":         { bg: "#fee2e2", color: "#991b1b" },
+  "Eating Out":              { bg: "#fff7ed", color: "#9a3412" },
+  "Online Shopping":         { bg: "#fef9c3", color: "#713f12" },
+  "High Street":             { bg: "#fdf2f8", color: "#86198f" },
+  "Travel & Transport":      { bg: "#eff6ff", color: "#1d4ed8" },
+  "Household Bills":         { bg: "#f8fafc", color: "#334155" },
+  "Direct Debits":           { bg: "#eef2ff", color: "#4338ca" },
+  "Health & Fitness":        { bg: "#f0fdfa", color: "#0f766e" },
+  "Entertainment & Leisure": { bg: "#faf5ff", color: "#7e22ce" },
+  "Charity":                 { bg: "#fff1f2", color: "#be123c" },
+  "Cash & ATM":              { bg: "#fafaf9", color: "#57534e" },
+  "Transfers Received":      { bg: "#f0fdf4", color: "#15803d" },
+  "Transfers Sent":          { bg: "#fef2f2", color: "#dc2626" },
+  "Refunds":                 { bg: "#ecfdf5", color: "#059669" },
+  "Finance & Bills":         { bg: "#f0f4ff", color: "#3730a3" },
+  "Rent & Mortgage":         { bg: "#fff8f1", color: "#c2410c" },
   "Uncategorised":           { bg: "#f9fafb", color: "#6b7280" },
   [UNKNOWN_CAT]:             { bg: "#f9fafb", color: "#6b7280" },
 };
@@ -748,7 +748,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   );
 }
 
-export default function Dashboard({ transactions, demoMode = false, confidence, bank, debug, insights, overdraftLimit = 500, internalTransferTotal = 0, reversalsCount = 0 }) {
+export default function Dashboard({ transactions, demoMode = false, confidence, bank, debug, insights, overdraftLimit = 500, internalTransferTotal = 0, reversalsCount = 0, statementIncome = null, statementExpenses = null, startBalance = null, endBalance = null }) {
   const [search, setSearch]                   = useState("");
   const [sortKey, setSortKey]                 = useState("date");
   const [sortDir, setSortDir]                 = useState("desc");
@@ -857,15 +857,20 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   }, [transactions]);
 
   // ── Summary stats ──
-  const { income, expenses, net, incomeCount, expenseCount } = useMemo(() => {
-    let income = 0, expenses = 0, incomeCount = 0, expenseCount = 0;
+  const { txIncome, txExpenses, incomeCount, expenseCount } = useMemo(() => {
+    let txIncome = 0, txExpenses = 0, incomeCount = 0, expenseCount = 0;
     for (const t of transactions) {
       if (t.exclude || t.excludeFromTotals) continue;
-      if (t.amount > 0) { income += t.amount; incomeCount++; }
-      else { expenses += Math.abs(t.amount); expenseCount++; }
+      if (t.amount > 0) { txIncome += t.amount; incomeCount++; }
+      else { txExpenses += Math.abs(t.amount); expenseCount++; }
     }
-    return { income, expenses, net: income - expenses, incomeCount, expenseCount };
+    return { txIncome, txExpenses, incomeCount, expenseCount };
   }, [transactions]);
+
+  // Use PDF-extracted totals for KPI display when available (FIX 1)
+  const income   = statementIncome   ?? txIncome;
+  const expenses = statementExpenses ?? txExpenses;
+  const net      = (endBalance !== null) ? endBalance : income - expenses;
 
   // ── Net balance liquidity gauge (Upgrade 1) ──
   const netGauge = useMemo(() => {
