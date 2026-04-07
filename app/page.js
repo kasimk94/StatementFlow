@@ -366,10 +366,6 @@ export default function Home() {
           </div>
         </header>
         <main className="dash-main-inner max-w-6xl mx-auto px-6 py-10">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-slate-900">Your Statement</h2>
-            <p className="text-slate-500 text-sm mt-1">{transactions.length} transactions found</p>
-          </div>
           <Dashboard
             transactions={transactions}
             confidence={parseResult?.confidence}

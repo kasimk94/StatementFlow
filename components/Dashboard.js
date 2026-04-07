@@ -19,24 +19,24 @@ function fmtShort(amount) {
 const UNKNOWN_CAT = "Unknown ⚠️";
 
 const CAT_CONFIG = {
-  "Groceries":               { hex: "#166534", badge: "bg-green-100 text-green-800 ring-green-200" },
-  "Eating Out":              { hex: "#9a3412", badge: "bg-orange-100 text-orange-800 ring-orange-200" },
-  "Online Shopping":         { hex: "#713f12", badge: "bg-yellow-100 text-yellow-800 ring-yellow-200" },
-  "High Street":             { hex: "#86198f", badge: "bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200" },
-  "Travel & Transport":      { hex: "#1d4ed8", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
-  "Household Bills":         { hex: "#334155", badge: "bg-slate-100 text-slate-700 ring-slate-200" },
-  "Direct Debits":           { hex: "#4338ca", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
-  "Health & Fitness":        { hex: "#0f766e", badge: "bg-teal-100 text-teal-800 ring-teal-200" },
-  "Entertainment & Leisure": { hex: "#7e22ce", badge: "bg-violet-100 text-violet-800 ring-violet-200" },
-  "Charity":                 { hex: "#be123c", badge: "bg-rose-100 text-rose-800 ring-rose-200" },
-  "Cash & ATM":              { hex: "#57534e", badge: "bg-stone-100 text-stone-700 ring-stone-200" },
-  "Transfers Received":      { hex: "#15803d", badge: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
-  "Transfers Sent":          { hex: "#dc2626", badge: "bg-red-100 text-red-800 ring-red-200" },
-  "Refunds":                 { hex: "#059669", badge: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  "Finance & Bills":         { hex: "#3730a3", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
-  "Rent & Mortgage":         { hex: "#c2410c", badge: "bg-orange-100 text-orange-800 ring-orange-200" },
-  "Uncategorised":           { hex: "#6b7280", badge: "bg-gray-100 text-gray-700 ring-gray-200" },
-  [UNKNOWN_CAT]:             { hex: "#6b7280", badge: "bg-gray-100 text-gray-700 ring-gray-200" },
+  "Groceries":               { hex: "#16a34a" },
+  "Eating Out":              { hex: "#ea580c" },
+  "Online Shopping":         { hex: "#ca8a04" },
+  "High Street":             { hex: "#db2777" },
+  "Travel & Transport":      { hex: "#2563eb" },
+  "Household Bills":         { hex: "#475569" },
+  "Direct Debits":           { hex: "#4f46e5" },
+  "Health & Fitness":        { hex: "#0d9488" },
+  "Entertainment & Leisure": { hex: "#7c3aed" },
+  "Charity":                 { hex: "#e11d48" },
+  "Cash & ATM":              { hex: "#78716c" },
+  "Transfers Received":      { hex: "#059669" },
+  "Transfers Sent":          { hex: "#dc2626" },
+  "Refunds":                 { hex: "#0891b2" },
+  "Finance & Bills":         { hex: "#1d4ed8" },
+  "Rent & Mortgage":         { hex: "#b45309" },
+  "Uncategorised":           { hex: "#9ca3af" },
+  [UNKNOWN_CAT]:             { hex: "#9ca3af" },
 };
 
 const CAT_EMOJI = {
@@ -60,26 +60,26 @@ const CAT_EMOJI = {
   [UNKNOWN_CAT]:             "❓",
 };
 
-// ─── Category pill colours (FIX 6 — visually distinct per category) ──────────
+// ─── Category pill colours (vivid solid colours, white text) ─────────────────
 const CAT_PILL_STYLE = {
-  "Groceries":               { bg: "#dcfce7", color: "#166534" },
-  "Eating Out":              { bg: "#fff7ed", color: "#9a3412" },
-  "Online Shopping":         { bg: "#fef9c3", color: "#713f12" },
-  "High Street":             { bg: "#fdf2f8", color: "#86198f" },
-  "Travel & Transport":      { bg: "#eff6ff", color: "#1d4ed8" },
-  "Household Bills":         { bg: "#f8fafc", color: "#334155" },
-  "Direct Debits":           { bg: "#eef2ff", color: "#4338ca" },
-  "Health & Fitness":        { bg: "#f0fdfa", color: "#0f766e" },
-  "Entertainment & Leisure": { bg: "#faf5ff", color: "#7e22ce" },
-  "Charity":                 { bg: "#fff1f2", color: "#be123c" },
-  "Cash & ATM":              { bg: "#fafaf9", color: "#57534e" },
-  "Transfers Received":      { bg: "#f0fdf4", color: "#15803d" },
-  "Transfers Sent":          { bg: "#fef2f2", color: "#dc2626" },
-  "Refunds":                 { bg: "#ecfdf5", color: "#059669" },
-  "Finance & Bills":         { bg: "#f0f4ff", color: "#3730a3" },
-  "Rent & Mortgage":         { bg: "#fff8f1", color: "#c2410c" },
-  "Uncategorised":           { bg: "#f9fafb", color: "#6b7280" },
-  [UNKNOWN_CAT]:             { bg: "#f9fafb", color: "#6b7280" },
+  "Groceries":               { bg: "#16a34a", color: "#ffffff" },
+  "Eating Out":              { bg: "#ea580c", color: "#ffffff" },
+  "Online Shopping":         { bg: "#ca8a04", color: "#ffffff" },
+  "High Street":             { bg: "#db2777", color: "#ffffff" },
+  "Travel & Transport":      { bg: "#2563eb", color: "#ffffff" },
+  "Household Bills":         { bg: "#475569", color: "#ffffff" },
+  "Direct Debits":           { bg: "#4f46e5", color: "#ffffff" },
+  "Health & Fitness":        { bg: "#0d9488", color: "#ffffff" },
+  "Entertainment & Leisure": { bg: "#7c3aed", color: "#ffffff" },
+  "Charity":                 { bg: "#e11d48", color: "#ffffff" },
+  "Cash & ATM":              { bg: "#78716c", color: "#ffffff" },
+  "Transfers Received":      { bg: "#059669", color: "#ffffff" },
+  "Transfers Sent":          { bg: "#dc2626", color: "#ffffff" },
+  "Refunds":                 { bg: "#0891b2", color: "#ffffff" },
+  "Finance & Bills":         { bg: "#1d4ed8", color: "#ffffff" },
+  "Rent & Mortgage":         { bg: "#b45309", color: "#ffffff" },
+  "Uncategorised":           { bg: "#9ca3af", color: "#ffffff" },
+  [UNKNOWN_CAT]:             { bg: "#9ca3af", color: "#ffffff" },
 };
 
 const CAT_TIPS = {
@@ -104,7 +104,6 @@ const CAT_TIPS = {
 };
 
 function catHex(name)   { return (CAT_CONFIG[name] ?? CAT_CONFIG[UNKNOWN_CAT]).hex; }
-function catBadge(name) { return (CAT_CONFIG[name] ?? CAT_CONFIG[UNKNOWN_CAT]).badge; }
 function catEmoji(name) { return CAT_EMOJI[name] ?? "❓"; }
 
 // ─── Count-up animation hook ──────────────────────────────────────────────────
@@ -1150,11 +1149,18 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         </div>
       )}
 
-      {/* ── STATEMENT SUBTITLE ── */}
-      <p style={{ margin: 0, fontSize: "0.8rem", color: "#94a3b8" }}>
-        {transactions.length} transactions analysed{dateRange ? ` · ${dateRange}` : ""}
-        {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
-      </p>
+      {/* ── STATEMENT HEADING ── */}
+      <div style={{ marginBottom: 2 }}>
+        <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em" }}>
+          {demoMode ? "Example Statement" : "Your Statement"}
+        </h2>
+        {(dateRange || bankName || (bank && bank !== "ai-parsed")) && (
+          <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
+            {dateRange ?? ""}
+            {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
+          </p>
+        )}
+      </div>
 
       {/* ── EXPORT TOOLBAR ── */}
       <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />
