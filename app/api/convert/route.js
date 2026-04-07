@@ -43,6 +43,13 @@ export async function POST(req) {
     const rawText = extraction.text;
     console.log("Text extracted, length:", rawText.length, "method:", extraction.method);
 
+    // TEMP DEBUG - remove after testing
+    if (extraction.text) {
+      console.log('=== RAW TEXT SAMPLE ===')
+      console.log(extraction.text.substring(0, 1000))
+      console.log('=== END SAMPLE ===')
+    }
+
     // ── 4. Extract PDF summary totals (e.g. Barclays Money in/out) ─────────
     const pdfSummary = extractStatementTotals(rawText);
     const overdraftLimit = pdfSummary.overdraftLimit ?? 500;
