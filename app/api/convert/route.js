@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+
+const anthropic = new Anthropic();
 
 // ---------------------------------------------------------------------------
-// POST /api/convert  — free local extraction, zero API cost
+// POST /api/convert  — unpdf extracts text, Claude structures, regex categorises
 // ---------------------------------------------------------------------------
 export async function POST(req) {
   try {
@@ -43,13 +46,6 @@ export async function POST(req) {
     const rawText = extraction.text;
     console.log("Text extracted, length:", rawText.length, "method:", extraction.method);
 
-    // TEMP DEBUG - remove after testing
-    if (extraction.text) {
-      console.log('=== RAW TEXT SAMPLE ===')
-      console.log(extraction.text.substring(0, 1000))
-      console.log('=== END SAMPLE ===')
-    }
-
     // ── 4. Extract PDF summary totals (e.g. Barclays Money in/out) ─────────
     const pdfSummary = extractStatementTotals(rawText);
     const overdraftLimit = pdfSummary.overdraftLimit ?? 500;
@@ -59,9 +55,9 @@ export async function POST(req) {
     const bankName = detectBank(rawText);
     console.log("Bank detected:", bankName);
 
-    // ── 6. Parse transactions with local regex engine ───────────────────────
-    const parsed = parseTransactions(rawText, bankName);
-    console.log("Transactions parsed:", parsed.length);
+    // ── 6. Structure transactions via Claude (text already extracted) ────────
+    const parsed = await structureTransactions(rawText);
+    console.log("Transactions structured:", parsed.length);
 
     if (parsed.length === 0) {
       return NextResponse.json(
@@ -73,16 +69,22 @@ export async function POST(req) {
       );
     }
 
-    // ── 7. Categorise + normalise ───────────────────────────────────────────
+    // ── 7. Categorise + normalise via local regex engine (zero cost) ─────────
     const rawTransactions = parsed
       .map((t) => {
+        const amount =
+          typeof t.amount === "number"
+            ? t.amount
+            : parseFloat(String(t.amount).replace(/[^0-9.\-]/g, "")) || 0;
+        const type = t.type || (amount >= 0 ? "credit" : "debit");
+        const signedAmount = type === "debit" ? -Math.abs(amount) : Math.abs(amount);
         const { category, exclude, isInternal = false, note = null } =
-          categoriseTransaction(t.description, t.amount, t.type);
+          categoriseTransaction(t.description, signedAmount, type);
         return {
-          date:              t.date,
+          date:              normaliseDate(t.date),
           description:       cleanDescription(t.description || "Transaction"),
-          amount:            t.amount,
-          type:              t.type,
+          amount:            signedAmount,
+          type,
           category,
           exclude,
           isInternal,
@@ -200,6 +202,74 @@ async function extractTextFromPDF(buffer) {
   } catch (err) {
     console.error("unpdf error:", err.message);
     return { text: null, method: "failed", cost: 0, error: err.message };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Claude structuring — converts garbled PDF text into clean transaction JSON
+// Text extraction already done by unpdf; Claude only does data structuring.
+// Cost: ~$0.001 per statement with Haiku (16k chars ≈ 4k tokens input)
+// ---------------------------------------------------------------------------
+async function structureTransactions(rawText) {
+  try {
+    // Truncate to keep costs minimal — first 50k chars covers any real statement
+    const text = rawText.length > 50000 ? rawText.substring(0, 50000) : rawText;
+
+    const response = await anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 4000,
+      messages: [
+        {
+          role: "user",
+          content: `Extract ALL transactions from this UK bank statement text.
+The text may be garbled due to PDF column extraction - use context to reconstruct dates, descriptions and amounts correctly.
+
+Return ONLY a JSON array, no other text:
+[{
+  "date": "15 Mar 2024",
+  "description": "Card Payment to Tesco Stores",
+  "amount": 3.20,
+  "type": "debit",
+  "balance": null
+}]
+
+Rules:
+- type is "debit" for Money out, "credit" for Money in
+- amount is always positive
+- Include ALL transactions including refunds, transfers, direct debits
+- date format: DD Mon YYYY
+- Do not include opening/closing balance rows
+- Do not include summary rows (Money in, Money out totals)
+
+Bank statement text:
+${text}`,
+        },
+      ],
+    });
+
+    console.log(
+      "Claude tokens used:",
+      response.usage.input_tokens, "in,",
+      response.usage.output_tokens, "out"
+    );
+
+    const content = response.content[0].text.trim();
+    const cleaned = content.replace(/```json|```/g, "").trim();
+
+    // Locate JSON array boundaries
+    const start = cleaned.indexOf("[");
+    const end   = cleaned.lastIndexOf("]");
+    if (start === -1 || end === -1) {
+      console.error("No JSON array in Claude response:", cleaned.substring(0, 200));
+      return [];
+    }
+
+    const transactions = JSON.parse(cleaned.substring(start, end + 1));
+    console.log("Claude structured transactions:", transactions.length);
+    return transactions;
+  } catch (err) {
+    console.error("Claude structuring error:", err.message);
+    return [];
   }
 }
 
