@@ -310,7 +310,8 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
         left:                "50%",
         transform:           "translateX(-50%)",
         width:               "fit-content",
-        maxWidth:            "calc(100% - 24px)",
+        maxWidth:            "min(900px, calc(100% - 24px))",
+        overflow:            "hidden",
         zIndex:              1000,
         transition:          easing,
         borderRadius:        menuOpen ? "50px 50px 20px 20px" : 50,
@@ -392,7 +393,18 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
               <button
                 className="ntry"
                 onClick={onUploadAnother}
-                style={{ background: "transparent", color: "#6c5ce7", border: "1.5px solid #6c5ce7", boxShadow: "none", padding: "8px 18px" }}
+                style={{
+                  background: "transparent",
+                  color:       "#6c5ce7",
+                  border:      "1.5px solid #6c5ce7",
+                  boxShadow:   "none",
+                  padding:     "8px 16px",
+                  fontSize:    "0.85rem",
+                  maxWidth:    180,
+                  overflow:    "hidden",
+                  whiteSpace:  "nowrap",
+                  textOverflow:"ellipsis",
+                }}
               >
                 ↑ Upload another
               </button>

@@ -185,8 +185,8 @@ function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarge
         {sub && <p className="text-sm text-white/60 mt-1.5">{sub}</p>}
         {gauge && (
           <div style={{ marginTop: 8 }}>
-            <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${gauge.pct}%`, background: gauge.color, borderRadius: 3, transition: "width 1s ease 0.6s" }} />
+            <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.3)", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${gauge.pct}%`, background: gauge.color, borderRadius: 999, transition: "width 1s ease 0.6s" }} />
             </div>
             <p style={{ margin: "3px 0 0", fontSize: "0.68rem", color: "rgba(255,255,255,0.72)" }}>{gauge.label}</p>
           </div>
@@ -880,15 +880,15 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       const remaining = Math.max(0, limit - overdraftUsed);
       return {
         pct,
-        color: "#f87171",
+        color: "#ef4444",
         label: `${fmt(overdraftUsed)} overdrawn · ${fmt(remaining)} remaining`,
       };
     }
     if (net < 500) {
       const pct = Math.min(100, (net / 500) * 100);
-      return { pct, color: "#fbbf24", label: `${fmt(net)} available · low buffer` };
+      return { pct, color: "#f59e0b", label: `${fmt(net)} available · low buffer` };
     }
-    return { pct: 100, color: "#4ade80", label: `${fmt(net)} positive balance` };
+    return { pct: 100, color: "#22c55e", label: `${fmt(net)} positive balance` };
   }, [net, overdraftLimit]);
 
   // ── Demo toast helper ──
@@ -1211,9 +1211,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Net Balance"
           value={fmt(net)}
           sub={net >= 0 ? "✓ Positive cash flow" : "⚠ Negative cash flow"}
-          gradient={net >= 0
-            ? "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)"
-            : "linear-gradient(135deg, #d63031 0%, #e17055 100%)"}
+          gradient="linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
           loaded={loaded}
           delay={300}
@@ -1226,7 +1224,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Transactions"
           value={`${transactions.length}`}
           sub={`${incomeCount} in · ${expenseCount} out`}
-          gradient="linear-gradient(135deg, #fd79a8 0%, #e84393 100%)"
+          gradient="linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
           loaded={loaded}
           delay={400}
