@@ -27,25 +27,21 @@ const NAVBAR_CSS = `
   }
 
   .ntry {
-    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00d4ff 100%);
-    background-size: 200% 200%;
-    background-position: 0% 50%;
+    background: linear-gradient(135deg, #6d28d9, #4f46e5);
     color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    padding: 9px 22px;
-    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 999px;
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 12px rgba(108,92,231,0.25);
-    min-height: 44px;
+    transition: filter 0.2s ease;
+    box-shadow: none;
+    min-height: 36px;
+    white-space: nowrap;
   }
   .ntry:hover {
-    opacity: 0.92;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(108,92,231,0.4);
-    background-position: 100% 50%;
+    filter: brightness(1.1);
   }
 
   /* Desktop nav — hidden on mobile */
@@ -391,22 +387,26 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
           <div className="nav-tryfree-desktop">
             {onUploadAnother ? (
               <button
-                className="ntry"
                 onClick={onUploadAnother}
                 style={{
-                  background: "transparent",
-                  color:       "#6c5ce7",
-                  border:      "1.5px solid #6c5ce7",
-                  boxShadow:   "none",
-                  padding:     "8px 16px",
+                  background:  "transparent",
+                  color:       "#6d28d9",
+                  border:      "2px solid #6d28d9",
+                  borderRadius: 999,
+                  padding:     "8px 18px",
                   fontSize:    "0.85rem",
+                  fontWeight:  600,
+                  cursor:      "pointer",
+                  transition:  "background 0.2s ease, color 0.2s ease",
+                  whiteSpace:  "nowrap",
                   maxWidth:    180,
                   overflow:    "hidden",
-                  whiteSpace:  "nowrap",
                   textOverflow:"ellipsis",
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "#6d28d9"; e.currentTarget.style.color = "#fff"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6d28d9"; }}
               >
-                ↑ Upload another
+                Upload another
               </button>
             ) : (
               <button className="ntry" onClick={onScrollToUpload}>Try Free</button>
@@ -462,11 +462,10 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
           <div style={{ padding: "8px 6px 2px" }}>
             {onUploadAnother ? (
               <button
-                className="ntry"
-                style={{ width: "100%", borderRadius: 12, fontSize: 15, padding: "13px", background: "transparent", color: "#6c5ce7", border: "1.5px solid #6c5ce7", boxShadow: "none" }}
+                style={{ width: "100%", borderRadius: 999, fontSize: "0.9rem", fontWeight: 600, padding: "13px", background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9", cursor: "pointer" }}
                 onClick={() => { setMenuOpen(false); onUploadAnother(); }}
               >
-                ↑ Upload another
+                Upload another
               </button>
             ) : (
               <button
