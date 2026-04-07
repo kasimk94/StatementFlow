@@ -169,49 +169,50 @@ export async function POST(req) {
 // ---------------------------------------------------------------------------
 async function extractTextFromPDF(buffer) {
   try {
-    // Dynamic import avoids Next.js build issues with pdf-parse test file reads
-    const pdfParse = (await import("pdf-parse")).default;
+    // pdfjs-dist/legacy works in Node.js serverless without DOM APIs
+    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+    // Disable web worker — not available in server environment
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "";
 
     console.log("PDF buffer size:", buffer.length);
 
-    // First attempt — standard parsing
-    const data = await pdfParse(buffer);
-    console.log("Extracted text length:", data.text?.length);
-    console.log("First 200 chars:", data.text?.substring(0, 200));
+    const uint8Array = new Uint8Array(buffer);
 
-    if (data.text && data.text.trim().length > 50) {
-      return { text: data.text, method: "pdf-parse", cost: 0 };
-    }
-
-    // Second attempt — with whitespace normalisation
-    const data2 = await pdfParse(buffer, {
-      normalizeWhitespace: true,
-      disableCombineTextItems: false,
+    const loadingTask = pdfjsLib.getDocument({
+      data:             uint8Array,
+      useWorkerFetch:   false,
+      isEvalSupported:  false,
+      useSystemFonts:   true,
+      disableFontFace:  true,
     });
-    console.log("Second attempt text length:", data2.text?.length);
 
-    if (data2.text && data2.text.trim().length > 50) {
-      return { text: data2.text, method: "pdf-parse-v2", cost: 0 };
+    const pdf = await loadingTask.promise;
+    console.log("PDF pages:", pdf.numPages);
+
+    let fullText = "";
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page        = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText    = textContent.items.map((item) => item.str).join(" ");
+      fullText += pageText + "\n";
     }
 
-    // Use whichever attempt returned more text, even if short
-    const longerText =
-      (data.text || "").length >= (data2.text || "").length
-        ? data.text
-        : data2.text;
+    console.log("Extracted text length:", fullText.length);
+    console.log("First 300 chars:", fullText.substring(0, 300));
 
-    if (longerText && longerText.trim().length > 0) {
-      return { text: longerText, method: "pdf-parse-fallback", cost: 0 };
+    if (fullText.trim().length > 50) {
+      return { text: fullText, method: "pdfjs", cost: 0 };
     }
 
     return {
       text: null,
       method: "failed",
       cost: 0,
-      error: "PDF appears to be scanned or image-based",
+      error: "Could not extract text — PDF may be scanned",
     };
   } catch (err) {
-    console.error("pdf-parse error:", err.message);
+    console.error("pdfjs extraction error:", err.message);
     return { text: null, method: "failed", cost: 0, error: err.message };
   }
 }

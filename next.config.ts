@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  serverExternalPackages: ["pdfjs-dist"],
+  turbopack: {},
   async headers() {
     return [
       {
