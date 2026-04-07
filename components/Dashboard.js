@@ -257,7 +257,7 @@ function ExportToolbar({ downloading, onDownload, onCSV, downloadError }) {
         border:       "1px solid #e8e4f8",
         borderLeft:   "4px solid #6c5ce7",
         boxShadow:    "0 2px 12px rgba(108,92,231,0.07), 0 1px 4px rgba(0,0,0,0.04)",
-        padding:      "12px 18px 12px 20px",
+        padding:      "10px 18px 10px 20px",
       }}
     >
       {/* Label */}
@@ -871,14 +871,24 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const expenses = statementExpenses ?? txExpenses;
   const net      = (endBalance !== null) ? endBalance : income - expenses;
 
-  // ── Net balance liquidity gauge (Upgrade 1) ──
+  // ── Net balance liquidity gauge ──
   const netGauge = useMemo(() => {
-    const limit = overdraftLimit || 500;
-    const range = limit * 2;
-    const pct = Math.max(0, Math.min(100, ((net + limit) / range) * 100));
-    if (net >= limit) return { pct, color: "#4ade80", label: `${fmt(net)} positive balance` };
-    if (net >= 0)     return { pct, color: "#fbbf24", label: `${fmt(limit - net)} until overdraft` };
-    return { pct, color: "#f87171", label: `${fmt(Math.abs(net))} overdrawn` };
+    const limit = overdraftLimit || 200;
+    if (net < 0) {
+      const overdraftUsed = Math.abs(net);
+      const pct = Math.min(100, (overdraftUsed / limit) * 100);
+      const remaining = Math.max(0, limit - overdraftUsed);
+      return {
+        pct,
+        color: "#f87171",
+        label: `${fmt(overdraftUsed)} overdrawn · ${fmt(remaining)} remaining`,
+      };
+    }
+    if (net < 500) {
+      const pct = Math.min(100, (net / 500) * 100);
+      return { pct, color: "#fbbf24", label: `${fmt(net)} available · low buffer` };
+    }
+    return { pct: 100, color: "#4ade80", label: `${fmt(net)} positive balance` };
   }, [net, overdraftLimit]);
 
   // ── Demo toast helper ──
@@ -1150,7 +1160,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       )}
 
       {/* ── STATEMENT HEADING ── */}
-      <div style={{ marginBottom: 2 }}>
+      <div style={{ marginBottom: 8 }}>
         <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em" }}>
           {demoMode ? "Example Statement" : "Your Statement"}
         </h2>

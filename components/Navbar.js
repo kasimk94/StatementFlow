@@ -89,7 +89,7 @@ const NAVBAR_CSS = `
     .nav-tryfree-desktop { display: none !important; }
     .nav-hamburger      { display: flex !important; }
     .nav-mobile-menu    { display: block !important; }
-    .nav-wrapper-outer  { width: calc(100% - 24px) !important; }
+    .nav-wrapper-outer  { width: calc(100% - 24px) !important; max-width: calc(100% - 24px) !important; }
   }
 
   /* Mobile menu link */
@@ -305,36 +305,33 @@ export default function Navbar({ onScrollToUpload }) {
       ref={wrapperRef}
       className="nav-wrapper-outer"
       style={{
-        position:   "fixed",
-        top:        topPx,
-        left:       "50%",
-        transform:  "translateX(-50%)",
-        width:      "calc(100% - 48px)",
-        maxWidth:   1100,
-        zIndex:     1000,
-        transition: easing,
-        borderRadius: menuOpen ? "21px 21px 16px 16px" : 21,
-        padding:      1,
-        background:   "linear-gradient(135deg, rgba(108,92,231,0.4), rgba(0,212,255,0.35), rgba(255,180,255,0.25), rgba(108,92,231,0.4))",
-        backgroundSize: "300% 300%",
-        animation:    "navBorderGlow 10s ease infinite",
+        position:            "fixed",
+        top:                 topPx,
+        left:                "50%",
+        transform:           "translateX(-50%)",
+        width:               "fit-content",
+        maxWidth:            "calc(100% - 24px)",
+        zIndex:              1000,
+        transition:          easing,
+        borderRadius:        menuOpen ? "50px 50px 20px 20px" : 50,
+        background:          "rgba(255,255,255,0.85)",
+        backdropFilter:      "blur(20px)",
+        WebkitBackdropFilter:"blur(20px)",
+        boxShadow:           "0 4px 24px rgba(0,0,0,0.10)",
+        border:              "1px solid rgba(255,255,255,0.6)",
+        padding:             menuOpen ? 0 : 0,
       }}
     >
-      {/* ── Frosted glass header row ── */}
+      {/* ── Pill header row ── */}
       <header
         style={{
-          borderRadius:        menuOpen ? "20px 20px 0 0" : 20,
-          height:              56,
-          background:          "rgba(255,255,255,0.95)",
-          backdropFilter:      "blur(16px)",
-          WebkitBackdropFilter:"blur(16px)",
-          boxShadow:           menuOpen ? "none" : "0 8px 32px rgba(108,92,231,0.12), 0 2px 8px rgba(0,0,0,0.08)",
-          display:             "flex",
-          alignItems:          "center",
-          justifyContent:      "space-between",
-          padding:             "0 16px 0 20px",
-          gap:                 12,
-          transition:          "border-radius 0.15s ease",
+          borderRadius:  menuOpen ? "50px 50px 0 0" : 50,
+          height:        52,
+          display:       "flex",
+          alignItems:    "center",
+          justifyContent:"space-between",
+          padding:       "0 16px 0 20px",
+          gap:           12,
         }}
       >
         {/* Logo */}
@@ -425,7 +422,7 @@ export default function Navbar({ onScrollToUpload }) {
           background:          "rgba(255,255,255,0.98)",
           backdropFilter:      "blur(16px)",
           WebkitBackdropFilter:"blur(16px)",
-          borderRadius:        "0 0 20px 20px",
+          borderRadius:        "0 0 24px 24px",
           borderTop:           "1px solid rgba(108,92,231,0.08)",
         }}
       >
