@@ -343,29 +343,8 @@ export default function Home() {
   if (transactions) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#f8fafc" }}>
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-          <div className="dash-header-inner max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <Link
-              href="/"
-              onClick={(e) => { e.preventDefault(); handleReset(); window.scrollTo(0, 0); }}
-              className="flex items-center gap-2.5"
-              style={{ textDecoration: "none", cursor: "pointer" }}
-            >
-              <LogoIcon size={32} />
-              <span className="text-lg font-bold text-slate-900">StatementFlow</span>
-            </Link>
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg px-4 py-2 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Upload another
-            </button>
-          </div>
-        </header>
-        <main className="dash-main-inner max-w-6xl mx-auto px-6 py-10">
+        <Navbar onScrollToUpload={scrollToUpload} onUploadAnother={handleReset} />
+        <main className="dash-main-inner max-w-6xl mx-auto px-6 py-10" style={{ paddingTop: 80 }}>
           <Dashboard
             transactions={transactions}
             confidence={parseResult?.confidence}

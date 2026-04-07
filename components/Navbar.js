@@ -147,7 +147,7 @@ const NAV_LINKS = [
   { label: "Security",     href: "#security",     section: "security"     },
 ];
 
-export default function Navbar({ onScrollToUpload }) {
+export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
   const [topPx,         setTopPx]         = useState(-110);
   const [easing,        setEasing]        = useState("top 0.65s cubic-bezier(0.34,1.56,0.64,1)");
   const [activeSection, setActiveSection] = useState("");
@@ -386,9 +386,19 @@ export default function Navbar({ onScrollToUpload }) {
 
         {/* Right side */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          {/* Try Free — desktop only */}
+          {/* Dashboard: "Upload another" | Homepage: "Try Free" — desktop only */}
           <div className="nav-tryfree-desktop">
-            <button className="ntry" onClick={onScrollToUpload}>Try Free</button>
+            {onUploadAnother ? (
+              <button
+                className="ntry"
+                onClick={onUploadAnother}
+                style={{ background: "transparent", color: "#6c5ce7", border: "1.5px solid #6c5ce7", boxShadow: "none", padding: "8px 18px" }}
+              >
+                ↑ Upload another
+              </button>
+            ) : (
+              <button className="ntry" onClick={onScrollToUpload}>Try Free</button>
+            )}
           </div>
           {/* Hamburger — mobile only */}
           <button
@@ -438,13 +448,23 @@ export default function Navbar({ onScrollToUpload }) {
             </a>
           ))}
           <div style={{ padding: "8px 6px 2px" }}>
-            <button
-              className="ntry"
-              style={{ width: "100%", borderRadius: 12, fontSize: 15, padding: "13px" }}
-              onClick={() => { setMenuOpen(false); onScrollToUpload(); }}
-            >
-              Try Free
-            </button>
+            {onUploadAnother ? (
+              <button
+                className="ntry"
+                style={{ width: "100%", borderRadius: 12, fontSize: 15, padding: "13px", background: "transparent", color: "#6c5ce7", border: "1.5px solid #6c5ce7", boxShadow: "none" }}
+                onClick={() => { setMenuOpen(false); onUploadAnother(); }}
+              >
+                ↑ Upload another
+              </button>
+            ) : (
+              <button
+                className="ntry"
+                style={{ width: "100%", borderRadius: 12, fontSize: 15, padding: "13px" }}
+                onClick={() => { setMenuOpen(false); onScrollToUpload(); }}
+              >
+                Try Free
+              </button>
+            )}
           </div>
         </nav>
       </div>
