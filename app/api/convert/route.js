@@ -29,7 +29,7 @@ export async function POST(req) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const extraction = await extractTextFromPDF(buffer);
 
-    if (!extraction.text) {
+    if (!extraction.text || extraction.text.trim().length < 20) {
       return NextResponse.json(
         {
           error:
@@ -171,11 +171,39 @@ async function extractTextFromPDF(buffer) {
   try {
     // Dynamic import avoids Next.js build issues with pdf-parse test file reads
     const pdfParse = (await import("pdf-parse")).default;
+
+    console.log("PDF buffer size:", buffer.length);
+
+    // First attempt — standard parsing
     const data = await pdfParse(buffer);
-    const text = data.text || "";
-    if (text.trim().length > 100) {
-      return { text, method: "pdf-parse", cost: 0 };
+    console.log("Extracted text length:", data.text?.length);
+    console.log("First 200 chars:", data.text?.substring(0, 200));
+
+    if (data.text && data.text.trim().length > 50) {
+      return { text: data.text, method: "pdf-parse", cost: 0 };
     }
+
+    // Second attempt — with whitespace normalisation
+    const data2 = await pdfParse(buffer, {
+      normalizeWhitespace: true,
+      disableCombineTextItems: false,
+    });
+    console.log("Second attempt text length:", data2.text?.length);
+
+    if (data2.text && data2.text.trim().length > 50) {
+      return { text: data2.text, method: "pdf-parse-v2", cost: 0 };
+    }
+
+    // Use whichever attempt returned more text, even if short
+    const longerText =
+      (data.text || "").length >= (data2.text || "").length
+        ? data.text
+        : data2.text;
+
+    if (longerText && longerText.trim().length > 0) {
+      return { text: longerText, method: "pdf-parse-fallback", cost: 0 };
+    }
+
     return {
       text: null,
       method: "failed",
