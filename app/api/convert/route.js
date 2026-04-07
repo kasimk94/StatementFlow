@@ -132,9 +132,12 @@ export async function POST(req) {
 
     const reversalsCount = transactions.filter(t => t.reversalLinked && t.type === "credit").length;
 
-    const totalIncome   = transactions.filter(t => t.type === "credit" && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    const totalExpenses = transactions.filter(t => t.type === "debit"  && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    // FIX 1A — Use PDF summary totals as canonical; fall back to summing transactions
+    const pdfTotals = extractStatementTotals(rawText);
+    const totalIncome   = pdfTotals.moneyIn  ?? transactions.filter(t => t.type === "credit" && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const totalExpenses = pdfTotals.moneyOut ?? transactions.filter(t => t.type === "debit"  && !t.exclude).reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const netBalance    = totalIncome - totalExpenses;
+    console.log("PDF totals:", pdfTotals, "→ income:", totalIncome, "expenses:", totalExpenses);
 
     const { trueSpending, trueIncome, categories, liquidity } =
       calculateTrueSpending(transactions, netBalance, overdraftLimit);
@@ -205,96 +208,132 @@ function extractActualMerchant(desc) {
 }
 
 // ---------------------------------------------------------------------------
-// PART 2 — Internal transfer detection
+// FIX 1A — Statement summary total extractor
 // ---------------------------------------------------------------------------
-function isInternalTransfer(desc) {
-  const d = desc.toLowerCase();
-  const patterns = [
-    "kasim khalid", "kasam khalid", "k khalid",
-    "ref: monzo", "monzo",
-    "savings pot", "save the change",
-    "transfer to", "transfer from",
-    "own transfer", "between accounts",
-    "self transfer", "pot transfer",
-    "flex saver",
+function extractStatementTotals(rawText) {
+  const moneyInPatterns = [
+    /total\s+money\s+in[:\s]+£?([\d,]+\.?\d*)/i,
+    /money\s+in[:\s]+£?([\d,]+\.?\d*)/i,
+    /total\s+credits?[:\s]+£?([\d,]+\.?\d*)/i,
+    /\bcredits?\b[:\s]+£?([\d,]+\.?\d*)/i,
+    /total\s+paid\s+in[:\s]+£?([\d,]+\.?\d*)/i,
+    /paid\s+in[:\s]+£?([\d,]+\.?\d*)/i,
   ];
-  return patterns.some(p => d.includes(p));
+  const moneyOutPatterns = [
+    /total\s+money\s+out[:\s]+£?([\d,]+\.?\d*)/i,
+    /money\s+out[:\s]+£?([\d,]+\.?\d*)/i,
+    /total\s+debits?[:\s]+£?([\d,]+\.?\d*)/i,
+    /\bdebits?\b[:\s]+£?([\d,]+\.?\d*)/i,
+    /total\s+paid\s+out[:\s]+£?([\d,]+\.?\d*)/i,
+    /paid\s+out[:\s]+£?([\d,]+\.?\d*)/i,
+  ];
+
+  let moneyIn = null;
+  for (const pat of moneyInPatterns) {
+    const m = rawText.match(pat);
+    if (m) { moneyIn = parseFloat(m[1].replace(/,/g, "")); break; }
+  }
+
+  let moneyOut = null;
+  for (const pat of moneyOutPatterns) {
+    const m = rawText.match(pat);
+    if (m) { moneyOut = parseFloat(m[1].replace(/,/g, "")); break; }
+  }
+
+  return { moneyIn, moneyOut };
 }
 
 // ---------------------------------------------------------------------------
-// PART 3 — Regex categorisation engine (first match wins)
+// FIX 1B+1C — Rebuilt categorisation engine
 // ---------------------------------------------------------------------------
+const CHARITY_KEYWORDS = [
+  "penny appeal", "muslim global", "islamic relief", "human appeal",
+  "map international", "red cross", "oxfam", "cancer research", "british heart",
+  "save the children", "unicef", "shelter", "mind charity",
+  "macmillan", "age uk", "rspca", "wateraid", "comic relief",
+  "sport relief", "justgiving", "localgiving", "charitycheckout",
+  "charity", "foundation", "appeal", "relief", "humanitarian",
+];
+
 function categoriseTransaction(description, amount, type) {
-  const desc = cleanDescription(description || "").toLowerCase();
+  const cleaned = cleanDescription(description || "");
+  const desc    = cleaned.toLowerCase();
 
-  // Internal transfers — excluded from spending totals
-  if (isInternalTransfer(desc)) return { category: "Bank Transfers", exclude: true };
+  // Step 1 — Refunds (first of all)
+  if (/refund|reversal|reversed|cashback|money back|returned payment/i.test(desc) && type === "credit")
+    return { category: "Refunds", exclude: false };
 
-  // ── Credits ────────────────────────────────────────────────────────────────
-  if (type === "credit" || amount > 0) {
-    if (/salary|payroll|wages|bacs credit|employer|hmrc|tax credit|universal credit|dwp|state pension|dividend|interest paid/i.test(desc))
-      return { category: "Income & Salary", exclude: false };
-    if (/refund|reversal|reversed|cashback|chargeback/i.test(desc))
-      return { category: "Refunds", exclude: false };
-    return { category: "Bank Transfers", exclude: false };
+  // Step 2 — Charity (before PayPal stripping)
+  if (CHARITY_KEYWORDS.some(k => desc.includes(k)))
+    return { category: "Charity", exclude: false };
+
+  // Step 3 — PayPal merchant detection
+  const paypalMatch = cleaned.match(/^PayPal\s*\*?\s*(.+)/i);
+  if (paypalMatch) {
+    const merchant = paypalMatch[1].trim().toLowerCase();
+    if (CHARITY_KEYWORDS.some(k => merchant.includes(k)))
+      return { category: "Charity", exclude: false };
+    if (/tesco|sainsbury|asda|morrisons|waitrose|aldi|lidl|marks & spencer food|m&s food|co-op|coop|iceland food|ocado|farmfoods|budgens|spar|whole foods/i.test(merchant))
+      return { category: "Groceries", exclude: false };
+    if (/mcdonald|burger king|kfc|subway|nando|pizza|domino|deliveroo|uber eats|just eat|greggs|costa coffee|starbucks|caffe nero|pret|restaurant|cafe|takeaway|dessert|ice cream/i.test(merchant))
+      return { category: "Eating Out", exclude: false };
+    if (/superdrug|boots|lloyds pharmacy|primark|next|tkmaxx|tk maxx|argos|wilko|poundland|card factory|salon|barber|hairdress|beauty|nail/i.test(merchant))
+      return { category: "High Street", exclude: false };
+    return { category: "Online Shopping", exclude: false };
   }
 
-  // ── Cash & ATM ─────────────────────────────────────────────────────────────
-  if (/\batm\b|cash machine|cashpoint|cash withdrawal|link atm/i.test(desc))
-    return { category: "Cash & ATM", exclude: false };
+  // Step 4 — Transfers Received
+  if (type === "credit" && /transfer|bank transfer|faster payment|fps|bacs received|standing order received|ref:|payment from/i.test(desc))
+    return { category: "Transfers Received", exclude: false };
 
-  // ── Supermarkets & Food ────────────────────────────────────────────────────
-  if (/tesco|sainsbury|sainsburys|asda|morrisons|waitrose|aldi|lidl|marks\s*&\s*spencer|m&s food|co-op|coop|iceland\b|ocado|farmfoods|budgens|\bspar\b|booths|whole foods|costco/i.test(desc))
-    return { category: "Supermarkets & Food", exclude: false };
+  // Step 5 — Transfers Sent
+  if (type === "debit" && /transfer to|sent to|faster payment|standing order|bill payment to|\bbacs\b|kasim khalid|kasam khalid|k khalid|ref: monzo|monzo|pot transfer|\bflex\b/i.test(desc))
+    return { category: "Transfers Sent", exclude: false };
 
-  // ── Eating & Drinking ──────────────────────────────────────────────────────
-  if (/mcdonald|burger king|\bkfc\b|subway|nando|pizza hut|domino|deliveroo|uber eats|just eat|greggs|costa coffee|starbucks|caffe nero|pret a manger|pret\b|itsu|wagamama|wetherspoon|restaurant|bistro|takeaway|leon\b|wasabi|five guys|franco manca|honest burger|bill's|carluccio|zizzi|pizza express|nando/i.test(desc))
-    return { category: "Eating & Drinking", exclude: false };
+  // Step 6 — Direct Debits
+  if (/amazon prime|amazon membership|rci financial|rci finance|barclays partner|barclays finance|sky |virgin media|\bbt\b|talktalk|vodafone|\bee\b|\bo2\b|three mobile|council tax|tv licence|insurance|aviva|admiral|legal & general|netflix|spotify|disney|apple\.com\/bill|google storage|icloud|microsoft 365|puregym|david lloyd|thames water|ovo energy|british gas|octopus|edf/i.test(desc))
+    return { category: "Direct Debits", exclude: false };
 
-  // ── Travel & Transport ─────────────────────────────────────────────────────
-  if (/\btfl\b|transport for london|trainline|national rail|avanti west|great western|gwr\b|lner\b|southeastern|southern rail|thameslink|crossrail|elizabeth line|oyster card|\bbolt\b|addison lee|\bparking\b|ncp\b|ringo\b|just park|petrol|bp\b|shell\b|esso\b|texaco|jet2|easyjet|ryanair|british airways|luton airport|gatwick|heathrow|stansted|eurostar|\bbus\b|national express|coach\b|arriva|stagecoach|first group|go ahead/i.test(desc))
+  // Step 7 — Groceries
+  if (/tesco|sainsbury|asda|morrisons|waitrose|aldi|lidl|marks & spencer food|m&s food|co-op|\bcoop\b|iceland food|ocado|farmfoods|budgens|\bspar\b|whole foods|fresh and local|freshlocal|local farm|village store|corner shop|newsagent/i.test(desc))
+    return { category: "Groceries", exclude: false };
+
+  // Step 8 — Eating Out
+  if (/mcdonald|burger king|\bkfc\b|subway|nando|pizza|domino|deliveroo|uber eats|just eat|greggs|costa coffee|starbucks|caffe nero|pret a manger|itsu|wagamama|wetherspoon|restaurant|\bcafe\b|\bbar\b|bistro|takeaway|heavenly desert|desserts?|ice cream|food delivery|hungry|eat\./i.test(desc))
+    return { category: "Eating Out", exclude: false };
+
+  // Step 9 — High Street
+  if (/superdrug|boots pharmacy|lloyds pharmacy|cloud city vape|\bvape\b|maani couture|\bcouture\b|primark|\bnext\b|tkmaxx|tk maxx|argos|wilko|poundland|home bargains|\bb&m\b|card factory|waterstones|\bsmiths\b|\bhmv\b|barber|salon|hairdress|beauty|\bnail\b/i.test(desc))
+    return { category: "High Street", exclude: false };
+
+  // Step 10 — Online Shopping
+  if (/amazon(?!.*prime)|ebay|asos|very\.co|littlewoods|boohoo|prettylittlething|shein|etsy|currys|ao\.com|john lewis online|apple store|app store|google play/i.test(desc))
+    return { category: "Online Shopping", exclude: false };
+
+  // Step 11 — Travel & Transport
+  if (/\btfl\b|transport for london|trainline|national rail|avanti|\bgwr\b|\blner\b|southeastern|thameslink|elizabeth line|oyster|\buber\b(?!.*eats)|bolt taxi|addison lee|\bparking\b|\bncp\b|ringo|petrol|\bbp\b|\bshell\b|\besso\b|jet2|easyjet|ryanair|british airways|\bbus\b|\bcoach\b|arriva|stagecoach/i.test(desc))
     return { category: "Travel & Transport", exclude: false };
 
-  // Uber — transport only (not Uber Eats)
-  if (/\buber\b/i.test(desc) && !/uber\s*eats/i.test(desc))
-    return { category: "Travel & Transport", exclude: false };
-
-  // ── Subscriptions & Streaming — before shopping so Amazon Prime beats Amazon
-  if (/netflix|spotify|amazon prime|prime video|disney\+|disney plus|apple tv\+?|now tv|now ent|sky cinema|sky sports|sky q|paramount\+?|britbox|apple music|youtube premium|google one|icloud\+?|adobe cc|creative cloud|microsoft 365|office 365|xbox game pass|playstation plus|ps plus|\bpsn\b|nintendo online|headspace|calm\b|duolingo|audible|kindle unlimited|medium\.com|substack/i.test(desc))
-    return { category: "Subscriptions & Streaming", exclude: false };
-
-  // ── Online & High Street Shopping ──────────────────────────────────────────
-  if (/amazon|amznmktplace|\bamzn\b|ebay|asos|\bnext\b|primark|zara|h&m|topshop|argos|currys|pc world|john lewis|harvey nichols|selfridges|tkmaxx|tk maxx|sports direct|jd sports|nike|adidas|apple store|paypal|shein|very\.co|boohoo|pretty little thing|ao\.com|wayfair|ikea|b&q|screwfix|wickes/i.test(desc))
-    return { category: "Online & High Street", exclude: false };
-
-  // ── Household Bills ────────────────────────────────────────────────────────
-  if (/british gas|ovo energy|octopus energy|edf energy|e\.on|npower|bulb|thames water|severn trent|anglian water|\bbt\b|virgin media|sky broadband|talktalk|vodafone|\bee\b|\bo2\b|\bthree\b|council tax|tv licence|broadband/i.test(desc))
-    return { category: "Household Bills", exclude: false };
-
-  // ── Health & Fitness ───────────────────────────────────────────────────────
-  if (/boots\b|lloyds pharmacy|superdrug|chemist|pharmacy|nhs\b|dentist|optician|specsavers|vision express|puregym|pure gym|\bgym\b|anytime fitness|david lloyd|nuffield health|bupa|axa health|holland barrett/i.test(desc))
+  // Step 12 — Health & Fitness
+  if (/\bboots\b|pharmacy|chemist|\bnhs\b|dentist|optician|specsavers|puregym|\bgym\b|fitness|holland barrett|vitamin|supplement/i.test(desc))
     return { category: "Health & Fitness", exclude: false };
 
-  // ── Entertainment & Leisure ────────────────────────────────────────────────
-  if (/cinema|odeon|vue\b|cineworld|picturehouse|theatre|museum|gallery|english heritage|national trust|bowling|laser quest|escape room|go ape|legoland|alton towers|thorpe park|\bzoo\b|aquarium|concert|ticketmaster|see tickets|eventbrite|airbnb|travelodge|premier inn|holiday inn|booking\.com|expedia|hotels\.com/i.test(desc))
-    return { category: "Entertainment & Leisure", exclude: false };
+  // Step 13 — Household Bills
+  if (/council tax|\bwater\b|electric|gas bill|broadband|internet|tv licence/i.test(desc))
+    return { category: "Household Bills", exclude: false };
 
-  // ── Rent & Mortgage ────────────────────────────────────────────────────────
-  if (/\brent\b|landlord|letting|estate agent|rightmove|zoopla|foxton|connells|purple bricks/i.test(desc))
+  // Step 14 — Cash & ATM
+  if (/\batm\b|cash machine|cashpoint|withdraw|link atm/i.test(desc))
+    return { category: "Cash & ATM", exclude: false };
+
+  // Step 15 — Rent & Mortgage
+  if (/\brent\b|landlord|letting|mortgage/i.test(desc))
     return { category: "Rent & Mortgage", exclude: false };
 
-  // ── Finance & Bills ────────────────────────────────────────────────────────
-  if (/\bloan\b|mortgage|insurance|aviva|legal & general|admiral|comparethemarket|clearscore|experian|barclaycard|\bamex\b|american express|payplan|stepchange|debt management|\brci\b|black horse|hire purchase/i.test(desc))
-    return { category: "Finance & Bills", exclude: false };
+  // Step 16 — Remaining credits
+  if (type === "credit") return { category: "Transfers Received", exclude: false };
 
-  // ── Bank Fees ──────────────────────────────────────────────────────────────
-  if (/\bfee\b|bank charge|overdraft fee|monthly charge|account fee|interest charged/i.test(desc))
-    return { category: "Bank Fees", exclude: false };
-
-  // ── Bank Transfers (remaining) ─────────────────────────────────────────────
-  if (/standing order|faster payment|\bfp\b|sent to|bank transfer|payment reference/i.test(desc))
-    return { category: "Bank Transfers", exclude: false };
-
+  // Step 17 — Fallback
   return { category: "Uncategorised", exclude: false };
 }
 

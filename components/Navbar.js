@@ -11,7 +11,6 @@ const NAVBAR_CSS = `
     100% { background-position: 0%   50%; }
   }
 
-  /* Nav link — no background here; the sliding pill handles that */
   .npill {
     position: relative;
     z-index: 1;
@@ -22,12 +21,11 @@ const NAVBAR_CSS = `
     border-radius: 8px;
     white-space: nowrap;
     color: #4a4a6a;
-    transition: color 0.2s ease, font-weight 0s;
+    transition: color 0.2s ease;
     display: inline-block;
     cursor: pointer;
   }
 
-  /* Try Free button */
   .ntry {
     background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00d4ff 100%);
     background-size: 200% 200%;
@@ -40,41 +38,29 @@ const NAVBAR_CSS = `
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 12px rgba(108, 92, 231, 0.25);
+    box-shadow: 0 2px 12px rgba(108,92,231,0.25);
+    min-height: 44px;
   }
   .ntry:hover {
     opacity: 0.92;
     transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
+    box-shadow: 0 4px 20px rgba(108,92,231,0.4);
     background-position: 100% 50%;
   }
 
-  /* Mobile nav link inside hamburger menu */
-  .npill-mobile {
-    display: block;
-    font-size: 15px;
-    font-weight: 500;
-    text-decoration: none;
-    padding: 13px 16px;
-    border-radius: 10px;
-    color: #4a4a6a;
-    transition: background 0.15s ease, color 0.15s ease;
-    min-height: 48px;
+  /* Desktop nav — hidden on mobile */
+  .nav-links-desktop {
+    position: relative;
     display: flex;
     align-items: center;
+    gap: 2px;
   }
-  .npill-mobile:hover,
-  .npill-mobile:active {
-    background: rgba(108, 92, 231, 0.08);
-    color: #6c5ce7;
+  /* Try Free button — hidden on mobile */
+  .nav-tryfree-desktop {
+    display: inline-flex;
+    align-items: center;
   }
-  .npill-mobile.active {
-    background: rgba(108, 92, 231, 0.1);
-    color: #6c5ce7;
-    font-weight: 600;
-  }
-
-  /* Hamburger button */
+  /* Hamburger — hidden on desktop */
   .nav-hamburger {
     display: none;
     background: none;
@@ -82,7 +68,7 @@ const NAVBAR_CSS = `
     cursor: pointer;
     padding: 8px;
     border-radius: 8px;
-    color: #4a4a6a;
+    color: #1e293b;
     line-height: 1;
     min-width: 44px;
     min-height: 44px;
@@ -93,13 +79,41 @@ const NAVBAR_CSS = `
   }
   .nav-hamburger:hover { background: rgba(108,92,231,0.08); }
 
-  @media (max-width: 768px) {
-    .nav-hamburger { display: flex; }
-    .ntry-desktop  { display: none !important; }
-    .nav-wrapper   { width: calc(100% - 24px) !important; }
+  /* Mobile dropdown — hidden on desktop */
+  .nav-mobile-menu {
+    display: none;
   }
-  @media (min-width: 769px) {
-    .nav-mobile-dropdown { display: none !important; }
+
+  @media (max-width: 768px) {
+    .nav-links-desktop  { display: none !important; }
+    .nav-tryfree-desktop { display: none !important; }
+    .nav-hamburger      { display: flex !important; }
+    .nav-mobile-menu    { display: block !important; }
+    .nav-wrapper-outer  { width: calc(100% - 24px) !important; }
+  }
+
+  /* Mobile menu link */
+  .nav-mobile-link {
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 13px 16px;
+    border-radius: 10px;
+    color: #334155;
+    min-height: 48px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .nav-mobile-link:hover,
+  .nav-mobile-link:active {
+    background: rgba(108,92,231,0.08);
+    color: #6c5ce7;
+  }
+  .nav-mobile-link.active {
+    background: rgba(108,92,231,0.1);
+    color: #6c5ce7;
+    font-weight: 600;
   }
 `;
 
@@ -118,10 +132,8 @@ function LogoIcon({ size = 32 }) {
         <rect x="1"  y="11" width="3" height="6"  rx="1" fill="white" fillOpacity="0.65"/>
         <rect x="6"  y="7"  width="3" height="10" rx="1" fill="white" fillOpacity="0.85"/>
         <rect x="11" y="3"  width="3" height="14" rx="1" fill="white"/>
-        <path d="M2.5 10.5 C5.5 6 9 6.5 12.5 2.5"
-          stroke="white" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
-        <path d="M10.5 1.5 L13 2.5 L12 5"
-          stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M2.5 10.5 C5.5 6 9 6.5 12.5 2.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
+        <path d="M10.5 1.5 L13 2.5 L12 5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
       </svg>
     </div>
   );
@@ -142,16 +154,15 @@ export default function Navbar({ onScrollToUpload }) {
   const [hoveredIdx,    setHoveredIdx]    = useState(null);
   const [menuOpen,      setMenuOpen]      = useState(false);
 
-  // Sliding pill geometry
   const [pill, setPill] = useState({ left: 0, width: 0, opacity: 0 });
 
-  const navRef        = useRef(null);
-  const linkRefs      = useRef([]);
-  const wrapperRef    = useRef(null);
-  const hasMounted    = useRef(false);
-  const lastScrollY   = useRef(0);
-  const hoverTopRef   = useRef(false);
-  const hideTimerRef  = useRef(null);
+  const navRef       = useRef(null);
+  const linkRefs     = useRef([]);
+  const wrapperRef   = useRef(null);
+  const hasMounted   = useRef(false);
+  const lastScrollY  = useRef(0);
+  const hoverTopRef  = useRef(false);
+  const hideTimerRef = useRef(null);
 
   // ── Inject CSS once ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -175,7 +186,16 @@ export default function Navbar({ onScrollToUpload }) {
     return () => document.removeEventListener("click", handleClick);
   }, [menuOpen]);
 
-  // ── Sliding pill position ─────────────────────────────────────────────────
+  // Close menu on resize to desktop
+  useEffect(() => {
+    function onResize() {
+      if (window.innerWidth > 768) setMenuOpen(false);
+    }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // ── Sliding pill ──────────────────────────────────────────────────────────
   const activeIdx = NAV_LINKS.findIndex((l) => l.section === activeSection);
   const targetIdx = hoveredIdx !== null ? hoveredIdx : activeIdx;
 
@@ -199,7 +219,7 @@ export default function Navbar({ onScrollToUpload }) {
     return () => window.removeEventListener("resize", onResize);
   }, [targetIdx, movePill]);
 
-  // ── Drop-in on first load ─────────────────────────────────────────────────
+  // ── Drop-in on mount ──────────────────────────────────────────────────────
   useEffect(() => {
     const t1 = setTimeout(() => {
       setTopPx(12);
@@ -212,7 +232,7 @@ export default function Navbar({ onScrollToUpload }) {
     return () => clearTimeout(t1);
   }, []);
 
-  // ── Scroll + hover-at-top show/hide ───────────────────────────────────────
+  // ── Show/hide on scroll + mouse-at-top ────────────────────────────────────
   useEffect(() => {
     function show() { setTopPx(12); }
     function hide() { setTopPx(-110); }
@@ -239,9 +259,7 @@ export default function Navbar({ onScrollToUpload }) {
       } else {
         if (hoverTopRef.current) {
           hoverTopRef.current = false;
-          if (window.scrollY > 100) {
-            hideTimerRef.current = setTimeout(hide, 1500);
-          }
+          if (window.scrollY > 100) hideTimerRef.current = setTimeout(hide, 1500);
         }
       }
     }
@@ -285,7 +303,7 @@ export default function Navbar({ onScrollToUpload }) {
   return (
     <div
       ref={wrapperRef}
-      className="nav-wrapper"
+      className="nav-wrapper-outer"
       style={{
         position:   "fixed",
         top:        topPx,
@@ -295,87 +313,72 @@ export default function Navbar({ onScrollToUpload }) {
         maxWidth:   1100,
         zIndex:     1000,
         transition: easing,
-        borderRadius: 21,
+        borderRadius: menuOpen ? "21px 21px 16px 16px" : 21,
         padding:      1,
         background:   "linear-gradient(135deg, rgba(108,92,231,0.4), rgba(0,212,255,0.35), rgba(255,180,255,0.25), rgba(108,92,231,0.4))",
         backgroundSize: "300% 300%",
         animation:    "navBorderGlow 10s ease infinite",
       }}
     >
-      {/* Inner frosted-glass pill */}
+      {/* ── Frosted glass header row ── */}
       <header
         style={{
           borderRadius:        menuOpen ? "20px 20px 0 0" : 20,
           height:              56,
-          background:          "rgba(255, 255, 255, 0.95)",
+          background:          "rgba(255,255,255,0.95)",
           backdropFilter:      "blur(16px)",
           WebkitBackdropFilter:"blur(16px)",
           boxShadow:           menuOpen ? "none" : "0 8px 32px rgba(108,92,231,0.12), 0 2px 8px rgba(0,0,0,0.08)",
-          display:             "grid",
-          gridTemplateColumns: "1fr auto 1fr",
+          display:             "flex",
           alignItems:          "center",
+          justifyContent:      "space-between",
           padding:             "0 16px 0 20px",
+          gap:                 12,
           transition:          "border-radius 0.15s ease",
         }}
       >
-        {/* ── Logo ── */}
+        {/* Logo */}
         <Link
           href="/"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none" }}
+          style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none", flexShrink: 0 }}
         >
           <LogoIcon size={30} />
           <span style={{
-            fontSize:   16,
-            fontWeight: 800,
-            letterSpacing: "-0.02em",
+            fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
             background: "linear-gradient(135deg, #1a1a2e 0%, #6c5ce7 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor:  "transparent",
-            backgroundClip:       "text",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
           }}>
             StatementFlow
           </span>
         </Link>
 
-        {/* ── Desktop nav links with sliding pill ── */}
+        {/* Desktop nav links with sliding pill */}
         <nav
           ref={navRef}
-          className="hidden md:flex"
-          style={{ position: "relative", alignItems: "center", gap: 2 }}
+          className="nav-links-desktop"
           onMouseLeave={() => setHoveredIdx(null)}
         >
-          {/* Sliding background pill */}
           <div
             aria-hidden="true"
             style={{
-              position:   "absolute",
-              top:        "50%",
-              transform:  "translateY(-50%)",
-              height:     34,
-              left:       pill.left,
-              width:      pill.width,
-              background: "rgba(108, 92, 231, 0.12)",
-              borderRadius: 10,
-              opacity:    pill.opacity,
+              position: "absolute", top: "50%", transform: "translateY(-50%)",
+              height: 34, left: pill.left, width: pill.width,
+              background: "rgba(108,92,231,0.12)", borderRadius: 10, opacity: pill.opacity,
               transition: "left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease",
               pointerEvents: "none",
             }}
           />
           {NAV_LINKS.map(({ label, href, section }, i) => {
             const isActive  = activeSection === section;
-            const isHovered = hoveredIdx === i;
-            const highlight = isActive || isHovered;
+            const highlight = isActive || hoveredIdx === i;
             return (
               <a
                 key={section}
                 href={href}
                 ref={(el) => { linkRefs.current[i] = el; }}
                 className="npill"
-                style={{
-                  color:      highlight ? "#6c5ce7" : "#4a4a6a",
-                  fontWeight: isActive  ? 600       : 500,
-                }}
+                style={{ color: highlight ? "#6c5ce7" : "#4a4a6a", fontWeight: isActive ? 600 : 500 }}
                 onMouseEnter={() => setHoveredIdx(i)}
               >
                 {label}
@@ -384,28 +387,25 @@ export default function Navbar({ onScrollToUpload }) {
           })}
         </nav>
 
-        {/* ── Right side: Try Free (desktop) + Hamburger (mobile) ── */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+        {/* Right side */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           {/* Try Free — desktop only */}
-          <button className="ntry ntry-desktop" onClick={onScrollToUpload}>
-            Try Free
-          </button>
+          <div className="nav-tryfree-desktop">
+            <button className="ntry" onClick={onScrollToUpload}>Try Free</button>
+          </div>
           {/* Hamburger — mobile only */}
           <button
             className="nav-hamburger"
             onClick={() => setMenuOpen((o) => !o)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
           >
             {menuOpen ? (
-              /* X icon */
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="6"  y1="6" x2="18" y2="18" />
               </svg>
             ) : (
-              /* Hamburger icon */
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="3" y1="6"  x2="21" y2="6"  />
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />
@@ -415,36 +415,35 @@ export default function Navbar({ onScrollToUpload }) {
         </div>
       </header>
 
-      {/* ── Mobile dropdown menu ── */}
+      {/* ── Mobile dropdown ── */}
       <div
-        className="nav-mobile-dropdown"
+        className="nav-mobile-menu"
         style={{
-          overflow:   "hidden",
-          maxHeight:  menuOpen ? 480 : 0,
-          transition: "max-height 0.3s ease",
-          background: "rgba(255, 255, 255, 0.97)",
+          overflow:            "hidden",
+          maxHeight:           menuOpen ? 520 : 0,
+          transition:          "max-height 0.3s ease",
+          background:          "rgba(255,255,255,0.98)",
           backdropFilter:      "blur(16px)",
           WebkitBackdropFilter:"blur(16px)",
-          borderRadius: "0 0 20px 20px",
-          borderTop: "1px solid rgba(108,92,231,0.1)",
+          borderRadius:        "0 0 20px 20px",
+          borderTop:           "1px solid rgba(108,92,231,0.08)",
         }}
       >
-        <nav style={{ padding: "8px 12px 16px" }}>
+        <nav style={{ padding: "6px 10px 14px" }}>
           {NAV_LINKS.map(({ label, href, section }) => (
             <a
               key={section}
               href={href}
-              className={`npill-mobile${activeSection === section ? " active" : ""}`}
+              className={`nav-mobile-link${activeSection === section ? " active" : ""}`}
               onClick={() => setMenuOpen(false)}
             >
               {label}
             </a>
           ))}
-          {/* Try Free in menu */}
-          <div style={{ padding: "8px 4px 0" }}>
+          <div style={{ padding: "8px 6px 2px" }}>
             <button
               className="ntry"
-              style={{ width: "100%", borderRadius: 12, padding: "12px", fontSize: "15px" }}
+              style={{ width: "100%", borderRadius: 12, fontSize: 15, padding: "13px" }}
               onClick={() => { setMenuOpen(false); onScrollToUpload(); }}
             >
               Try Free

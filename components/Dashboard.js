@@ -19,90 +19,88 @@ function fmtShort(amount) {
 const UNKNOWN_CAT = "Unknown ⚠️";
 
 const CAT_CONFIG = {
-  "Income & Salary":           { hex: "#10b981", badge: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
-  "Refunds":                   { hex: "#14b8a6", badge: "bg-teal-100 text-teal-800 ring-teal-200" },
-  "Supermarkets & Food":       { hex: "#22c55e", badge: "bg-green-100 text-green-800 ring-green-200" },
-  "Online & High Street":      { hex: "#3b82f6", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
-  "Eating & Drinking":         { hex: "#f59e0b", badge: "bg-amber-100 text-amber-800 ring-amber-200" },
-  "Travel & Transport":        { hex: "#0ea5e9", badge: "bg-sky-100 text-sky-800 ring-sky-200" },
-  "Entertainment & Leisure":   { hex: "#8b5cf6", badge: "bg-violet-100 text-violet-800 ring-violet-200" },
-  "Health & Fitness":          { hex: "#ec4899", badge: "bg-pink-100 text-pink-800 ring-pink-200" },
-  "Household Bills":           { hex: "#64748b", badge: "bg-slate-100 text-slate-700 ring-slate-200" },
-  "Cash & ATM":                { hex: "#eab308", badge: "bg-yellow-100 text-yellow-800 ring-yellow-200" },
-  "Subscriptions & Streaming": { hex: "#a855f7", badge: "bg-purple-100 text-purple-800 ring-purple-200" },
-  "Bank Transfers":            { hex: "#6366f1", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
-  "Finance & Bills":           { hex: "#475569", badge: "bg-slate-100 text-slate-600 ring-slate-200" },
-  "Bank Fees":                 { hex: "#94a3b8", badge: "bg-slate-100 text-slate-500 ring-slate-200" },
-  "Rent & Mortgage":           { hex: "#1e293b", badge: "bg-slate-200 text-slate-900 ring-slate-300" },
-  "Uncategorised":             { hex: "#f87171", badge: "bg-red-100 text-red-700 ring-red-200" },
-  "Charity & Donations":       { hex: "#a855f7", badge: "bg-purple-100 text-purple-800 ring-purple-200" },
-  "Vaping & Tobacco":          { hex: "#84cc16", badge: "bg-lime-100 text-lime-800 ring-lime-200" },
-  [UNKNOWN_CAT]:               { hex: "#f87171", badge: "bg-red-100 text-red-700 ring-red-200" },
+  "Groceries":               { hex: "#166534", badge: "bg-green-100 text-green-800 ring-green-200" },
+  "Eating Out":              { hex: "#9a3412", badge: "bg-orange-100 text-orange-800 ring-orange-200" },
+  "Online Shopping":         { hex: "#854d0e", badge: "bg-yellow-100 text-yellow-800 ring-yellow-200" },
+  "High Street":             { hex: "#9d174d", badge: "bg-pink-100 text-pink-800 ring-pink-200" },
+  "Travel & Transport":      { hex: "#1e40af", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
+  "Household Bills":         { hex: "#334155", badge: "bg-slate-100 text-slate-700 ring-slate-200" },
+  "Direct Debits":           { hex: "#3730a3", badge: "bg-indigo-100 text-indigo-800 ring-indigo-200" },
+  "Health & Fitness":        { hex: "#134e4a", badge: "bg-teal-100 text-teal-800 ring-teal-200" },
+  "Entertainment & Leisure": { hex: "#6b21a8", badge: "bg-purple-100 text-purple-800 ring-purple-200" },
+  "Charity":                 { hex: "#881337", badge: "bg-rose-100 text-rose-800 ring-rose-200" },
+  "Cash & ATM":              { hex: "#57534e", badge: "bg-stone-100 text-stone-700 ring-stone-200" },
+  "Transfers Received":      { hex: "#065f46", badge: "bg-emerald-100 text-emerald-800 ring-emerald-200" },
+  "Transfers Sent":          { hex: "#991b1b", badge: "bg-red-100 text-red-800 ring-red-200" },
+  "Refunds":                 { hex: "#166534", badge: "bg-green-100 text-green-800 ring-green-200" },
+  "Finance & Bills":         { hex: "#1e40af", badge: "bg-blue-100 text-blue-800 ring-blue-200" },
+  "Rent & Mortgage":         { hex: "#991b1b", badge: "bg-red-100 text-red-800 ring-red-200" },
+  "Uncategorised":           { hex: "#6b7280", badge: "bg-gray-100 text-gray-700 ring-gray-200" },
+  [UNKNOWN_CAT]:             { hex: "#6b7280", badge: "bg-gray-100 text-gray-700 ring-gray-200" },
 };
 
 const CAT_EMOJI = {
-  "Income & Salary":           "💰",
-  "Refunds":                   "↩️",
-  "Supermarkets & Food":       "🛒",
-  "Online & High Street":      "🛍️",
-  "Eating & Drinking":         "🍽️",
-  "Travel & Transport":        "🚇",
-  "Entertainment & Leisure":   "🎭",
-  "Health & Fitness":          "💊",
-  "Household Bills":           "🏠",
-  "Cash & ATM":                "🏧",
-  "Subscriptions & Streaming": "📺",
-  "Bank Transfers":            "🔄",
-  "Finance & Bills":           "💳",
-  "Bank Fees":                 "🏦",
-  "Rent & Mortgage":           "🏡",
-  "Uncategorised":             "❓",
-  "Charity & Donations":       "❤️",
-  "Vaping & Tobacco":          "💨",
-  [UNKNOWN_CAT]:               "❓",
+  "Groceries":               "🛒",
+  "Eating Out":              "🍽️",
+  "Online Shopping":         "🛍️",
+  "High Street":             "🏪",
+  "Travel & Transport":      "🚇",
+  "Household Bills":         "🏠",
+  "Direct Debits":           "📋",
+  "Health & Fitness":        "💊",
+  "Entertainment & Leisure": "🎭",
+  "Charity":                 "❤️",
+  "Cash & ATM":              "🏧",
+  "Transfers Received":      "💸",
+  "Transfers Sent":          "🔄",
+  "Refunds":                 "↩️",
+  "Finance & Bills":         "💳",
+  "Rent & Mortgage":         "🏡",
+  "Uncategorised":           "❓",
+  [UNKNOWN_CAT]:             "❓",
 };
 
-// ─── Category pill colours (Upgrade 3) ───────────────────────────────────────
+// ─── Category pill colours ────────────────────────────────────────────────────
 const CAT_PILL_STYLE = {
-  "Supermarkets & Food":       { bg: "#dcfce7", color: "#166534" },
-  "Eating & Drinking":         { bg: "#ffedd5", color: "#9a3412" },
-  "Travel & Transport":        { bg: "#dbeafe", color: "#1e40af" },
-  "Household Bills":           { bg: "#f1f5f9", color: "#334155" },
-  "Subscriptions & Streaming": { bg: "#f3e8ff", color: "#6b21a8" },
-  "Entertainment & Leisure":   { bg: "#fce7f3", color: "#9d174d" },
-  "Health & Fitness":          { bg: "#ccfbf1", color: "#134e4a" },
-  "Online & High Street":      { bg: "#fef9c3", color: "#854d0e" },
-  "Bank Transfers":            { bg: "#f3f4f6", color: "#374151" },
-  "Income & Salary":           { bg: "#d1fae5", color: "#065f46" },
-  "Rent & Mortgage":           { bg: "#fee2e2", color: "#991b1b" },
-  "Cash & ATM":                { bg: "#f5f5f4", color: "#57534e" },
-  "Finance & Bills":           { bg: "#e0e7ff", color: "#3730a3" },
-  "Refunds":                   { bg: "#ccfbf1", color: "#134e4a" },
-  "Bank Fees":                 { bg: "#f3f4f6", color: "#374151" },
-  "Uncategorised":             { bg: "#f9fafb", color: "#6b7280" },
-  [UNKNOWN_CAT]:               { bg: "#f9fafb", color: "#6b7280" },
+  "Groceries":               { bg: "#dcfce7", color: "#166534" },
+  "Eating Out":              { bg: "#ffedd5", color: "#9a3412" },
+  "Online Shopping":         { bg: "#fef9c3", color: "#854d0e" },
+  "High Street":             { bg: "#fce7f3", color: "#9d174d" },
+  "Travel & Transport":      { bg: "#dbeafe", color: "#1e40af" },
+  "Household Bills":         { bg: "#f1f5f9", color: "#334155" },
+  "Direct Debits":           { bg: "#e0e7ff", color: "#3730a3" },
+  "Health & Fitness":        { bg: "#ccfbf1", color: "#134e4a" },
+  "Entertainment & Leisure": { bg: "#f3e8ff", color: "#6b21a8" },
+  "Charity":                 { bg: "#fce7f3", color: "#881337" },
+  "Cash & ATM":              { bg: "#f5f5f4", color: "#57534e" },
+  "Transfers Received":      { bg: "#d1fae5", color: "#065f46" },
+  "Transfers Sent":          { bg: "#fee2e2", color: "#991b1b" },
+  "Refunds":                 { bg: "#dcfce7", color: "#166534" },
+  "Finance & Bills":         { bg: "#e0e7ff", color: "#1e40af" },
+  "Rent & Mortgage":         { bg: "#fee2e2", color: "#991b1b" },
+  "Uncategorised":           { bg: "#f9fafb", color: "#6b7280" },
+  [UNKNOWN_CAT]:             { bg: "#f9fafb", color: "#6b7280" },
 };
 
 const CAT_TIPS = {
-  "Income & Salary":           "Salary, wages, benefits, and other incoming money",
-  "Refunds":                   "Refunds and cashbacks from retailers",
-  "Supermarkets & Food":       "Supermarkets, food stores, and online grocery delivery",
-  "Online & High Street":      "Clothing, electronics, home goods, and online retail",
-  "Eating & Drinking":         "Restaurants, cafés, takeaways, pubs, and fast food",
-  "Travel & Transport":        "Trains, buses, taxis, Uber, fuel, and parking",
-  "Entertainment & Leisure":   "Cinema, theatre, gaming, events, and hobbies",
-  "Health & Fitness":          "Pharmacy, gym, medical, dentist, and personal care",
-  "Household Bills":           "Utilities, insurance, broadband, phone, and council tax",
-  "Cash & ATM":                "ATM withdrawals and cash transactions",
-  "Subscriptions & Streaming": "Netflix, Spotify, Disney+, and other recurring services",
-  "Bank Transfers":            "Bank transfers and payments to individuals",
-  "Finance & Bills":           "Financial services, bank charges, and miscellaneous bills",
-  "Bank Fees":                 "Bank charges, interest, and overdraft fees",
-  "Rent & Mortgage":           "Rent payments and mortgage repayments",
-  "Uncategorised":             "Transactions that couldn't be automatically categorised",
-  "Charity & Donations":       "Charitable giving and donations",
-  "Vaping & Tobacco":          "Vape shops, tobacconists, and related purchases",
-  [UNKNOWN_CAT]:               "Transactions that couldn't be automatically categorised",
+  "Groceries":               "Supermarkets, food stores, and online grocery delivery",
+  "Eating Out":              "Restaurants, cafés, takeaways, pubs, and fast food",
+  "Online Shopping":         "Amazon, eBay, ASOS, and other online retailers",
+  "High Street":             "High street shops, salons, pharmacies, and vape stores",
+  "Travel & Transport":      "Trains, buses, taxis, Uber, fuel, and parking",
+  "Household Bills":         "Utilities, broadband, and council tax",
+  "Direct Debits":           "Recurring subscriptions, insurance, and regular bills",
+  "Health & Fitness":        "Pharmacy, gym, medical, dentist, and personal care",
+  "Entertainment & Leisure": "Cinema, theatre, gaming, events, and hobbies",
+  "Charity":                 "Charitable giving and donations",
+  "Cash & ATM":              "ATM withdrawals and cash transactions",
+  "Transfers Received":      "Incoming bank transfers and faster payments",
+  "Transfers Sent":          "Outgoing bank transfers and payments to individuals",
+  "Refunds":                 "Refunds and cashbacks from retailers",
+  "Finance & Bills":         "Loans, hire purchase, and financial services",
+  "Rent & Mortgage":         "Rent payments and mortgage repayments",
+  "Uncategorised":           "Transactions that couldn't be automatically categorised",
+  [UNKNOWN_CAT]:             "Transactions that couldn't be automatically categorised",
 };
 
 function catHex(name)   { return (CAT_CONFIG[name] ?? CAT_CONFIG[UNKNOWN_CAT]).hex; }
@@ -447,13 +445,13 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   const debits = transactions.filter(t => t.amount < 0);
 
   // ── Spending personality ──
-  const SKIP_CATS = new Set(["Income & Salary","Bank Transfers","Refunds","Finance & Bills","Bank Fees"]);
+  const SKIP_CATS = new Set(["Transfers Received","Transfers Sent","Refunds","Direct Debits","Finance & Bills"]);
   const topCat = categoryBreakdown.find(c => !SKIP_CATS.has(c.name));
   const PERSONALITIES = {
     default:     { emoji: "⚖️", name: "The Balanced Budgeter",  desc: "You spread your spending evenly — no obvious weak spots",              gradient: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)" },
     homebody:    { emoji: "🏠", name: "The Homebody",           desc: "Home & essentials are your biggest priority this month",               gradient: "linear-gradient(135deg,#4facfe 0%,#00c9ff 100%)" },
     foodie:      { emoji: "🍕", name: "The Foodie",             desc: "Restaurants & cafes take the top spot — you love eating out",          gradient: "linear-gradient(135deg,#f6d365 0%,#fda085 100%)" },
-    streamer:    { emoji: "📺", name: "The Streamer",           desc: "Subscriptions & streaming services dominate your spending",            gradient: "linear-gradient(135deg,#a18cd1 0%,#fbc2eb 100%)" },
+    subscriber:  { emoji: "📋", name: "The Bill Payer",         desc: "Regular bills & direct debits dominate your outgoings",               gradient: "linear-gradient(135deg,#a18cd1 0%,#fbc2eb 100%)" },
     shopper:     { emoji: "🛍️", name: "The Shopper",            desc: "Retail therapy is real — shopping leads your spending this month",     gradient: "linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)" },
     commuter:    { emoji: "🚇", name: "The Commuter",           desc: "Getting around costs you the most — transport is your #1 category",   gradient: "linear-gradient(135deg,#30cfd0 0%,#5f72bd 100%)" },
     entertainer: { emoji: "🎭", name: "The Entertainer",        desc: "Entertainment & leisure is where you splash out the most",             gradient: "linear-gradient(135deg,#cd9cf2 0%,#8b5cf6 100%)" },
@@ -462,13 +460,13 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   let personality = PERSONALITIES.default;
   if (topCat) {
     const n = topCat.name;
-    if (["Supermarkets & Food","Household Bills","Rent & Mortgage"].includes(n)) personality = PERSONALITIES.homebody;
-    else if (n === "Eating & Drinking")         personality = PERSONALITIES.foodie;
-    else if (n === "Subscriptions & Streaming") personality = PERSONALITIES.streamer;
-    else if (n === "Online & High Street")      personality = PERSONALITIES.shopper;
-    else if (n === "Travel & Transport")        personality = PERSONALITIES.commuter;
-    else if (n === "Entertainment & Leisure")   personality = PERSONALITIES.entertainer;
-    else if (n === "Health & Fitness")          personality = PERSONALITIES.wellness;
+    if (["Groceries","Household Bills","Rent & Mortgage"].includes(n)) personality = PERSONALITIES.homebody;
+    else if (n === "Eating Out")              personality = PERSONALITIES.foodie;
+    else if (n === "Direct Debits")           personality = PERSONALITIES.subscriber;
+    else if (n === "Online Shopping" || n === "High Street") personality = PERSONALITIES.shopper;
+    else if (n === "Travel & Transport")      personality = PERSONALITIES.commuter;
+    else if (n === "Entertainment & Leisure") personality = PERSONALITIES.entertainer;
+    else if (n === "Health & Fitness")        personality = PERSONALITIES.wellness;
   }
 
   // ── Top 5 merchants (used in why text + card C) ──
@@ -611,11 +609,11 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
       </div>
 
       {/* ── ROW 1: Personality + Money Moments ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 14 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 14, alignItems: "stretch" }}>
 
         {/* Card A — Spending Personality with "Why?" toggle (Upgrade 4) */}
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ borderRadius: showWhy ? "12px 12px 0 0" : 12, boxShadow: "0 2px 16px rgba(0,0,0,0.12)", padding: 24, background: personality.gradient, minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+          <div style={{ flex: 1, borderRadius: showWhy ? "12px 12px 0 0" : 12, boxShadow: "0 2px 16px rgba(0,0,0,0.12)", padding: 24, background: personality.gradient, minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -24, right: -24, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
             <div style={{ position: "absolute", bottom: -28, left: -12, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
             <p style={{ margin: "0 0 8px", fontSize: "0.62rem", fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Spending Personality</p>
@@ -637,7 +635,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
         </div>
 
         {/* Card B — Money Moments */}
-        <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: 24, border: "1px solid #f1f5f9" }}>
+        <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: 24, border: "1px solid #f1f5f9", height: "100%", boxSizing: "border-box" }}>
           {sectionLabel("Money Moments")}
           <div style={{ display: "flex", flexDirection: "column" }}>
             {busiestDay && (
@@ -1147,18 +1145,11 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         </div>
       )}
 
-      {/* ── STATEMENT HEADING ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em" }}>
-            {demoMode ? "📊 Example Statement" : "📊 Your Statement"}
-          </h2>
-          <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
-            {transactions.length} transactions analysed{dateRange ? ` · ${dateRange}` : ""}
-            {bankName ? ` · ${bankName}` : ""}
-          </p>
-        </div>
-      </div>
+      {/* ── STATEMENT SUBTITLE ── */}
+      <p style={{ margin: 0, fontSize: "0.8rem", color: "#94a3b8" }}>
+        {transactions.length} transactions analysed{dateRange ? ` · ${dateRange}` : ""}
+        {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
+      </p>
 
       {/* ── EXPORT TOOLBAR ── */}
       <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />
