@@ -168,53 +168,65 @@ export async function POST(req) {
 // PDF text extraction — pdf-parse (free, local, zero API cost)
 // ---------------------------------------------------------------------------
 async function extractTextFromPDF(buffer) {
-  try {
-    // pdfjs-dist/legacy works in Node.js serverless without DOM APIs
-    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  return new Promise((resolve) => {
+    try {
+      // pdf2json — pure Node.js, no browser APIs, works in Vercel serverless
+      const PDF2Json = require("pdf2json");
+      const pdfParser = new PDF2Json(null, 1);
 
-    // Disable web worker — not available in server environment
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+      console.log("PDF buffer size:", buffer.length);
 
-    console.log("PDF buffer size:", buffer.length);
+      pdfParser.on("pdfParser_dataError", (err) => {
+        console.error("pdf2json error:", err.parserError);
+        resolve({ text: null, method: "failed", cost: 0, error: err.parserError });
+      });
 
-    const uint8Array = new Uint8Array(buffer);
+      pdfParser.on("pdfParser_dataReady", (pdfData) => {
+        try {
+          let fullText = "";
 
-    const loadingTask = pdfjsLib.getDocument({
-      data:             uint8Array,
-      useWorkerFetch:   false,
-      isEvalSupported:  false,
-      useSystemFonts:   true,
-      disableFontFace:  true,
-    });
+          if (pdfData && pdfData.Pages) {
+            pdfData.Pages.forEach((page) => {
+              if (page.Texts) {
+                page.Texts.forEach((textItem) => {
+                  if (textItem.R) {
+                    textItem.R.forEach((r) => {
+                      if (r.T) {
+                        fullText += decodeURIComponent(r.T) + " ";
+                      }
+                    });
+                  }
+                });
+              }
+              fullText += "\n";
+            });
+          }
 
-    const pdf = await loadingTask.promise;
-    console.log("PDF pages:", pdf.numPages);
+          console.log("pdf2json extracted length:", fullText.length);
+          console.log("First 300 chars:", fullText.substring(0, 300));
 
-    let fullText = "";
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page        = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText    = textContent.items.map((item) => item.str).join(" ");
-      fullText += pageText + "\n";
+          if (fullText.trim().length > 50) {
+            resolve({ text: fullText, method: "pdf2json", cost: 0 });
+          } else {
+            resolve({
+              text: null,
+              method: "failed",
+              cost: 0,
+              error: "No text extracted — PDF may be scanned",
+            });
+          }
+        } catch (parseErr) {
+          console.error("pdf2json parse error:", parseErr.message);
+          resolve({ text: null, method: "failed", cost: 0, error: parseErr.message });
+        }
+      });
+
+      pdfParser.parseBuffer(buffer);
+    } catch (err) {
+      console.error("pdf2json init error:", err.message);
+      resolve({ text: null, method: "failed", cost: 0, error: err.message });
     }
-
-    console.log("Extracted text length:", fullText.length);
-    console.log("First 300 chars:", fullText.substring(0, 300));
-
-    if (fullText.trim().length > 50) {
-      return { text: fullText, method: "pdfjs", cost: 0 };
-    }
-
-    return {
-      text: null,
-      method: "failed",
-      cost: 0,
-      error: "Could not extract text — PDF may be scanned",
-    };
-  } catch (err) {
-    console.error("pdfjs extraction error:", err.message);
-    return { text: null, method: "failed", cost: 0, error: err.message };
-  }
+  });
 }
 
 // ---------------------------------------------------------------------------
