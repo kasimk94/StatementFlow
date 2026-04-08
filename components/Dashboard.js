@@ -245,12 +245,13 @@ function BarTooltip({ active, payload, label }) {
 
 const PAGE_SIZE = 15;
 
-// ─── Accountant View: P&L + VAT Summary + Business Flags ─────────────────────
+// ─── Accountant View: P&L + VAT Summary + Business Expense Review ────────────
 function AccountantView({ transactions, income, expenses, net, categoryBreakdown, vatSummary, dateRange, period, bank, bankName }) {
+  const [checkedRows, setCheckedRows] = useState(new Set());
+
   const periodStr = period
     ? (period.from && period.to ? `${period.from} – ${period.to}` : (period.to || dateRange || ""))
     : (dateRange || "");
-  const bankStr = (bank && bank !== "ai-parsed") ? bank : (bankName || "Your Bank");
 
   // Income breakdown by category
   const incomeByCategory = {};
@@ -261,39 +262,52 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
   });
   const incomeCategories = Object.entries(incomeByCategory).sort((a, b) => b[1] - a[1]);
 
-  // Business expense flags: travel, software/subs, over £50, professional
-  const businessTx = transactions.filter(t => {
-    if (t.amount >= 0 || t.exclude || t.excludeFromTotals) return false;
-    const amt = Math.abs(t.amount);
-    const isBizCat = ["Travel & Transport", "Direct Debits", "Finance & Bills", "Health & Fitness", "Online Shopping"].includes(t.category);
-    return amt >= 50 || isBizCat;
-  }).sort((a, b) => a.amount - b.amount); // most negative first
+  // Transactions to review: all debits except excluded categories
+  const REVIEW_EXCLUDE = new Set(["Transfers Sent", "Cash & ATM", "Charity", "Groceries"]);
+  const reviewTx = transactions.filter(t =>
+    t.amount < 0 && !t.exclude && !t.excludeFromTotals && !REVIEW_EXCLUDE.has(t.category)
+  ).sort((a, b) => a.amount - b.amount);
 
-  // VAT reclaimable breakdown from vatSummary OR compute from transactions
+  // Selected totals
+  const selectedTotal    = reviewTx.filter((_, i) => checkedRows.has(i)).reduce((s, t) => s + Math.abs(t.amount), 0);
+  const selectedVATTotal = reviewTx.filter((_, i) => checkedRows.has(i)).reduce((s, t) => s + (t.vatAmount || 0), 0);
+
+  function toggleRow(i) {
+    setCheckedRows(prev => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setCheckedRows(prev => prev.size === reviewTx.length ? new Set() : new Set(reviewTx.map((_, i) => i)));
+  }
+
+  // VAT data
   const vatBreakdown = vatSummary?.breakdown ?? {};
   const vatTotal     = vatSummary?.totalReclaimable ?? 0;
-
-  // All categories that had VAT for the table
-  const vatCatRows = categoryBreakdown
+  const vatCount     = vatSummary?.transactionCount ?? 0;
+  const vatCatRows   = categoryBreakdown
     .filter(c => c.total > 0 && !["Groceries","Cash & ATM","Transfers Sent","Transfers Received","Refunds","Charity","Rent & Mortgage"].includes(c.name))
     .map(c => ({ name: c.name, spend: c.total, vat: vatBreakdown[c.name] || 0 }));
 
-  const rowStyle = { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: "0.9rem" };
-  const dividerStyle = { borderTop: "2px solid #e2e8f0", margin: "4px 0" };
-  const cardStyle = { background: "#fff", borderRadius: 16, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: "24px 28px", border: "1px solid #f1f5f9" };
+  const rowStyle  = { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: "0.9rem" };
+  const divStyle  = { borderTop: "2px solid #e2e8f0", margin: "4px 0" };
+  const cardStyle = { background: "#fff", borderRadius: 16, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: "24px 28px", border: "1px solid #f1f5f9", borderTop: "3px solid #6d28d9" };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="accountant-panel" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-      {/* ── P&L STATEMENT ── */}
-      <div style={cardStyle} className="print-section">
+      {/* ── CARD 1: P&L STATEMENT ── */}
+      <div style={cardStyle} className="pl-card">
         <div style={{ marginBottom: 20 }}>
           <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Profit &amp; Loss Summary</h3>
           <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>{periodStr} · Prepared by StatementFlow</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-          {/* Income column */}
+          {/* Income */}
           <div>
             <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#059669", textTransform: "uppercase", letterSpacing: "0.08em" }}>Income</p>
             {incomeCategories.map(([cat, amt]) => (
@@ -302,14 +316,14 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
                 <span style={{ fontWeight: 600, color: "#1e293b" }}>{fmt(amt)}</span>
               </div>
             ))}
-            <div style={dividerStyle} />
+            <div style={divStyle} />
             <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
               <span style={{ color: "#059669" }}>TOTAL INCOME</span>
               <span style={{ color: "#059669" }}>{fmt(income)}</span>
             </div>
           </div>
 
-          {/* Expenditure column */}
+          {/* Expenditure */}
           <div>
             <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#dc2626", textTransform: "uppercase", letterSpacing: "0.08em" }}>Expenditure</p>
             {categoryBreakdown.filter(c => c.total > 0).map(({ name, total }) => (
@@ -318,7 +332,7 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
                 <span style={{ fontWeight: 600, color: "#1e293b" }}>{fmt(total)}</span>
               </div>
             ))}
-            <div style={dividerStyle} />
+            <div style={divStyle} />
             <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
               <span style={{ color: "#dc2626" }}>TOTAL EXPENDITURE</span>
               <span style={{ color: "#dc2626" }}>{fmt(expenses)}</span>
@@ -327,84 +341,111 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
         </div>
 
         {/* Net position */}
-        <div style={{ marginTop: 24, padding: "16px 20px", borderRadius: 12, background: net >= 0 ? "#f0fdf4" : "#fff1f2", border: `2px solid ${net >= 0 ? "#86efac" : "#fecaca"}` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: 700, fontSize: "1rem", color: "#1e293b" }}>NET POSITION</span>
-            <span style={{ fontWeight: 900, fontSize: "1.3rem", color: net >= 0 ? "#16a34a" : "#dc2626" }}>
-              {net >= 0 ? "" : "−"}{fmt(Math.abs(net))}
-            </span>
-          </div>
-          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#64748b" }}>
-            {net >= 0 ? "Surplus for the period" : "Deficit for the period"}
+        <div style={{ marginTop: 24, padding: "16px 20px", borderRadius: 12, background: net >= 0 ? "#f0fdf4" : "#fff1f2", border: `2px solid ${net >= 0 ? "#86efac" : "#fecaca"}`, textAlign: "center" }}>
+          <p style={{ margin: "0 0 4px", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Net Position</p>
+          <p style={{ margin: 0, fontWeight: 900, fontSize: "1.6rem", color: net >= 0 ? "#16a34a" : "#dc2626" }}>
+            {net >= 0 ? "+" : "−"}{fmt(Math.abs(net))}
           </p>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#64748b" }}>{net >= 0 ? "Surplus for the period" : "Deficit for the period"}</p>
         </div>
       </div>
 
-      {/* ── VAT SUMMARY ── */}
-      <div style={cardStyle} className="print-section">
+      {/* ── CARD 2: VAT SUMMARY ── */}
+      <div style={cardStyle}>
         <div style={{ marginBottom: 20 }}>
           <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Estimated VAT Reclaimable</h3>
-          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Based on 20% standard rate · Verify with HMRC</p>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Standard rate 20% · Verify all claims with HMRC</p>
         </div>
 
-        <div style={{ textAlign: "center", marginBottom: 24, padding: "20px", background: "linear-gradient(135deg, #f3f0ff, #ede9fe)", borderRadius: 12 }}>
-          <p style={{ margin: "0 0 4px", fontSize: "0.75rem", fontWeight: 700, color: "#6d28d9", textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Estimated VAT Reclaimable</p>
-          <p style={{ margin: 0, fontSize: "2.2rem", fontWeight: 900, color: "#4c1d95" }}>{fmt(vatTotal)}</p>
-        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 28, alignItems: "start" }}>
+          {/* Left: total figure */}
+          <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #f3f0ff, #ede9fe)", borderRadius: 12, textAlign: "center", minWidth: 160 }}>
+            <p style={{ margin: "0 0 4px", fontSize: "0.7rem", fontWeight: 700, color: "#6d28d9", textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Est. VAT</p>
+            <p style={{ margin: "0 0 4px", fontSize: "2rem", fontWeight: 900, color: "#4c1d95", lineHeight: 1 }}>{fmt(vatTotal)}</p>
+            <p style={{ margin: 0, fontSize: "0.72rem", color: "#7c3aed" }}>across {vatCount} transaction{vatCount !== 1 ? "s" : ""}</p>
+          </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-              {["Category", "Spend", "Est. VAT"].map(h => (
-                <th key={h} style={{ padding: "8px 12px", textAlign: h === "Category" ? "left" : "right", fontWeight: 700, color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {vatCatRows.map(({ name, spend, vat }) => (
-              <tr key={name} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                <td style={{ padding: "8px 12px", color: "#475569" }}>{name}</td>
-                <td style={{ padding: "8px 12px", textAlign: "right", color: "#1e293b", fontWeight: 600 }}>{fmt(spend)}</td>
-                <td style={{ padding: "8px 12px", textAlign: "right", color: vat > 0 ? "#6d28d9" : "#94a3b8", fontWeight: vat > 0 ? 700 : 400 }}>{fmt(vat)}</td>
+          {/* Right: breakdown table */}
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+            <thead>
+              <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                {["Category", "Gross Spend", "Est. VAT"].map(h => (
+                  <th key={h} style={{ padding: "6px 10px", textAlign: h === "Category" ? "left" : "right", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {vatCatRows.map(({ name, spend, vat }) => (
+                <tr key={name} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "6px 10px", color: "#475569" }}>{name}</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", color: "#1e293b", fontWeight: 600 }}>{fmt(spend)}</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", color: vat > 0 ? "#6d28d9" : "#94a3b8", fontWeight: vat > 0 ? 700 : 400 }}>{fmt(vat)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        <p style={{ margin: "20px 0 0", fontSize: "0.78rem", color: "#94a3b8", fontStyle: "italic", lineHeight: 1.5 }}>
-          ⚠️ These are estimates only. VAT reclaim eligibility depends on your business type and HMRC rules. Always verify with a qualified accountant.
+        <p style={{ margin: "20px 0 0", fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic", lineHeight: 1.6 }}>
+          ⚠️ VAT estimates are based on standard 20% rate applied to gross amounts. Actual VAT reclaimable depends on your business type, VAT registration status, and HMRC guidelines. Always verify with a qualified accountant before submitting claims.
         </p>
       </div>
 
-      {/* ── BUSINESS EXPENSE FLAGS ── */}
-      {businessTx.length > 0 && (
-        <div style={cardStyle} className="print-section">
+      {/* ── CARD 3: BUSINESS EXPENSE REVIEW ── */}
+      {reviewTx.length > 0 && (
+        <div style={cardStyle} className="no-print">
           <div style={{ marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Potential Business Expenses</h3>
-            <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Review and confirm which are genuine business expenses</p>
+            <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Transactions to Review</h3>
+            <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Flag which are genuine business expenses</p>
           </div>
 
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
               <thead>
                 <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-                  {["Date", "Description", "Amount", "Category", "Est. VAT"].map(h => (
-                    <th key={h} style={{ padding: "8px 12px", textAlign: h === "Amount" || h === "Est. VAT" ? "right" : "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
-                  ))}
+                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</th>
+                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Description</th>
+                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Category</th>
+                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Amount</th>
+                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>VAT Est.</th>
+                  <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    <input type="checkbox" checked={checkedRows.size === reviewTx.length && reviewTx.length > 0} onChange={toggleAll} style={{ cursor: "pointer" }} title="Select all" />
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {businessTx.slice(0, 30).map((t, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #f1f5f9", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                {reviewTx.map((t, i) => (
+                  <tr
+                    key={i}
+                    style={{ borderBottom: "1px solid #f1f5f9", background: checkedRows.has(i) ? "#faf5ff" : (i % 2 === 0 ? "#fff" : "#fafafa"), cursor: "pointer" }}
+                    onClick={() => toggleRow(i)}
+                  >
                     <td style={{ padding: "8px 12px", color: "#64748b", whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t.date}</td>
                     <td style={{ padding: "8px 12px", color: "#1e293b", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.description}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#dc2626" }}>{fmt(t.amount)}</td>
                     <td style={{ padding: "8px 12px" }}><CategoryBadge name={t.category} /></td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#dc2626" }}>{fmt(t.amount)}</td>
                     <td style={{ padding: "8px 12px", textAlign: "right", color: t.vatAmount > 0 ? "#6d28d9" : "#94a3b8", fontWeight: t.vatAmount > 0 ? 700 : 400 }}>{t.vatAmount > 0 ? fmt(t.vatAmount) : "—"}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "center" }} onClick={e => { e.stopPropagation(); toggleRow(i); }}>
+                      <input type="checkbox" checked={checkedRows.has(i)} onChange={() => toggleRow(i)} style={{ cursor: "pointer" }} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Running total */}
+          <div style={{ marginTop: 12, padding: "12px 16px", background: checkedRows.size > 0 ? "#faf5ff" : "#f8fafc", borderRadius: 10, border: `1px solid ${checkedRows.size > 0 ? "#ddd6fe" : "#e2e8f0"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "0.82rem", color: "#64748b" }}>
+              {checkedRows.size === 0
+                ? "Click rows to flag business expenses"
+                : `${checkedRows.size} transaction${checkedRows.size !== 1 ? "s" : ""} selected`}
+            </span>
+            {checkedRows.size > 0 && (
+              <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "#6d28d9" }}>
+                Selected total: {fmt(selectedTotal)} · Est. VAT: {fmt(selectedVATTotal)}
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -441,6 +482,29 @@ function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError 
 
       {/* Buttons */}
       <div className="export-toolbar-buttons">
+        <button
+          onClick={onPrint}
+          style={{
+            background:   "linear-gradient(135deg, #1e3a5f 0%, #1e293b 100%)",
+            color:        "#fff",
+            fontWeight:   700,
+            fontSize:     "0.88rem",
+            padding:      "9px 20px",
+            borderRadius: 11,
+            border:       "none",
+            cursor:       "pointer",
+            boxShadow:    "0 4px 14px rgba(30,58,95,0.32)",
+            display:      "flex",
+            alignItems:   "center",
+            gap:          7,
+            transition:   "transform 0.15s ease, box-shadow 0.2s ease",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(30,58,95,0.5)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(30,58,95,0.32)"; }}
+        >
+          <span style={{ fontSize: "1rem" }}>📄</span> Download Report
+        </button>
+
         <button
           onClick={onDownload}
           disabled={downloading}
@@ -497,29 +561,6 @@ function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError 
           onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(9,132,227,0.32)"; }}
         >
           <span style={{ fontSize: "1rem" }}>📄</span> Download CSV
-        </button>
-
-        <button
-          onClick={onPrint}
-          style={{
-            background:   "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
-            color:        "#fff",
-            fontWeight:   700,
-            fontSize:     "0.88rem",
-            padding:      "9px 20px",
-            borderRadius: 11,
-            border:       "none",
-            cursor:       "pointer",
-            boxShadow:    "0 4px 14px rgba(30,41,59,0.32)",
-            display:      "flex",
-            alignItems:   "center",
-            gap:          7,
-            transition:   "transform 0.15s ease, box-shadow 0.2s ease",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(30,41,59,0.5)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(30,41,59,0.32)"; }}
-        >
-          <span style={{ fontSize: "1rem" }}>🖨️</span> Download Report (PDF)
         </button>
       </div>
 
@@ -1168,8 +1209,11 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       : (dateRange || "");
     const bankStr = (bank && bank !== "ai-parsed") ? bank : (bankName || "Your Bank");
     document.title = `StatementFlow Report - ${bankStr} - ${periodStr}`;
-    window.print();
-    setTimeout(() => { document.title = "StatementFlow – Bank Statement Converter"; }, 3000);
+    setAccountantView(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => { document.title = "StatementFlow – Bank Statement Converter"; }, 2000);
+    }, 500);
   }, [demoMode, showDemoToast, period, dateRange, bankName, bank]);
 
   // ── Share / copy summary ──
@@ -1378,96 +1422,33 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       {/* ── PRINT STYLES ── */}
       <style>{`
         @media print {
-          .navbar, .export-toolbar-inner, .no-print, header, footer { display: none !important; }
+          nav, .navbar { display: none !important; }
+          .export-toolbar-inner { display: none !important; }
+          .view-toggle { display: none !important; }
+          .stat-cards { display: none !important; }
+          .your-money-explained { display: none !important; }
+          .spending-breakdown { display: none !important; }
+          .category-grid { display: none !important; }
+          .transaction-table-section { display: none !important; }
+          .no-print { display: none !important; }
+          .print-report { display: none !important; }
           body { background: #fff !important; }
-          .space-y-6 > *:not(.print-report) { display: none !important; }
-          .print-report { display: block !important; }
-        }
-        .print-report { display: none; }
-        @media print {
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           @page { margin: 20mm; }
+          .print-header { display: block !important; }
+          .accountant-panel { display: block !important; }
+          .pl-card { page-break-after: always; }
         }
+        .print-header { display: none; }
       `}</style>
 
-      {/* ── PRINT REPORT (hidden on screen, visible on print) ── */}
-      <div className="print-report" style={{ fontFamily: "sans-serif", color: "#1e293b" }}>
-        {/* Cover */}
-        <div style={{ textAlign: "center", padding: "40px 0 60px", borderBottom: "3px solid #6d28d9", marginBottom: 40 }}>
-          <p style={{ margin: "0 0 8px", fontSize: "2rem", fontWeight: 900, color: "#6d28d9" }}>StatementFlow</p>
-          <p style={{ margin: "0 0 32px", fontSize: "1.4rem", fontWeight: 700, color: "#1e293b" }}>Financial Statement Report</p>
-          <div style={{ display: "inline-block", textAlign: "left", fontSize: "0.95rem", lineHeight: 2 }}>
-            <div><strong>Bank:</strong> {bankStr}</div>
-            <div><strong>Period:</strong> {periodStr || "—"}</div>
-            <div><strong>Prepared:</strong> {todayStr}</div>
-          </div>
-          <p style={{ margin: "40px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Prepared using StatementFlow · statementflow.app</p>
-        </div>
-
-        {/* P&L Summary */}
-        <div style={{ marginBottom: 40 }}>
-          <h2 style={{ margin: "0 0 20px", fontSize: "1.2rem", fontWeight: 800, color: "#1e293b", borderBottom: "2px solid #e2e8f0", paddingBottom: 10 }}>Profit &amp; Loss Summary</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
-            <div>
-              <p style={{ margin: "0 0 8px", fontWeight: 700, color: "#059669" }}>INCOME</p>
-              {transactions.filter(t => t.amount > 0 && !t.exclude && !t.excludeFromTotals).reduce((acc, t) => {
-                acc[t.category] = (acc[t.category] || 0) + t.amount; return acc;
-              }, {}) && Object.entries(transactions.filter(t => t.amount > 0 && !t.exclude && !t.excludeFromTotals).reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc; }, {})).map(([cat, amt]) => (
-                <div key={cat} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #f1f5f9" }}>
-                  <span>{cat}</span><span style={{ fontWeight: 600 }}>{fmt(amt)}</span>
-                </div>
-              ))}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", fontWeight: 800, borderTop: "2px solid #e2e8f0", marginTop: 4 }}>
-                <span>TOTAL INCOME</span><span style={{ color: "#059669" }}>{fmt(income)}</span>
-              </div>
-            </div>
-            <div>
-              <p style={{ margin: "0 0 8px", fontWeight: 700, color: "#dc2626" }}>EXPENDITURE</p>
-              {categoryBreakdown.filter(c => c.total > 0).map(({ name, total }) => (
-                <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #f1f5f9" }}>
-                  <span>{name}</span><span style={{ fontWeight: 600 }}>{fmt(total)}</span>
-                </div>
-              ))}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", fontWeight: 800, borderTop: "2px solid #e2e8f0", marginTop: 4 }}>
-                <span>TOTAL EXPENDITURE</span><span style={{ color: "#dc2626" }}>{fmt(expenses)}</span>
-              </div>
-            </div>
-          </div>
-          <div style={{ marginTop: 20, padding: "14px 20px", background: net >= 0 ? "#f0fdf4" : "#fff1f2", borderRadius: 8, border: `2px solid ${net >= 0 ? "#86efac" : "#fecaca"}` }}>
-            <strong>NET POSITION: </strong>
-            <span style={{ color: net >= 0 ? "#16a34a" : "#dc2626", fontWeight: 800, fontSize: "1.1rem" }}>{net >= 0 ? "" : "−"}{fmt(Math.abs(net))}</span>
-          </div>
-          {vatSummary && vatSummary.totalReclaimable > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <p style={{ margin: "0 0 8px", fontWeight: 700, color: "#6d28d9" }}>ESTIMATED VAT RECLAIMABLE: {fmt(vatSummary.totalReclaimable)}</p>
-              <p style={{ margin: 0, fontSize: "0.8rem", color: "#94a3b8", fontStyle: "italic" }}>Estimates only. Verify with a qualified accountant.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Transaction list */}
-        <div>
-          <h2 style={{ margin: "0 0 16px", fontSize: "1.2rem", fontWeight: 800, color: "#1e293b", borderBottom: "2px solid #e2e8f0", paddingBottom: 10 }}>Transaction Detail</h2>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
-            <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                {["Date","Description","Category","Amount","Est. VAT"].map(h => (
-                  <th key={h} style={{ padding: "8px 10px", textAlign: h === "Amount" || h === "Est. VAT" ? "right" : "left", fontWeight: 700, color: "#475569" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((t, i) => (
-                <tr key={i} style={{ borderBottom: "1px solid #f1f5f9", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
-                  <td style={{ padding: "6px 10px", color: "#64748b", whiteSpace: "nowrap" }}>{t.date}</td>
-                  <td style={{ padding: "6px 10px", color: "#1e293b" }}>{t.description}</td>
-                  <td style={{ padding: "6px 10px", color: "#64748b" }}>{t.category}</td>
-                  <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700, color: t.amount >= 0 ? "#16a34a" : "#dc2626" }}>{t.amount >= 0 ? "+" : ""}{fmt(t.amount)}</td>
-                  <td style={{ padding: "6px 10px", textAlign: "right", color: "#6d28d9" }}>{t.vatAmount > 0 ? fmt(t.vatAmount) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* ── PRINT HEADER (hidden on screen, shown when printing) ── */}
+      <div className="print-header" style={{ display: "none" }}>
+        <h1 style={{ color: "#6d28d9", fontSize: "24px", margin: 0, fontWeight: 900 }}>StatementFlow</h1>
+        <h2 style={{ fontSize: "18px", margin: "8px 0", fontWeight: 700, color: "#1e293b" }}>Financial Statement Report</h2>
+        <p style={{ color: "#666", margin: "4px 0" }}>{bankStr} · {periodStr || "—"}</p>
+        <p style={{ color: "#666", margin: "4px 0" }}>Prepared: {todayStr}</p>
+        <p style={{ color: "#999", fontSize: "12px", margin: "8px 0 0 0" }}>Generated by StatementFlow · statementflow.app</p>
       </div>
 
       {/* ── AI PARSER NOTICE ── */}
@@ -1530,7 +1511,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} onPrint={handlePrintReport} downloadError={downloadError} />
 
       {/* ── STAT CARDS ── */}
-      <div ref={demoRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div ref={demoRef} className="stat-cards grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           label="Total Money In"
           value={fmt(income)}
@@ -1589,7 +1570,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── VIEW TOGGLE ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 0, background: "#f1f5f9", borderRadius: 999, padding: 4, width: "fit-content" }}>
+      <div className="view-toggle" style={{ display: "flex", alignItems: "center", gap: 0, background: "#f1f5f9", borderRadius: 999, padding: 4, width: "fit-content" }}>
         {["Personal View", "Accountant View"].map((label, i) => {
           const active = accountantView === (i === 1);
           return (
@@ -1617,7 +1598,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {/* ── UNIFIED FINANCIAL SUMMARY ── */}
       {!accountantView && transactions.length > 0 && (
-        <FinancialSummary
+        <div className="your-money-explained"><FinancialSummary
           transactions={transactions}
           income={income}
           expenses={expenses}
@@ -1627,7 +1608,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           insights={insights}
           onWeekClick={handleWeekClick}
           activeWeek={weekFilter}
-        />
+        /></div>
       )}
 
       {/* ── ACCOUNTANT VIEW: P&L + VAT ── */}
@@ -1647,7 +1628,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       )}
 
       {/* ── CHARTS ── */}
-      <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
+      <div ref={chartsRef} className="spending-breakdown grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
 
         {/* Donut chart */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6" style={{ borderRadius: 16 }}>
@@ -1739,7 +1720,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {/* ── CATEGORY BREAKDOWN ── */}
       <div
-        className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
+        className="category-grid bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
         style={{ ...sectionStyle(450), borderRadius: 16 }}
       >
         <div className="flex items-center justify-between mb-6">
@@ -1869,7 +1850,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── TRANSACTIONS TABLE ── */}
-      <div ref={txTableRef} style={sectionStyle(550)}>
+      <div ref={txTableRef} className="transaction-table-section" style={sectionStyle(550)}>
         {/* Collapse toggle */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: txExpanded ? 12 : 0 }}>
           <button

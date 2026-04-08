@@ -639,6 +639,7 @@ function detectVAT(description, category, amount) {
     "costa", "starbucks", "tfl", "trainline", "bp", "shell", "esso",
     "vodafone", "ee", "o2", "bt ", "virgin media", "sky ", "puregym",
     "david lloyd", "boots", "superdrug", "hotel", "travelodge", "premier inn",
+    "rci", "barclays partner", "barclaysprtnr", "cloud city", "maani",
   ];
 
   const desc = description.toLowerCase();
