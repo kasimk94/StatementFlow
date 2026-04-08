@@ -299,6 +299,12 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
   return (
     <div className="accountant-panel" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
+      {/* ── MODE BANNER ── */}
+      <div style={{ background: "linear-gradient(135deg, #1e3a5f, #2563eb)", borderRadius: 12, padding: "16px 24px" }}>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: "1rem", color: "white" }}>📊 Accountant View — Professional Analysis</p>
+        <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.65)" }}>Switch to Personal View for the standard dashboard</p>
+      </div>
+
       {/* ── CARD 1: P&L STATEMENT ── */}
       <div style={cardStyle} className="pl-card">
         <div style={{ marginBottom: 20 }}>
@@ -1417,7 +1423,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const todayStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ transition: "background 0.4s ease", background: accountantView ? "#f0f4ff" : "transparent", borderRadius: 20, padding: accountantView ? "0 0 24px" : undefined }}>
 
       {/* ── PRINT STYLES ── */}
       <style>{`
@@ -1499,14 +1505,21 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       )}
 
       {/* ── STATEMENT HEADING ── */}
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: 8, borderLeft: accountantView ? "3px solid #2563eb" : "3px solid transparent", paddingLeft: accountantView ? 12 : 0, transition: "border-color 0.3s ease, padding-left 0.3s ease" }}>
         <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em" }}>
           {demoMode ? "Example Statement" : "Your Statement"}
         </h2>
         {(dateRange || bankName || (bank && bank !== "ai-parsed")) && (
-          <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
-            {dateRange ?? ""}
-            {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
+          <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#94a3b8", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+            <span>
+              {dateRange ?? ""}
+              {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
+            </span>
+            {accountantView && (
+              <span style={{ background: "linear-gradient(135deg, #1e3a5f, #2563eb)", color: "white", fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: 999, letterSpacing: "0.04em" }}>
+                Accountant Mode
+              </span>
+            )}
           </p>
         )}
       </div>
@@ -1575,22 +1588,22 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {/* ── VIEW TOGGLE ── */}
       <div className="view-toggle" style={{ display: "inline-flex", background: "#f3f4f6", borderRadius: "999px", padding: "4px", position: "relative", cursor: "pointer" }}>
-        {/* Sliding white pill */}
+        {/* Sliding pill */}
         <div style={{
           position: "absolute",
           top: "4px",
           bottom: "4px",
           width: "calc(50% - 4px)",
-          background: "white",
+          background: accountantView ? "linear-gradient(135deg, #1e3a5f, #2563eb)" : "white",
           borderRadius: "999px",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          boxShadow: accountantView ? "0 2px 8px rgba(37,99,235,0.4)" : "0 1px 4px rgba(0,0,0,0.12)",
+          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, box-shadow 0.3s ease",
           transform: accountantView ? "translateX(calc(100% + 4px))" : "translateX(0)",
         }} />
         <div onClick={() => setAccountantView(false)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 400 : 600, color: accountantView ? "#6b7280" : "#6d28d9", transition: "color 0.3s ease", userSelect: "none" }}>
           👤 Personal
         </div>
-        <div onClick={() => setAccountantView(true)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "#6d28d9" : "#6b7280", transition: "color 0.3s ease", userSelect: "none" }}>
+        <div onClick={() => setAccountantView(true)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "white" : "#6b7280", transition: "color 0.3s ease", userSelect: "none" }}>
           📊 Accountant
         </div>
       </div>
