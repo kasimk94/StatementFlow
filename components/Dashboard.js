@@ -1254,6 +1254,22 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       .slice(0, 8);
   }, [transactions]);
 
+  // Transfers totals — computed directly from transactions so credits are included
+  const transferStats = useMemo(() => {
+    let sentAmt = 0, sentCnt = 0, recvAmt = 0, recvCnt = 0;
+    for (const tx of transactions) {
+      if (tx.excludeFromTotals) continue;
+      if (tx.category === "Transfers Sent") {
+        sentAmt += Math.abs(tx.amount);
+        sentCnt++;
+      } else if (tx.category === "Transfers Received") {
+        recvAmt += Math.abs(tx.amount);
+        recvCnt++;
+      }
+    }
+    return { sentAmt, sentCnt, recvAmt, recvCnt, net: recvAmt - sentAmt };
+  }, [transactions]);
+
   // Build display categories: merge Transfers Sent + Received into one entry
   const displayBreakdown = useMemo(() => {
     const sent     = categoryBreakdown.find(c => c.name === "Transfers Sent");
@@ -1747,11 +1763,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
             if (isTransferCard) {
               const isActive  = filterCat === "__TRANSFERS__";
-              const sentAmt   = entry.sent?.total ?? 0;
-              const recvAmt   = entry.received?.total ?? 0;
-              const sentCnt   = entry.sent?.count ?? 0;
-              const recvCnt   = entry.received?.count ?? 0;
-              const netXfer   = recvAmt - sentAmt;
+              const { sentAmt, sentCnt, recvAmt, recvCnt, net: netXfer } = transferStats;
               return (
                 <button
                   key="__TRANSFERS__"
