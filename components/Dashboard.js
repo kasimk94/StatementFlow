@@ -1254,7 +1254,31 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       .slice(0, 8);
   }, [transactions]);
 
-  const allCategories = ["All", ...categoryBreakdown.map((c) => c.name)];
+  // Build display categories: merge Transfers Sent + Received into one entry
+  const displayBreakdown = useMemo(() => {
+    const sent     = categoryBreakdown.find(c => c.name === "Transfers Sent");
+    const received = categoryBreakdown.find(c => c.name === "Transfers Received");
+    const rest     = categoryBreakdown.filter(c => c.name !== "Transfers Sent" && c.name !== "Transfers Received");
+    const combined = (sent || received)
+      ? [{
+          name:  "__TRANSFERS__",
+          label: "Transfers In & Out",
+          total: (sent?.total ?? 0) + (received?.total ?? 0),
+          count: (sent?.count ?? 0) + (received?.count ?? 0),
+          sent,
+          received,
+        }]
+      : [];
+    return [...rest, ...combined];
+  }, [categoryBreakdown]);
+
+  const allCategories = [
+    "All",
+    ...categoryBreakdown
+      .filter(c => c.name !== "Transfers Sent" && c.name !== "Transfers Received")
+      .map(c => c.name),
+    ...(displayBreakdown.find(c => c.name === "__TRANSFERS__") ? ["Transfers In & Out"] : []),
+  ];
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -1264,7 +1288,12 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         t.date.toLowerCase().includes(q) ||
         String(Math.abs(t.amount)).includes(q) ||
         (t.category || "").toLowerCase().includes(q);
-      const matchCat  = filterCat  === "All" || t.category === filterCat;
+      const matchCat  = filterCat === "All"
+        || filterCat === "__TRANSFERS__"
+          ? (filterCat === "__TRANSFERS__"
+              ? (t.category === "Transfers Sent" || t.category === "Transfers Received")
+              : true)
+          : t.category === filterCat;
       const matchType =
         filterType === "All" ||
         (filterType === "Income"  && t.amount > 0) ||
@@ -1304,7 +1333,11 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     return <span className="ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>;
   }
 
-  function setFilter(cat) { triggerRowAnim(); setFilterCat(cat); setPage(1); }
+  function setFilter(cat) {
+    triggerRowAnim();
+    setFilterCat(cat === "Transfers In & Out" ? "__TRANSFERS__" : cat);
+    setPage(1);
+  }
 
   const loadedTime = loadedAt.current.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
@@ -1703,13 +1736,68 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               onClick={() => setFilter("All")}
               className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
             >
-              ✕ Clear filter
+              ✕ Clear filter ({filterCat === "__TRANSFERS__" ? "Transfers In & Out" : filterCat})
             </button>
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categoryBreakdown.map(({ name, total, count }, idx) => {
+          {displayBreakdown.map((entry, idx) => {
+            const isTransferCard = entry.name === "__TRANSFERS__";
+
+            if (isTransferCard) {
+              const isActive  = filterCat === "__TRANSFERS__";
+              const sentAmt   = entry.sent?.total ?? 0;
+              const recvAmt   = entry.received?.total ?? 0;
+              const sentCnt   = entry.sent?.count ?? 0;
+              const recvCnt   = entry.received?.count ?? 0;
+              const netXfer   = recvAmt - sentAmt;
+              return (
+                <button
+                  key="__TRANSFERS__"
+                  onClick={() => setFilter(isActive ? "All" : "Transfers In & Out")}
+                  className={`group relative text-left p-4 rounded-xl border transition-all hover:shadow-md ${
+                    isActive
+                      ? "border-blue-400 ring-2 ring-blue-200 bg-blue-50/50"
+                      : "border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200"
+                  }`}
+                  style={{ borderRadius: 12 }}
+                >
+                  <div className="absolute left-0 top-3 bottom-3 w-1 rounded-full" style={{ backgroundColor: "#6366f1" }} />
+                  <div className="pl-3">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span style={{ fontSize: "1.05rem" }}>🔄</span>
+                      <p className="text-sm font-semibold text-slate-700">Transfers In &amp; Out</p>
+                    </div>
+                    {/* Sent row */}
+                    <div className="flex items-center justify-between mb-1">
+                      <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>↑ Sent</span>
+                      <div className="text-right">
+                        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#dc2626" }}>{fmt(sentAmt)}</span>
+                        <span style={{ fontSize: "0.7rem", color: "#94a3b8", marginLeft: 4 }}>{sentCnt} txn{sentCnt !== 1 ? "s" : ""}</span>
+                      </div>
+                    </div>
+                    {/* Received row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>↓ Received</span>
+                      <div className="text-right">
+                        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#059669" }}>{fmt(recvAmt)}</span>
+                        <span style={{ fontSize: "0.7rem", color: "#94a3b8", marginLeft: 4 }}>{recvCnt} txn{recvCnt !== 1 ? "s" : ""}</span>
+                      </div>
+                    </div>
+                    {/* Net */}
+                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 6, display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>Net</span>
+                      <span style={{ fontSize: "0.82rem", fontWeight: 700, color: netXfer >= 0 ? "#059669" : "#dc2626" }}>
+                        {netXfer >= 0 ? "+" : ""}{fmt(netXfer)}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            }
+
+            const { name, total, count } = entry;
             const hex      = catHex(name);
             const pct      = expenses > 0 ? (total / expenses) * 100 : 0;
             const isActive = filterCat === name;
@@ -1726,26 +1814,16 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                 }`}
                 style={{ borderRadius: 12 }}
               >
-                {/* Left accent bar */}
-                <div
-                  className="absolute left-0 top-3 bottom-3 w-1 rounded-full"
-                  style={{ backgroundColor: hex }}
-                />
-
+                <div className="absolute left-0 top-3 bottom-3 w-1 rounded-full" style={{ backgroundColor: hex }} />
                 <div className="pl-3">
-                  {/* Top row: emoji + name + tooltip + pct badge */}
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span style={{ fontSize: "1.05rem", flexShrink: 0 }}>{catEmoji(name)}</span>
                       <p className="text-sm font-semibold text-slate-700 truncate">{name}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {/* Tooltip */}
                       <div className="relative">
-                        <span
-                          className="text-slate-300 hover:text-slate-500 text-xs cursor-default"
-                          onClick={(e) => e.stopPropagation()}
-                        >ℹ</span>
+                        <span className="text-slate-300 hover:text-slate-500 text-xs cursor-default" onClick={(e) => e.stopPropagation()}>ℹ</span>
                         <div
                           className="pointer-events-none absolute z-20 bottom-full right-0 mb-2 w-48 rounded-lg bg-slate-800 px-3 py-2 text-xs text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                           style={{ transform: "translateX(20%)" }}
@@ -1754,20 +1832,13 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                           <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-800" />
                         </div>
                       </div>
-                      <span
-                        className="text-xs font-bold text-white px-1.5 py-0.5 rounded-full"
-                        style={{ backgroundColor: hex, minWidth: "2.8rem", textAlign: "center" }}
-                      >
+                      <span className="text-xs font-bold text-white px-1.5 py-0.5 rounded-full" style={{ backgroundColor: hex, minWidth: "2.8rem", textAlign: "center" }}>
                         {pct.toFixed(1)}%
                       </span>
                     </div>
                   </div>
-
-                  {/* Amount + count */}
                   <p className="text-xl font-extrabold text-slate-800 leading-none mb-2">{fmt(total)}</p>
                   <p className="text-xs text-slate-400 mb-2.5">{count} transaction{count !== 1 ? "s" : ""}</p>
-
-                  {/* Progress bar */}
                   <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full"
@@ -1839,7 +1910,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
             <h3 className="text-lg font-bold text-slate-800">
               Transactions
               {filterCat !== "All" && (
-                <span className="ml-2 text-sm font-normal text-slate-400">· filtered by {filterCat}</span>
+                <span className="ml-2 text-sm font-normal text-slate-400">· filtered by {filterCat === "__TRANSFERS__" ? "Transfers In & Out" : filterCat}</span>
               )}
             </h3>
             <p className="text-xs text-slate-400">{sorted.length} result{sorted.length !== 1 ? "s" : ""}</p>
@@ -1861,8 +1932,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
             </div>
             {/* Category filter */}
             <select
-              value={filterCat}
-              onChange={(e) => { const v = e.target.value; triggerRowAnim(); setFilterCat(v); setPage(1); }}
+              value={filterCat === "__TRANSFERS__" ? "Transfers In & Out" : filterCat}
+              onChange={(e) => { const v = e.target.value; setFilter(v); }}
               className="text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-700"
             >
               {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}

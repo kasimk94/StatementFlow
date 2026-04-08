@@ -269,6 +269,11 @@ Rules:
 - Do not include opening/closing balance rows
 - Do not include summary rows (Money in, Money out totals)
 
+TRANSFERS RULE:
+- Any transaction starting with 'Received From' is ALWAYS type 'credit'. Keep the full description including the name and reference e.g. 'Received From Kasam Khalid Ref Car'
+- Any transaction starting with 'Bill Payment to' is ALWAYS type 'debit'. Keep full description e.g. 'Bill Payment to Waleed Naeem Ref Money'
+- Any transaction starting with 'Giro' is type 'credit'
+
 CRITICAL UNPAID DIRECT DEBIT RULE: If you see a transaction containing 'Unpaid Direct Debit' or 'Unpaid DD', the bank RETURNED the money to the account. It must ALWAYS be type 'credit' not 'debit'. Example: 'RCI Financial Serv Unpaid Direct Debit £237.38' → type: 'credit', amount: 237.38. Similarly any transaction with 'Returned' in the description is always a credit.
 
 CRITICAL PAYPAL RULE: When you see a transaction containing 'Paypal' or 'PayPal', you MUST look at what comes after it and use that as the description. Examples:
@@ -679,6 +684,21 @@ function looksLikePersonName(desc) {
 function categoriseTransaction(rawDesc, amount, type) {
   const raw     = (rawDesc || "").toLowerCase();
   const cleaned = cleanDescription(rawDesc || "");
+
+  // Step 0a — Explicit credit transfer patterns (must beat all other rules)
+  if (
+    type === "credit" &&
+    /received from|giro received|^giro\b/i.test(raw)
+  )
+    return { category: "Transfers Received", exclude: false };
+
+  // "Ref: Car" or similar short-code credits are personal transfers
+  if (type === "credit" && /\bref:\s*car\b/i.test(raw))
+    return { category: "Transfers Received", exclude: false };
+
+  // Step 0b — Explicit debit transfer patterns
+  if (type === "debit" && /^bill payment to\b/i.test(rawDesc || ""))
+    return { category: "Transfers Sent", exclude: false };
 
   // Step 1 — Refunds / Unpaid DDs (credits with refund keywords)
   if (
