@@ -245,9 +245,177 @@ function BarTooltip({ active, payload, label }) {
 
 const PAGE_SIZE = 15;
 
+// ─── Accountant View: P&L + VAT Summary + Business Flags ─────────────────────
+function AccountantView({ transactions, income, expenses, net, categoryBreakdown, vatSummary, dateRange, period, bank, bankName }) {
+  const periodStr = period
+    ? (period.from && period.to ? `${period.from} – ${period.to}` : (period.to || dateRange || ""))
+    : (dateRange || "");
+  const bankStr = (bank && bank !== "ai-parsed") ? bank : (bankName || "Your Bank");
+
+  // Income breakdown by category
+  const incomeByCategory = {};
+  transactions.forEach(t => {
+    if (t.exclude || t.excludeFromTotals || t.amount <= 0) return;
+    const cat = t.category || "Other";
+    incomeByCategory[cat] = (incomeByCategory[cat] || 0) + t.amount;
+  });
+  const incomeCategories = Object.entries(incomeByCategory).sort((a, b) => b[1] - a[1]);
+
+  // Business expense flags: travel, software/subs, over £50, professional
+  const businessTx = transactions.filter(t => {
+    if (t.amount >= 0 || t.exclude || t.excludeFromTotals) return false;
+    const amt = Math.abs(t.amount);
+    const isBizCat = ["Travel & Transport", "Direct Debits", "Finance & Bills", "Health & Fitness", "Online Shopping"].includes(t.category);
+    return amt >= 50 || isBizCat;
+  }).sort((a, b) => a.amount - b.amount); // most negative first
+
+  // VAT reclaimable breakdown from vatSummary OR compute from transactions
+  const vatBreakdown = vatSummary?.breakdown ?? {};
+  const vatTotal     = vatSummary?.totalReclaimable ?? 0;
+
+  // All categories that had VAT for the table
+  const vatCatRows = categoryBreakdown
+    .filter(c => c.total > 0 && !["Groceries","Cash & ATM","Transfers Sent","Transfers Received","Refunds","Charity","Rent & Mortgage"].includes(c.name))
+    .map(c => ({ name: c.name, spend: c.total, vat: vatBreakdown[c.name] || 0 }));
+
+  const rowStyle = { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: "0.9rem" };
+  const dividerStyle = { borderTop: "2px solid #e2e8f0", margin: "4px 0" };
+  const cardStyle = { background: "#fff", borderRadius: 16, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: "24px 28px", border: "1px solid #f1f5f9" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* ── P&L STATEMENT ── */}
+      <div style={cardStyle} className="print-section">
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Profit &amp; Loss Summary</h3>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>{periodStr} · Prepared by StatementFlow</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          {/* Income column */}
+          <div>
+            <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#059669", textTransform: "uppercase", letterSpacing: "0.08em" }}>Income</p>
+            {incomeCategories.map(([cat, amt]) => (
+              <div key={cat} style={rowStyle}>
+                <span style={{ color: "#475569" }}>{cat}</span>
+                <span style={{ fontWeight: 600, color: "#1e293b" }}>{fmt(amt)}</span>
+              </div>
+            ))}
+            <div style={dividerStyle} />
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
+              <span style={{ color: "#059669" }}>TOTAL INCOME</span>
+              <span style={{ color: "#059669" }}>{fmt(income)}</span>
+            </div>
+          </div>
+
+          {/* Expenditure column */}
+          <div>
+            <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#dc2626", textTransform: "uppercase", letterSpacing: "0.08em" }}>Expenditure</p>
+            {categoryBreakdown.filter(c => c.total > 0).map(({ name, total }) => (
+              <div key={name} style={rowStyle}>
+                <span style={{ color: "#475569" }}>{name}</span>
+                <span style={{ fontWeight: 600, color: "#1e293b" }}>{fmt(total)}</span>
+              </div>
+            ))}
+            <div style={dividerStyle} />
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
+              <span style={{ color: "#dc2626" }}>TOTAL EXPENDITURE</span>
+              <span style={{ color: "#dc2626" }}>{fmt(expenses)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Net position */}
+        <div style={{ marginTop: 24, padding: "16px 20px", borderRadius: 12, background: net >= 0 ? "#f0fdf4" : "#fff1f2", border: `2px solid ${net >= 0 ? "#86efac" : "#fecaca"}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontWeight: 700, fontSize: "1rem", color: "#1e293b" }}>NET POSITION</span>
+            <span style={{ fontWeight: 900, fontSize: "1.3rem", color: net >= 0 ? "#16a34a" : "#dc2626" }}>
+              {net >= 0 ? "" : "−"}{fmt(Math.abs(net))}
+            </span>
+          </div>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#64748b" }}>
+            {net >= 0 ? "Surplus for the period" : "Deficit for the period"}
+          </p>
+        </div>
+      </div>
+
+      {/* ── VAT SUMMARY ── */}
+      <div style={cardStyle} className="print-section">
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Estimated VAT Reclaimable</h3>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Based on 20% standard rate · Verify with HMRC</p>
+        </div>
+
+        <div style={{ textAlign: "center", marginBottom: 24, padding: "20px", background: "linear-gradient(135deg, #f3f0ff, #ede9fe)", borderRadius: 12 }}>
+          <p style={{ margin: "0 0 4px", fontSize: "0.75rem", fontWeight: 700, color: "#6d28d9", textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Estimated VAT Reclaimable</p>
+          <p style={{ margin: 0, fontSize: "2.2rem", fontWeight: 900, color: "#4c1d95" }}>{fmt(vatTotal)}</p>
+        </div>
+
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
+          <thead>
+            <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+              {["Category", "Spend", "Est. VAT"].map(h => (
+                <th key={h} style={{ padding: "8px 12px", textAlign: h === "Category" ? "left" : "right", fontWeight: 700, color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {vatCatRows.map(({ name, spend, vat }) => (
+              <tr key={name} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <td style={{ padding: "8px 12px", color: "#475569" }}>{name}</td>
+                <td style={{ padding: "8px 12px", textAlign: "right", color: "#1e293b", fontWeight: 600 }}>{fmt(spend)}</td>
+                <td style={{ padding: "8px 12px", textAlign: "right", color: vat > 0 ? "#6d28d9" : "#94a3b8", fontWeight: vat > 0 ? 700 : 400 }}>{fmt(vat)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <p style={{ margin: "20px 0 0", fontSize: "0.78rem", color: "#94a3b8", fontStyle: "italic", lineHeight: 1.5 }}>
+          ⚠️ These are estimates only. VAT reclaim eligibility depends on your business type and HMRC rules. Always verify with a qualified accountant.
+        </p>
+      </div>
+
+      {/* ── BUSINESS EXPENSE FLAGS ── */}
+      {businessTx.length > 0 && (
+        <div style={cardStyle} className="print-section">
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Potential Business Expenses</h3>
+            <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Review and confirm which are genuine business expenses</p>
+          </div>
+
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                  {["Date", "Description", "Amount", "Category", "Est. VAT"].map(h => (
+                    <th key={h} style={{ padding: "8px 12px", textAlign: h === "Amount" || h === "Est. VAT" ? "right" : "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {businessTx.slice(0, 30).map((t, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #f1f5f9", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                    <td style={{ padding: "8px 12px", color: "#64748b", whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t.date}</td>
+                    <td style={{ padding: "8px 12px", color: "#1e293b", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.description}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#dc2626" }}>{fmt(t.amount)}</td>
+                    <td style={{ padding: "8px 12px" }}><CategoryBadge name={t.category} /></td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", color: t.vatAmount > 0 ? "#6d28d9" : "#94a3b8", fontWeight: t.vatAmount > 0 ? 700 : 400 }}>{t.vatAmount > 0 ? fmt(t.vatAmount) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 // ─── Export toolbar (shared between real dashboard and demo) ─────────────────
-function ExportToolbar({ downloading, onDownload, onCSV, downloadError }) {
+function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError }) {
   return (
     <div
       className="export-toolbar-inner"
@@ -329,6 +497,29 @@ function ExportToolbar({ downloading, onDownload, onCSV, downloadError }) {
           onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(9,132,227,0.32)"; }}
         >
           <span style={{ fontSize: "1rem" }}>📄</span> Download CSV
+        </button>
+
+        <button
+          onClick={onPrint}
+          style={{
+            background:   "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+            color:        "#fff",
+            fontWeight:   700,
+            fontSize:     "0.88rem",
+            padding:      "9px 20px",
+            borderRadius: 11,
+            border:       "none",
+            cursor:       "pointer",
+            boxShadow:    "0 4px 14px rgba(30,41,59,0.32)",
+            display:      "flex",
+            alignItems:   "center",
+            gap:          7,
+            transition:   "transform 0.15s ease, box-shadow 0.2s ease",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(30,41,59,0.5)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(30,41,59,0.32)"; }}
+        >
+          <span style={{ fontSize: "1rem" }}>🖨️</span> Download Report (PDF)
         </button>
       </div>
 
@@ -747,7 +938,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   );
 }
 
-export default function Dashboard({ transactions, demoMode = false, confidence, bank, debug, insights, overdraftLimit = 500, internalTransferTotal = 0, reversalsCount = 0, statementIncome = null, statementExpenses = null, startBalance = null, endBalance = null }) {
+export default function Dashboard({ transactions, demoMode = false, confidence, bank, debug, insights, overdraftLimit = 500, internalTransferTotal = 0, reversalsCount = 0, statementIncome = null, statementExpenses = null, startBalance = null, endBalance = null, vatSummary = null, period = null }) {
   const [search, setSearch]                   = useState("");
   const [sortKey, setSortKey]                 = useState("date");
   const [sortDir, setSortDir]                 = useState("desc");
@@ -760,6 +951,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const [demoToast, setDemoToast]             = useState(false);
   const [txExpanded, setTxExpanded]           = useState(false);
   const [weekFilter, setWeekFilter]           = useState(null);
+  const [accountantView, setAccountantView]   = useState(false);
 
   // Animation states
   const [loaded,          setLoaded]          = useState(false);
@@ -968,6 +1160,18 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     URL.revokeObjectURL(url);
   }, [transactions, demoMode, showDemoToast]);
 
+  // ── Print PDF report ──
+  const handlePrintReport = useCallback(() => {
+    if (demoMode) { showDemoToast(); return; }
+    const periodStr = period
+      ? (period.from && period.to ? `${period.from} – ${period.to}` : (period.to || ""))
+      : (dateRange || "");
+    const bankStr = (bank && bank !== "ai-parsed") ? bank : (bankName || "Your Bank");
+    document.title = `StatementFlow Report - ${bankStr} - ${periodStr}`;
+    window.print();
+    setTimeout(() => { document.title = "StatementFlow – Bank Statement Converter"; }, 3000);
+  }, [demoMode, showDemoToast, period, dateRange, bankName, bank]);
+
   // ── Share / copy summary ──
   const handleShare = useCallback(async () => {
     const lines = [
@@ -1113,8 +1317,109 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     };
   }
 
+  const periodStr = period
+    ? (period.from && period.to ? `${period.from} – ${period.to}` : (period.to || dateRange || ""))
+    : (dateRange || "");
+  const bankStr = (bank && bank !== "ai-parsed") ? bank : (bankName || "Your Bank");
+  const todayStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
   return (
     <div className="space-y-6">
+
+      {/* ── PRINT STYLES ── */}
+      <style>{`
+        @media print {
+          .navbar, .export-toolbar-inner, .no-print, header, footer { display: none !important; }
+          body { background: #fff !important; }
+          .space-y-6 > *:not(.print-report) { display: none !important; }
+          .print-report { display: block !important; }
+        }
+        .print-report { display: none; }
+        @media print {
+          @page { margin: 20mm; }
+        }
+      `}</style>
+
+      {/* ── PRINT REPORT (hidden on screen, visible on print) ── */}
+      <div className="print-report" style={{ fontFamily: "sans-serif", color: "#1e293b" }}>
+        {/* Cover */}
+        <div style={{ textAlign: "center", padding: "40px 0 60px", borderBottom: "3px solid #6d28d9", marginBottom: 40 }}>
+          <p style={{ margin: "0 0 8px", fontSize: "2rem", fontWeight: 900, color: "#6d28d9" }}>StatementFlow</p>
+          <p style={{ margin: "0 0 32px", fontSize: "1.4rem", fontWeight: 700, color: "#1e293b" }}>Financial Statement Report</p>
+          <div style={{ display: "inline-block", textAlign: "left", fontSize: "0.95rem", lineHeight: 2 }}>
+            <div><strong>Bank:</strong> {bankStr}</div>
+            <div><strong>Period:</strong> {periodStr || "—"}</div>
+            <div><strong>Prepared:</strong> {todayStr}</div>
+          </div>
+          <p style={{ margin: "40px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Prepared using StatementFlow · statementflow.app</p>
+        </div>
+
+        {/* P&L Summary */}
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ margin: "0 0 20px", fontSize: "1.2rem", fontWeight: 800, color: "#1e293b", borderBottom: "2px solid #e2e8f0", paddingBottom: 10 }}>Profit &amp; Loss Summary</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
+            <div>
+              <p style={{ margin: "0 0 8px", fontWeight: 700, color: "#059669" }}>INCOME</p>
+              {transactions.filter(t => t.amount > 0 && !t.exclude && !t.excludeFromTotals).reduce((acc, t) => {
+                acc[t.category] = (acc[t.category] || 0) + t.amount; return acc;
+              }, {}) && Object.entries(transactions.filter(t => t.amount > 0 && !t.exclude && !t.excludeFromTotals).reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc; }, {})).map(([cat, amt]) => (
+                <div key={cat} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #f1f5f9" }}>
+                  <span>{cat}</span><span style={{ fontWeight: 600 }}>{fmt(amt)}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", fontWeight: 800, borderTop: "2px solid #e2e8f0", marginTop: 4 }}>
+                <span>TOTAL INCOME</span><span style={{ color: "#059669" }}>{fmt(income)}</span>
+              </div>
+            </div>
+            <div>
+              <p style={{ margin: "0 0 8px", fontWeight: 700, color: "#dc2626" }}>EXPENDITURE</p>
+              {categoryBreakdown.filter(c => c.total > 0).map(({ name, total }) => (
+                <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #f1f5f9" }}>
+                  <span>{name}</span><span style={{ fontWeight: 600 }}>{fmt(total)}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", fontWeight: 800, borderTop: "2px solid #e2e8f0", marginTop: 4 }}>
+                <span>TOTAL EXPENDITURE</span><span style={{ color: "#dc2626" }}>{fmt(expenses)}</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop: 20, padding: "14px 20px", background: net >= 0 ? "#f0fdf4" : "#fff1f2", borderRadius: 8, border: `2px solid ${net >= 0 ? "#86efac" : "#fecaca"}` }}>
+            <strong>NET POSITION: </strong>
+            <span style={{ color: net >= 0 ? "#16a34a" : "#dc2626", fontWeight: 800, fontSize: "1.1rem" }}>{net >= 0 ? "" : "−"}{fmt(Math.abs(net))}</span>
+          </div>
+          {vatSummary && vatSummary.totalReclaimable > 0 && (
+            <div style={{ marginTop: 24 }}>
+              <p style={{ margin: "0 0 8px", fontWeight: 700, color: "#6d28d9" }}>ESTIMATED VAT RECLAIMABLE: {fmt(vatSummary.totalReclaimable)}</p>
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "#94a3b8", fontStyle: "italic" }}>Estimates only. Verify with a qualified accountant.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Transaction list */}
+        <div>
+          <h2 style={{ margin: "0 0 16px", fontSize: "1.2rem", fontWeight: 800, color: "#1e293b", borderBottom: "2px solid #e2e8f0", paddingBottom: 10 }}>Transaction Detail</h2>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+            <thead>
+              <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+                {["Date","Description","Category","Amount","Est. VAT"].map(h => (
+                  <th key={h} style={{ padding: "8px 10px", textAlign: h === "Amount" || h === "Est. VAT" ? "right" : "left", fontWeight: 700, color: "#475569" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((t, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #f1f5f9", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                  <td style={{ padding: "6px 10px", color: "#64748b", whiteSpace: "nowrap" }}>{t.date}</td>
+                  <td style={{ padding: "6px 10px", color: "#1e293b" }}>{t.description}</td>
+                  <td style={{ padding: "6px 10px", color: "#64748b" }}>{t.category}</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700, color: t.amount >= 0 ? "#16a34a" : "#dc2626" }}>{t.amount >= 0 ? "+" : ""}{fmt(t.amount)}</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", color: "#6d28d9" }}>{t.vatAmount > 0 ? fmt(t.vatAmount) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* ── AI PARSER NOTICE ── */}
       {!demoMode && confidence === "low" && (
@@ -1173,7 +1478,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── EXPORT TOOLBAR ── */}
-      <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} downloadError={downloadError} />
+      <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} onPrint={handlePrintReport} downloadError={downloadError} />
 
       {/* ── STAT CARDS ── */}
       <div ref={demoRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -1234,8 +1539,35 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         />
       </div>
 
+      {/* ── VIEW TOGGLE ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 0, background: "#f1f5f9", borderRadius: 999, padding: 4, width: "fit-content" }}>
+        {["Personal View", "Accountant View"].map((label, i) => {
+          const active = accountantView === (i === 1);
+          return (
+            <button
+              key={label}
+              onClick={() => setAccountantView(i === 1)}
+              style={{
+                padding:      "8px 20px",
+                borderRadius: 999,
+                border:       "none",
+                cursor:       "pointer",
+                fontWeight:   700,
+                fontSize:     "0.85rem",
+                transition:   "all 0.2s ease",
+                background:   active ? "linear-gradient(135deg, #6d28d9, #4f46e5)" : "transparent",
+                color:        active ? "#fff" : "#64748b",
+                boxShadow:    active ? "0 2px 10px rgba(109,40,217,0.35)" : "none",
+              }}
+            >
+              {i === 0 ? "👤" : "📊"} {label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* ── UNIFIED FINANCIAL SUMMARY ── */}
-      {transactions.length > 0 && (
+      {!accountantView && transactions.length > 0 && (
         <FinancialSummary
           transactions={transactions}
           income={income}
@@ -1246,6 +1578,22 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           insights={insights}
           onWeekClick={handleWeekClick}
           activeWeek={weekFilter}
+        />
+      )}
+
+      {/* ── ACCOUNTANT VIEW: P&L + VAT ── */}
+      {accountantView && (
+        <AccountantView
+          transactions={transactions}
+          income={income}
+          expenses={expenses}
+          net={net}
+          categoryBreakdown={categoryBreakdown}
+          vatSummary={vatSummary}
+          dateRange={dateRange}
+          period={period}
+          bank={bank}
+          bankName={bankName}
         />
       )}
 

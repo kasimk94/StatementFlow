@@ -80,9 +80,13 @@ export async function POST(req) {
         const signedAmount = type === "debit" ? -Math.abs(amount) : Math.abs(amount);
         const { category, exclude, isInternal = false, note = null } =
           categoriseTransaction(t.description, signedAmount, type);
+        const cleaned = cleanDescription(t.description || "Transaction");
+        const vat = type === "debit"
+          ? detectVAT(cleaned, category, Math.abs(signedAmount))
+          : { vatReclaimable: false, vatAmount: 0, vatConfidence: "excluded", vatNote: "Not applicable" };
         return {
           date:              normaliseDate(t.date),
-          description:       cleanDescription(t.description || "Transaction"),
+          description:       cleaned,
           amount:            signedAmount,
           type,
           category,
@@ -91,6 +95,7 @@ export async function POST(req) {
           excludeFromTotals: false,
           reversalLinked:    false,
           reversalNote:      note,
+          ...vat,
         };
       })
       .filter((t) => t.date && !isNaN(t.amount));
@@ -142,6 +147,24 @@ export async function POST(req) {
 
     const period = extractPeriod(rawText);
 
+    // ── VAT summary ─────────────────────────────────────────────────────────
+    const vatBreakdown = {};
+    transactions
+      .filter(t => t.vatReclaimable && t.type === "debit")
+      .forEach(t => {
+        vatBreakdown[t.category] = parseFloat(
+          ((vatBreakdown[t.category] || 0) + t.vatAmount).toFixed(2)
+        );
+      });
+    const totalVATReclaimable = parseFloat(
+      Object.values(vatBreakdown).reduce((s, v) => s + v, 0).toFixed(2)
+    );
+    const vatSummary = {
+      totalReclaimable:  totalVATReclaimable,
+      breakdown:         vatBreakdown,
+      transactionCount:  transactions.filter(t => t.vatReclaimable).length,
+    };
+
     console.log("=== CONVERSION SUCCESS ===", transactions.length, "transactions");
 
     return NextResponse.json({
@@ -163,6 +186,7 @@ export async function POST(req) {
       reversalsCount,
       categoryBreakdown:    categories,
       period,
+      vatSummary,
     });
   } catch (err) {
     console.error("=== CONVERSION FAILED ===", err.message, err.stack);
@@ -240,6 +264,14 @@ Rules:
 - date format: DD Mon YYYY
 - Do not include opening/closing balance rows
 - Do not include summary rows (Money in, Money out totals)
+
+CRITICAL PAYPAL RULE: When you see a transaction containing 'Paypal' or 'PayPal', you MUST look at what comes after it and use that as the description. Examples:
+- 'Card Payment to Paypal *Pennyappea' → description: 'PayPal Penny Appeal'
+- 'Card Payment to Paypal *Humanappea' → description: 'PayPal Human Appeal'
+- 'Card Payment to Paypal *Muslimglob' → description: 'PayPal Muslim Global'
+- 'Card Payment to Paypal *Argosdirec' → description: 'PayPal Argos Direct'
+- 'Card Payment to Paypal *Asdastores' → description: 'PayPal Asda Stores'
+Never use just 'PayPal' as the description - always include what follows it, expanding truncated names where obvious.
 
 Bank statement text:
 ${text}`,
@@ -578,8 +610,66 @@ function extractStatementTotals(rawText) {
 }
 
 // ---------------------------------------------------------------------------
+// VAT detection — estimates reclaimable VAT on debit transactions
+// ---------------------------------------------------------------------------
+function detectVAT(description, category, amount) {
+  const vatReclaimableCategories = [
+    "Online Shopping", "High Street", "Subscriptions & Streaming",
+    "Travel & Transport", "Health & Fitness", "Entertainment & Leisure",
+    "Eating Out", "Direct Debits", "Finance & Bills",
+  ];
+  const nonVatCategories = [
+    "Groceries", "Cash & ATM", "Transfers Sent", "Transfers Received",
+    "Refunds", "Charity", "Rent & Mortgage",
+  ];
+  const vatRegisteredMerchants = [
+    "amazon", "ebay", "argos", "currys", "apple", "google", "microsoft",
+    "adobe", "spotify", "netflix", "uber", "deliveroo", "just eat",
+    "costa", "starbucks", "tfl", "trainline", "bp", "shell", "esso",
+    "vodafone", "ee", "o2", "bt ", "virgin media", "sky ", "puregym",
+    "david lloyd", "boots", "superdrug", "hotel", "travelodge", "premier inn",
+  ];
+
+  const desc = description.toLowerCase();
+
+  if (nonVatCategories.includes(category)) {
+    return { vatReclaimable: false, vatAmount: 0, vatConfidence: "excluded", vatNote: "Not VAT reclaimable" };
+  }
+
+  const knownVAT     = vatRegisteredMerchants.some(m => desc.includes(m));
+  const categoryElig = vatReclaimableCategories.includes(category);
+
+  if (knownVAT || categoryElig) {
+    const vatAmount = parseFloat((amount * (20 / 120)).toFixed(2));
+    return {
+      vatReclaimable: true,
+      vatAmount,
+      vatConfidence: knownVAT ? "high" : "medium",
+      vatNote:       knownVAT ? "VAT registered merchant" : "Likely VAT reclaimable",
+    };
+  }
+
+  return { vatReclaimable: false, vatAmount: 0, vatConfidence: "unknown", vatNote: "VAT status unknown" };
+}
+
+// ---------------------------------------------------------------------------
 // FIX 3+4+5 — Rebuilt categorisation engine (18-step, first-match-wins)
 // ---------------------------------------------------------------------------
+function looksLikePersonName(desc) {
+  // Strip common payment prefixes
+  const stripped = desc
+    .replace(/^(bill payment to|payment to|received from|transfer to|transfer from)\s*/i, "")
+    .trim();
+  const words = stripped.split(/\s+/);
+  // 2-4 words, each starts with capital, no digits
+  return (
+    words.length >= 2 &&
+    words.length <= 4 &&
+    words.every(w => /^[A-Z][a-zA-Z]{1,}$/.test(w)) &&
+    !/\d/.test(stripped)
+  );
+}
+
 function categoriseTransaction(rawDesc, amount, type) {
   const raw     = (rawDesc || "").toLowerCase();
   const cleaned = cleanDescription(rawDesc || "");
@@ -715,11 +805,29 @@ function categoriseTransaction(rawDesc, amount, type) {
   )
     return { category: "Finance & Bills", exclude: false };
 
+  // Step 16b — BACS/standing order references → transfers
+  if (/ref:|reference:|s\/o\s|bacs ref|faster payment|standing order/i.test(raw))
+    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false };
+
   // Step 17 — Remaining credits → Transfers Received
   if (type === "credit") return { category: "Transfers Received", exclude: false };
 
-  // Step 18 — Fallback
-  return { category: "Uncategorised", exclude: false };
+  // Step 17b — Person name pattern (2–4 capitalised words, no digits) → Transfers Sent
+  const cleanedForName = cleanDescription(rawDesc || "");
+  if (looksLikePersonName(cleanedForName))
+    return { category: "Transfers Sent", exclude: false };
+
+  // Step 18a — Known person names from statements
+  const knownPersonTransfers = ["waleed naeem", "samra kaleem", "ali z", "kasam khalid", "kasim khalid"];
+  if (knownPersonTransfers.some(n => raw.includes(n)))
+    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false };
+
+  // Step 18b — Merchant-like debit → Online Shopping (eliminate Uncategorised for debits)
+  if (type === "debit" && cleanedForName.length > 2)
+    return { category: "Online Shopping", exclude: false };
+
+  // Step 18c — Fallback for any remaining credit
+  return { category: "Transfers Received", exclude: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -730,26 +838,55 @@ function applyReversals(transactions) {
 
   processed.forEach((tx, i) => {
     if (tx.reversalLinked) return;
-    const isReversal =
-      /refund|reversal|reversed|unpaid|returned|chargeback|cashback/i.test(
-        tx.description
-      );
 
-    if (isReversal && tx.type === "credit") {
-      const matchIndex = processed.findIndex(
-        (other, j) =>
+    const desc        = tx.description.toLowerCase();
+    const isUnpaidDD  = /unpaid direct debit|unpaid dd/i.test(tx.description);
+    const isReversal  = /refund|reversal|reversed|returned|chargeback|cashback/i.test(tx.description);
+
+    if ((isUnpaidDD || isReversal) && tx.type === "credit") {
+      let matchIndex = -1;
+
+      if (isUnpaidDD) {
+        // For unpaid DDs: match by amount and try to match merchant keyword
+        const keyword = desc
+          .replace(/unpaid direct debit/i, "")
+          .replace(/unpaid dd/i, "")
+          .trim()
+          .split(/\s+/)[0];
+        matchIndex = processed.findIndex((other, j) =>
+          j !== i &&
+          other.type === "debit" &&
+          Math.abs(Math.abs(other.amount) - Math.abs(tx.amount)) < 0.01 &&
+          !other.reversalLinked &&
+          (keyword.length < 3 || other.description.toLowerCase().includes(keyword))
+        );
+        // If keyword match fails, fall back to amount-only
+        if (matchIndex === -1) {
+          matchIndex = processed.findIndex((other, j) =>
+            j !== i &&
+            other.type === "debit" &&
+            Math.abs(Math.abs(other.amount) - Math.abs(tx.amount)) < 0.01 &&
+            !other.reversalLinked
+          );
+        }
+      } else {
+        matchIndex = processed.findIndex((other, j) =>
           j !== i &&
           other.type === "debit" &&
           Math.abs(Math.abs(other.amount) - Math.abs(tx.amount)) < 0.01 &&
           !other.reversalLinked
-      );
+        );
+      }
 
       if (matchIndex !== -1) {
         processed[i].reversalLinked             = true;
         processed[matchIndex].reversalLinked    = true;
         processed[i].excludeFromTotals          = true;
         processed[matchIndex].excludeFromTotals = true;
-        processed[i].reversalNote = `Reversal of: ${processed[matchIndex].description}`;
+        processed[i].category    = "Refunds";
+        processed[i].reversalNote = isUnpaidDD
+          ? `Unpaid DD returned: ${processed[matchIndex].description}`
+          : `Reversal of: ${processed[matchIndex].description}`;
       }
     }
   });
