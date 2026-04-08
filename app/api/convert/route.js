@@ -76,7 +76,11 @@ export async function POST(req) {
           typeof t.amount === "number"
             ? t.amount
             : parseFloat(String(t.amount).replace(/[^0-9.\-]/g, "")) || 0;
-        const type = t.type || (amount >= 0 ? "credit" : "debit");
+        // Force unpaid DDs and returned transactions to credit — bank returned the money
+        const isUnpaidReturn = /unpaid direct debit|unpaid dd|returned payment/i.test(t.description || "");
+        const type = isUnpaidReturn
+          ? "credit"
+          : (t.type || (amount >= 0 ? "credit" : "debit"));
         const signedAmount = type === "debit" ? -Math.abs(amount) : Math.abs(amount);
         const { category, exclude, isInternal = false, note = null } =
           categoriseTransaction(t.description, signedAmount, type);
@@ -264,6 +268,8 @@ Rules:
 - date format: DD Mon YYYY
 - Do not include opening/closing balance rows
 - Do not include summary rows (Money in, Money out totals)
+
+CRITICAL UNPAID DIRECT DEBIT RULE: If you see a transaction containing 'Unpaid Direct Debit' or 'Unpaid DD', the bank RETURNED the money to the account. It must ALWAYS be type 'credit' not 'debit'. Example: 'RCI Financial Serv Unpaid Direct Debit £237.38' → type: 'credit', amount: 237.38. Similarly any transaction with 'Returned' in the description is always a credit.
 
 CRITICAL PAYPAL RULE: When you see a transaction containing 'Paypal' or 'PayPal', you MUST look at what comes after it and use that as the description. Examples:
 - 'Card Payment to Paypal *Pennyappea' → description: 'PayPal Penny Appeal'
@@ -685,7 +691,7 @@ function categoriseTransaction(rawDesc, amount, type) {
 
   // Step 2 — Internal transfers (flag with isInternal)
   if (/kasam khalid|kasim khalid|k khalid|ref:\s*monzo/i.test(raw))
-    return { category: "Transfers Sent", exclude: false, isInternal: true };
+    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false, isInternal: true };
 
   // Step 3 — Transfers Received (specific known payees)
   if (
@@ -812,10 +818,10 @@ function categoriseTransaction(rawDesc, amount, type) {
   // Step 17 — Remaining credits → Transfers Received
   if (type === "credit") return { category: "Transfers Received", exclude: false };
 
-  // Step 17b — Person name pattern (2–4 capitalised words, no digits) → Transfers Sent
+  // Step 17b — Person name pattern (2–4 capitalised words, no digits) → Transfer by type
   const cleanedForName = cleanDescription(rawDesc || "");
   if (looksLikePersonName(cleanedForName))
-    return { category: "Transfers Sent", exclude: false };
+    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false };
 
   // Step 18a — Known person names from statements
   const knownPersonTransfers = ["waleed naeem", "samra kaleem", "ali z", "kasam khalid", "kasim khalid"];
