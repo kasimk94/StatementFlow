@@ -1440,6 +1440,10 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           .pl-card { page-break-after: always; }
         }
         .print-header { display: none; }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       {/* ── PRINT HEADER (hidden on screen, shown when printing) ── */}
@@ -1570,62 +1574,59 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── VIEW TOGGLE ── */}
-      <div className="view-toggle" style={{ display: "flex", alignItems: "center", gap: 0, background: "#f1f5f9", borderRadius: 999, padding: 4, width: "fit-content" }}>
-        {["Personal View", "Accountant View"].map((label, i) => {
-          const active = accountantView === (i === 1);
-          return (
-            <button
-              key={label}
-              onClick={() => setAccountantView(i === 1)}
-              style={{
-                padding:      "8px 20px",
-                borderRadius: 999,
-                border:       "none",
-                cursor:       "pointer",
-                fontWeight:   700,
-                fontSize:     "0.85rem",
-                transition:   "all 0.2s ease",
-                background:   active ? "linear-gradient(135deg, #6d28d9, #4f46e5)" : "transparent",
-                color:        active ? "#fff" : "#64748b",
-                boxShadow:    active ? "0 2px 10px rgba(109,40,217,0.35)" : "none",
-              }}
-            >
-              {i === 0 ? "👤" : "📊"} {label}
-            </button>
-          );
-        })}
+      <div className="view-toggle" style={{ display: "inline-flex", background: "#f3f4f6", borderRadius: "999px", padding: "4px", position: "relative", cursor: "pointer" }}>
+        {/* Sliding white pill */}
+        <div style={{
+          position: "absolute",
+          top: "4px",
+          bottom: "4px",
+          width: "calc(50% - 4px)",
+          background: "white",
+          borderRadius: "999px",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          transform: accountantView ? "translateX(calc(100% + 4px))" : "translateX(0)",
+        }} />
+        <div onClick={() => setAccountantView(false)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 400 : 600, color: accountantView ? "#6b7280" : "#6d28d9", transition: "color 0.3s ease", userSelect: "none" }}>
+          👤 Personal
+        </div>
+        <div onClick={() => setAccountantView(true)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "#6d28d9" : "#6b7280", transition: "color 0.3s ease", userSelect: "none" }}>
+          📊 Accountant
+        </div>
       </div>
 
-      {/* ── UNIFIED FINANCIAL SUMMARY ── */}
-      {!accountantView && transactions.length > 0 && (
-        <div className="your-money-explained"><FinancialSummary
-          transactions={transactions}
-          income={income}
-          expenses={expenses}
-          net={net}
-          categoryBreakdown={categoryBreakdown}
-          dateRange={dateRange}
-          insights={insights}
-          onWeekClick={handleWeekClick}
-          activeWeek={weekFilter}
-        /></div>
-      )}
+      <div key={accountantView ? "accountant" : "personal"} style={{ animation: "fadeIn 0.3s ease" }}>
+        {/* ── UNIFIED FINANCIAL SUMMARY ── */}
+        {!accountantView && transactions.length > 0 && (
+          <div className="your-money-explained"><FinancialSummary
+            transactions={transactions}
+            income={income}
+            expenses={expenses}
+            net={net}
+            categoryBreakdown={categoryBreakdown}
+            dateRange={dateRange}
+            insights={insights}
+            onWeekClick={handleWeekClick}
+            activeWeek={weekFilter}
+          /></div>
+        )}
 
-      {/* ── ACCOUNTANT VIEW: P&L + VAT ── */}
-      {accountantView && (
-        <AccountantView
-          transactions={transactions}
-          income={income}
-          expenses={expenses}
-          net={net}
-          categoryBreakdown={categoryBreakdown}
-          vatSummary={vatSummary}
-          dateRange={dateRange}
-          period={period}
-          bank={bank}
-          bankName={bankName}
-        />
-      )}
+        {/* ── ACCOUNTANT VIEW: P&L + VAT ── */}
+        {accountantView && (
+          <AccountantView
+            transactions={transactions}
+            income={income}
+            expenses={expenses}
+            net={net}
+            categoryBreakdown={categoryBreakdown}
+            vatSummary={vatSummary}
+            dateRange={dateRange}
+            period={period}
+            bank={bank}
+            bankName={bankName}
+          />
+        )}
+      </div>
 
       {/* ── CHARTS ── */}
       <div ref={chartsRef} className="spending-breakdown grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
