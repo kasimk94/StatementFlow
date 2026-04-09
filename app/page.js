@@ -161,10 +161,10 @@ export default function Home() {
   const [hoveredOption, setHoveredOption] = useState(null);
 
 
-  const PRO_MONTHLY = 7.99;
+  const PRO_MONTHLY = 5.99;
   const BIZ_MONTHLY = 25.99;
-  const PRO_ANNUAL  = 4.99;
-  const BIZ_ANNUAL  = 19.99;
+  const PRO_ANNUAL  = 3.99;
+  const BIZ_ANNUAL  = 17.99;
 
   function handleBilling(val) {
     if (val === billing) return;
@@ -690,7 +690,7 @@ export default function Home() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  Save up to 37%
+                  Save up to 33%
                 </span>
               </button>
             </div>
@@ -707,16 +707,16 @@ export default function Home() {
                   <span className="text-5xl font-extrabold text-slate-900">£0</span>
                   <span className="text-slate-400 pb-2 text-sm">/month</span>
                 </div>
-                <p className="text-sm text-slate-400 mt-2">Perfect for occasional use</p>
+                <p className="text-sm text-slate-400 mt-2">Perfect for getting started</p>
               </div>
               <ul className="space-y-3 flex-1 mb-8">
                 <PricingFeature text="3 PDF uploads per month" included />
-                <PricingFeature text="Basic transaction dashboard" included />
+                <PricingFeature text="Spending dashboard" included />
+                <PricingFeature text="Basic categories" included />
                 <PricingFeature text="CSV export" included />
-                <PricingFeature text="Spending categories" included />
                 <PricingFeature text="Excel export" included={false} />
-                <PricingFeature text="Priority processing" included={false} />
-                <PricingFeature text="Email support" included={false} />
+                <PricingFeature text="Accountant view" included={false} />
+                <PricingFeature text="VAT estimation" included={false} />
               </ul>
               <button
                 onClick={scrollToUpload}
@@ -760,20 +760,20 @@ export default function Home() {
                   style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
                 >
                   {billing === "annually"
-                    ? <><span className="text-emerald-300 font-bold">Save 37%</span> · billed £59.88 annually</>
+                    ? <><span className="text-emerald-300 font-bold">Save 33%</span> · billed £47.88 annually</>
                     : <>&nbsp;</>}
                 </p>
-                <p className="text-sm text-white/60 mt-2">For regular personal use</p>
+                <p className="text-sm text-white/60 mt-2">For individuals who want full control</p>
               </div>
               <ul className="space-y-3 flex-1 mb-8">
                 <PricingFeature text="Unlimited PDF uploads" included light />
-                <PricingFeature text="Advanced dashboard & insights" included light />
+                <PricingFeature text="Full spending dashboard" included light />
+                <PricingFeature text="Advanced categories & insights" included light />
                 <PricingFeature text="Excel & CSV export" included light />
-                <PricingFeature text="Premium Excel report formatting" included light />
-                <PricingFeature text="Spending trends & charts" included light />
+                <PricingFeature text="Spending personality & AI insights" included light />
                 <PricingFeature text="Priority processing" included light />
-                <PricingFeature text="Multi-user access" included={false} light />
-                <PricingFeature text="API access" included={false} light />
+                <PricingFeature text="Accountant view" included={false} light />
+                <PricingFeature text="VAT estimation" included={false} light />
               </ul>
               <button className="w-full py-3 rounded-xl text-sm font-bold text-indigo-700 bg-white hover:bg-slate-50 transition-colors shadow-md">
                 Start Pro
@@ -801,26 +801,26 @@ export default function Home() {
                   style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
                 >
                   {billing === "annually"
-                    ? <><span className="text-emerald-600 font-bold">Save 23%</span> · billed £239.88 annually</>
+                    ? <><span className="text-emerald-600 font-bold">Save 31%</span> · billed £215.88 annually</>
                     : <>&nbsp;</>}
                 </p>
-                <p className="text-sm text-slate-400 mt-2">For accountants & small businesses</p>
+                <p className="text-sm text-slate-400 mt-2">For accountants &amp; small businesses</p>
               </div>
               <ul className="space-y-3 flex-1 mb-8">
                 <PricingFeature text="Everything in Pro" included />
-                <PricingFeature text="Unlimited PDF uploads" included />
-                <PricingFeature text="Multi-user access (up to 5 users)" included />
-                <PricingFeature text="Bulk statement processing" included />
-                <PricingFeature text="API access" included />
-                <PricingFeature text="Priority email support" included />
-                <PricingFeature text="Custom Excel branding" included />
-                <PricingFeature text="Advanced analytics" included />
+                <PricingFeature text="Accountant P&L view" included />
+                <PricingFeature text="VAT estimation built in" included />
+                <PricingFeature text="Audit-ready reconciliation" included />
+                <PricingFeature text="Professional PDF reports" included />
+                <PricingFeature text="Debit & credit split export" included />
+                <PricingFeature text="Tax category mapping" included />
+                <PricingFeature text="Priority support" included />
               </ul>
               <button
                 className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:-translate-y-0.5"
                 style={{
-                  background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)",
-                  boxShadow: "0 8px 20px rgba(108,92,231,0.30)",
+                  background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)",
+                  boxShadow: "0 8px 20px rgba(30,58,95,0.35)",
                 }}
               >
                 Start Business
@@ -942,9 +942,6 @@ export default function Home() {
             ))}
           </div>
 
-          <p style={{ textAlign: "center", marginTop: 32, fontSize: "0.8rem", color: "#9ca3af" }}>
-            StatementFlow processes thousands of statements monthly. Zero data breaches. Zero stored records.
-          </p>
         </div>
       </section>
 
@@ -1113,7 +1110,7 @@ export default function Home() {
       {/* ══ SECTION 8: FINAL CTA ══ */}
       <section className="hp-section" style={{ background: "linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #4f46e5 100%)" }}>
         <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
-          <h2 className="font-extrabold scroll-animate" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "white", lineHeight: 1.2, marginBottom: 20 }}>
+          <h2 className="font-extrabold scroll-animate final-cta-headline" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "white", lineHeight: 1.2, marginBottom: 20 }}>
             Your bank statement is trying<br />to tell you something.
           </h2>
           <p className="scroll-animate" style={{ color: "rgba(255,255,255,0.72)", fontSize: "1.1rem", lineHeight: 1.75, marginBottom: 40, transitionDelay: "0.05s" }}>
