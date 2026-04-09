@@ -147,24 +147,18 @@ export default function Home() {
   const [showFeedback,  setShowFeedback]  = useState(false);
   const pendingDataRef = useRef(null);
 
-  const CYCLING_WORDS = [
-    { text: "Clarity",        icon: "✨" },
-    { text: "Insights",       icon: "📊" },
-    { text: "A Dashboard",    icon: "🖥️" },
-    { text: "An Excel Report", icon: "📥" },
-  ];
-  const [wordIndex, setWordIndex] = useState(0);
-  const [animState, setAnimState] = useState("in"); // "in" | "out"
+  const HERO_WORDS = ["Working For You.", "Making Sense.", "Crystal Clear.", "On Your Side."];
+  const [animatedWord, setAnimatedWord] = useState(0);
   const [openFaq, setOpenFaq]           = useState(null);
   const [billing, setBilling]           = useState("monthly");
   const [billingFade, setBillingFade]   = useState(true);
   const [hoveredOption, setHoveredOption] = useState(null);
 
 
-  const PRO_MONTHLY = 5.99;
-  const BIZ_MONTHLY = 25.99;
-  const PRO_ANNUAL  = 3.99;
-  const BIZ_ANNUAL  = 17.99;
+  const PRO_MONTHLY = 4.99;
+  const BIZ_MONTHLY = 19.99;
+  const PRO_ANNUAL  = 3.29;
+  const BIZ_ANNUAL  = 13.99;
 
   function handleBilling(val) {
     if (val === billing) return;
@@ -204,11 +198,7 @@ export default function Home() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setAnimState("out");
-      setTimeout(() => {
-        setWordIndex(i => (i + 1) % CYCLING_WORDS.length);
-        setAnimState("in");
-      }, 500); // matches wordOut duration
+      setAnimatedWord(prev => (prev + 1) % HERO_WORDS.length);
     }, 2500);
     return () => clearInterval(interval);
   }, []);
@@ -403,7 +393,20 @@ export default function Home() {
             Free · No account required · Instant results
           </div>
           <h1 className="font-extrabold text-slate-900 leading-tight tracking-tight mb-6 scroll-animate" style={{ fontSize: "clamp(2rem, 5vw, 3.75rem)", transitionDelay: "0.05s" }}>
-            Your Bank Statement.<br />Finally Working For You.
+            Your Bank Statement.<br />
+            <span
+              key={animatedWord}
+              style={{
+                background: "linear-gradient(135deg, #6d28d9, #2563eb)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                display: "inline-block",
+                animation: "fadeSlideIn 0.5s ease forwards",
+              }}
+            >
+              {HERO_WORDS[animatedWord]}
+            </span>
           </h1>
           <p className="text-slate-500 mx-auto mb-10 scroll-animate" style={{ fontSize: "1.15rem", lineHeight: 1.75, maxWidth: 600, transitionDelay: "0.1s" }}>
             Upload any UK bank statement and instantly turn it into a spending dashboard, budget tracker, or accountant-ready Excel report — in seconds. No bank login. No data stored. No nonsense.
@@ -690,7 +693,7 @@ export default function Home() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  Save up to 33%
+                  Save up to 34%
                 </span>
               </button>
             </div>
@@ -760,7 +763,7 @@ export default function Home() {
                   style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
                 >
                   {billing === "annually"
-                    ? <><span className="text-emerald-300 font-bold">Save 33%</span> · billed £47.88 annually</>
+                    ? <><span className="text-emerald-300 font-bold">Save 34%</span> · billed £39.48 annually</>
                     : <>&nbsp;</>}
                 </p>
                 <p className="text-sm text-white/60 mt-2">For individuals who want full control</p>
@@ -801,7 +804,7 @@ export default function Home() {
                   style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
                 >
                   {billing === "annually"
-                    ? <><span className="text-emerald-600 font-bold">Save 31%</span> · billed £215.88 annually</>
+                    ? <><span className="text-emerald-600 font-bold">Save 30%</span> · billed £167.88 annually</>
                     : <>&nbsp;</>}
                 </p>
                 <p className="text-sm text-slate-400 mt-2">For accountants &amp; small businesses</p>
