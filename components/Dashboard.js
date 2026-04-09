@@ -300,9 +300,9 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
     <div className="accountant-panel" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* ── MODE BANNER ── */}
-      <div style={{ background: "linear-gradient(135deg, #1e3a5f, #2563eb)", borderRadius: 12, padding: "16px 24px" }}>
-        <p style={{ margin: 0, fontWeight: 700, fontSize: "1rem", color: "white" }}>📊 Accountant View — Professional Analysis</p>
-        <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.65)" }}>Switch to Personal View for the standard dashboard</p>
+      <div style={{ background: "linear-gradient(135deg, #1e3a5f, #2563eb)", borderRadius: 12, padding: "12px 20px" }}>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "white" }}>📊 Accountant View — Professional Analysis</p>
+        <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "rgba(255,255,255,0.65)" }}>Switch to Personal View for the standard dashboard</p>
       </div>
 
       {/* ── CARD 1: P&L STATEMENT ── */}
@@ -1479,7 +1479,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const todayStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="space-y-6" style={{ transition: "background 0.4s ease", background: accountantView ? "#f0f4ff" : "transparent", borderRadius: 20, padding: accountantView ? "0 0 24px" : undefined }}>
+    <div className="space-y-6" style={{ transition: "background 0.4s ease", background: accountantView ? "#f0f4ff" : "transparent", borderRadius: 20, padding: accountantView ? "0 0 24px" : undefined, paddingTop: 16 }}>
 
       {/* ── PRINT STYLES ── */}
       <style>{`
@@ -1561,21 +1561,14 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       )}
 
       {/* ── STATEMENT HEADING ── */}
-      <div style={{ marginBottom: 8, borderLeft: accountantView ? "3px solid #2563eb" : "3px solid transparent", paddingLeft: accountantView ? 12 : 0, transition: "border-color 0.3s ease, padding-left 0.3s ease" }}>
+      <div style={{ marginBottom: 12 }}>
         <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em" }}>
           {demoMode ? "Example Statement" : "Your Statement"}
         </h2>
         {(dateRange || bankName || (bank && bank !== "ai-parsed")) && (
-          <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#94a3b8", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
-            <span>
-              {dateRange ?? ""}
-              {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
-            </span>
-            {accountantView && (
-              <span style={{ background: "linear-gradient(135deg, #1e3a5f, #2563eb)", color: "white", fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: 999, letterSpacing: "0.04em" }}>
-                Accountant Mode
-              </span>
-            )}
+          <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
+            {dateRange ?? ""}
+            {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
           </p>
         )}
       </div>
