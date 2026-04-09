@@ -148,6 +148,12 @@ export default function Home() {
   const pendingDataRef = useRef(null);
 
   const HERO_WORDS = ["Working For You.", "Making Sense.", "Crystal Clear.", "On Your Side."];
+  const HERO_WORD_STYLES = [
+    { fontWeight: 400, fontStyle: "normal",  letterSpacing: "0" },
+    { fontWeight: 800, fontStyle: "normal",  letterSpacing: "-0.02em" },
+    { fontWeight: 400, fontStyle: "italic",  letterSpacing: "0.01em" },
+    { fontWeight: 300, fontStyle: "normal",  letterSpacing: "0.05em" },
+  ];
   const [animatedWord, setAnimatedWord] = useState(0);
   const [openFaq, setOpenFaq]           = useState(null);
   const [billing, setBilling]           = useState("monthly");
@@ -403,6 +409,9 @@ export default function Home() {
                 backgroundClip: "text",
                 display: "inline-block",
                 animation: "fadeSlideIn 0.5s ease forwards",
+                fontWeight: HERO_WORD_STYLES[animatedWord].fontWeight,
+                fontStyle: HERO_WORD_STYLES[animatedWord].fontStyle,
+                letterSpacing: HERO_WORD_STYLES[animatedWord].letterSpacing,
               }}
             >
               {HERO_WORDS[animatedWord]}
