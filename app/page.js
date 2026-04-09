@@ -147,7 +147,7 @@ export default function Home() {
   const [showFeedback,  setShowFeedback]  = useState(false);
   const pendingDataRef = useRef(null);
 
-  const HERO_WORDS = ["Working For You.", "Making Sense.", "Crystal Clear.", "On Your Side."];
+  const HERO_WORDS = ["Finally Making Sense.", "Giving You Control.", "Decoded For You.", "Clear. Simple. Easy."];
   const HERO_WORD_STYLES = [
     { fontWeight: 400, fontStyle: "normal",  letterSpacing: "0" },
     { fontWeight: 800, fontStyle: "normal",  letterSpacing: "-0.02em" },
@@ -412,6 +412,7 @@ export default function Home() {
                 fontWeight: HERO_WORD_STYLES[animatedWord].fontWeight,
                 fontStyle: HERO_WORD_STYLES[animatedWord].fontStyle,
                 letterSpacing: HERO_WORD_STYLES[animatedWord].letterSpacing,
+                transition: "all 0.3s ease",
               }}
             >
               {HERO_WORDS[animatedWord]}
