@@ -88,8 +88,11 @@ export async function POST(req) {
         const vat = type === "debit"
           ? detectVAT(cleaned, category, Math.abs(signedAmount))
           : { vatReclaimable: false, vatAmount: 0, vatConfidence: "excluded", vatNote: "Not applicable" };
+        const { cleanMerchant, viaProcessor } = extractCleanMerchant(t.description || "");
+        const normDate = normaliseDate(t.date);
         return {
-          date:              normaliseDate(t.date),
+          date:              normDate,
+          dateFormatted:     formatDateYYYYMMDD(normDate),
           description:       cleaned,
           amount:            signedAmount,
           type,
@@ -99,6 +102,10 @@ export async function POST(req) {
           excludeFromTotals: false,
           reversalLinked:    false,
           reversalNote:      note,
+          cleanMerchant,
+          viaProcessor,
+          debit:  type === "debit"   ? signedAmount : null,
+          credit: type === "credit"  ? signedAmount : null,
           ...vat,
         };
       })
@@ -111,8 +118,25 @@ export async function POST(req) {
       );
     }
 
-    // ── 8. Apply reversal / refund netting ─────────────────────────────────
-    const transactions = applyReversals(rawTransactions);
+    // ── 8. Apply reversal / refund netting + transactionType ───────────────
+    const transactions = applyReversals(rawTransactions).map(tx => ({
+      ...tx,
+      transactionType: classifyTransactionType(tx),
+    }));
+
+    // ── 8b. Real income / spending (excludes transfers & adjustments) ───────
+    const realIncome = parseFloat(
+      transactions
+        .filter(tx => tx.type === "credit" && !tx.isInternal && !tx.isAdjustment && !tx.excludeFromTotals && tx.category !== "Transfers Received")
+        .reduce((sum, tx) => sum + tx.amount, 0)
+        .toFixed(2)
+    );
+    const realSpending = parseFloat(
+      transactions
+        .filter(tx => tx.type === "debit" && !tx.isInternal && !tx.isAdjustment && !tx.excludeFromTotals && tx.category !== "Transfers Sent")
+        .reduce((sum, tx) => sum + Math.abs(tx.amount), 0)
+        .toFixed(2)
+    );
 
     // ── 9. Calculate totals ─────────────────────────────────────────────────
     const internalTransferTotal = transactions
@@ -191,6 +215,8 @@ export async function POST(req) {
       categoryBreakdown:    categories,
       period,
       vatSummary,
+      realIncome,
+      realSpending,
     });
   } catch (err) {
     console.error("=== CONVERSION FAILED ===", err.message, err.stack);
@@ -536,6 +562,86 @@ function parseTransactions(rawText, bankName) {
   }
 
   return transactions;
+}
+
+// ---------------------------------------------------------------------------
+// Date formatter — "DD Mon YYYY" → "YYYY-MM-DD"
+// ---------------------------------------------------------------------------
+function formatDateYYYYMMDD(dateStr) {
+  try {
+    const parts = String(dateStr || "").toLowerCase().split(" ");
+    if (parts.length >= 3) {
+      const day   = parts[0].padStart(2, "0");
+      const month = String(MONTH_MAP[parts[1]] || 1).padStart(2, "0");
+      const year  = parts[2];
+      return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+  } catch { return dateStr; }
+}
+
+// ---------------------------------------------------------------------------
+// Clean merchant extractor — strips processor prefixes, expands truncations
+// ---------------------------------------------------------------------------
+function extractCleanMerchant(rawDescription) {
+  let clean = cleanDescription(rawDescription);
+
+  const processors = [
+    { pattern: /^paypal\s*\*?\s*/i, label: "PayPal" },
+    { pattern: /^stripe\s*\*?\s*/i, label: "Stripe" },
+    { pattern: /^sumup\s*\*?\s*/i,  label: "SumUp"  },
+    { pattern: /^sq\s*\*?\s*/i,     label: "Square" },
+  ];
+  let viaProcessor = null;
+  for (const p of processors) {
+    if (p.pattern.test(clean)) {
+      viaProcessor = p.label;
+      clean = clean.replace(p.pattern, "").trim();
+      break;
+    }
+  }
+
+  const expansions = {
+    "pennyappea":         "Penny Appeal",
+    "humanappea":         "Human Appeal",
+    "muslimglob":         "Muslim Global",
+    "argosdirec":         "Argos Direct",
+    "asdastores":         "Asda Stores",
+    "islamicrel":         "Islamic Relief",
+    "rci financial serv": "RCI Financial Services",
+    "barclays prtnr fin": "Barclays Partner Finance",
+    "amznmktplace":       "Amazon Marketplace",
+    "amazon.co.uk":       "Amazon UK",
+    "amazon.com":         "Amazon",
+  };
+  const lowerClean = clean.toLowerCase();
+  for (const [truncated, full] of Object.entries(expansions)) {
+    if (lowerClean.includes(truncated)) { clean = full; break; }
+  }
+
+  clean = clean
+    .replace(/\s+\d{3}-\d{6,}/g, "")
+    .replace(/\s+ref:?\s*\S+/gi, "")
+    .replace(/\s+on \d{1,2} \w+/gi, "")
+    .replace(/\*\w+/g, "")
+    .trim();
+
+  clean = clean.split(" ")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+
+  return { cleanMerchant: clean || rawDescription, viaProcessor };
+}
+
+// ---------------------------------------------------------------------------
+// Transaction type classifier
+// ---------------------------------------------------------------------------
+function classifyTransactionType(tx) {
+  if (tx.isInternal)                             return "Internal Transfer";
+  if (tx.reversalLinked || tx.excludeFromTotals) return "Reversal/Adjustment";
+  if (tx.vatReclaimable)                         return "Business Expense";
+  if (tx.type === "credit")                      return "Income";
+  return "Transaction";
 }
 
 // ---------------------------------------------------------------------------
@@ -910,6 +1016,8 @@ function applyReversals(transactions) {
         processed[matchIndex].reversalLinked    = true;
         processed[i].excludeFromTotals          = true;
         processed[matchIndex].excludeFromTotals = true;
+        processed[i].isAdjustment               = true;
+        processed[matchIndex].isAdjustment      = true;
         processed[i].category    = "Refunds";
         processed[i].reversalNote = isUnpaidDD
           ? `Unpaid DD returned: ${processed[matchIndex].description}`

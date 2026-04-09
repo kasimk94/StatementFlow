@@ -141,9 +141,34 @@ function writeTitleHeader(sheet, colSpan, title, subtitle, generatedLine) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+const TAX_CATEGORY_MAP = {
+  "Groceries":                "Subsistence",
+  "Eating Out":               "Subsistence",
+  "Travel & Transport":       "Travel",
+  "Online Shopping":          "Office/Admin",
+  "High Street":              "Retail",
+  "Direct Debits":            "Overheads",
+  "Household Bills":          "Overheads",
+  "Health & Fitness":         "Wellbeing",
+  "Entertainment & Leisure":  "Entertainment",
+  "Charity":                  "Charitable Donation",
+  "Cash & ATM":               "Cash",
+  "Transfers Sent":           "Internal Transfer",
+  "Transfers Received":       "Internal Transfer",
+  "Refunds":                  "Reversal",
+  "Finance & Bills":          "Finance",
+  "Rent & Mortgage":          "Property",
+  "Subscriptions & Streaming":"Subscriptions",
+  "Uncategorised":            "Uncategorised",
+};
+
 export async function POST(request) {
   const body         = await request.json().catch(() => ({}));
   const transactions = Array.isArray(body.transactions) ? body.transactions : [];
+  const realIncome   = body.realIncome  ?? null;
+  const realSpending = body.realSpending ?? null;
+  const vatSummary   = body.vatSummary  ?? null;
+  const bodyBankName = body.bankName    ?? null;
 
   // ── Aggregation ─────────────────────────────────────────────────────────────
   let totalIncome = 0, totalExpenses = 0;
@@ -335,32 +360,41 @@ export async function POST(request) {
   const txSheet = wb.addWorksheet("Transactions");
   txSheet.properties.tabColor = { argb: "FF009e7e" };
   txSheet.columns = [
-    { width: 16 }, // A Date
-    { width: 45 }, // B Description
-    { width: 20 }, // C Category
-    { width: 14 }, // D Amount
-    { width: 12 }, // E Type
-    { width: 16 }, // F Balance
+    { width: 14 }, // A  Date
+    { width: 14 }, // B  Date (YYYY-MM-DD)
+    { width: 28 }, // C  Clean Merchant
+    { width: 38 }, // D  Original Description
+    { width: 22 }, // E  Category
+    { width: 18 }, // F  Tax Category
+    { width: 18 }, // G  Type
+    { width: 14 }, // H  Debit (£)
+    { width: 14 }, // I  Credit (£)
+    { width: 14 }, // J  VAT Est. (£)
+    { width: 14 }, // K  Balance
   ];
 
   // Title header rows 1-4
-  writeTitleHeader(txSheet, "F", "Transactions", "Transactions", `Generated: ${todayStr}   ·   ${transactions.length} transactions`);
+  writeTitleHeader(txSheet, "K", "Transactions", "Professional Accounting Export", `Generated: ${todayStr}   ·   ${transactions.length} transactions`);
 
   // Data header — row 5
   txSheet.views = [{ state: "frozen", ySplit: 5, zoomScale: 100, activeCell: "A6" }];
 
-  ["Date","Description","Category","Amount","Type","Balance"].forEach((h, i) => {
-    const col  = "ABCDEF"[i];
-    const cell = txSheet.getCell(`${col}5`);
-    sc(cell, {
-      v: h, bg: HDR_BG,
-      font:   { bold: true, size: 11, color: { argb: HDR_TXT } },
-      align:  { horizontal: i >= 3 ? "right" : "left", indent: i < 2 ? 1 : 0 },
+  const txHeaders = [
+    ["A","Date"],["B","Date (YYYY-MM-DD)"],["C","Clean Merchant"],["D","Original Description"],
+    ["E","Category"],["F","Tax Category"],["G","Type"],
+    ["H","Debit (£)"],["I","Credit (£)"],["J","VAT Est. (£)"],["K","Balance"],
+  ];
+  const txRightAlign = new Set(["H","I","J","K"]);
+  txHeaders.forEach(([col, label]) => {
+    sc(txSheet.getCell(`${col}5`), {
+      v: label, bg: HDR_BG,
+      font:  { bold: true, size: 11, color: { argb: HDR_TXT } },
+      align: { horizontal: txRightAlign.has(col) ? "right" : "left", indent: txRightAlign.has(col) ? 0 : 1 },
       border: botAccent(),
     });
   });
   txSheet.getRow(5).height = 28;
-  txSheet.autoFilter = { from: "A5", to: "F5" };
+  txSheet.autoFilter = { from: "A5", to: "K5" };
 
   const sorted = [...transactions].sort((a, b) =>
     String(a.date || "").localeCompare(String(b.date || ""))
@@ -368,35 +402,51 @@ export async function POST(request) {
 
   let runBal = 0;
   sorted.forEach((t, i) => {
-    const row      = 6 + i;
-    const amt      = Number(t.amount) || 0;
-    runBal        += amt;
-    const isCredit = amt >= 0;
-    const bg       = i % 2 === 0 ? WHITE : ROW_ALT;
-    const amtClr   = isCredit ? "FF00b894" : "FFe17055";
-    const typeBg   = isCredit ? "FFf0faf5" : "FFfff5f5";
-    const balClr   = runBal >= 0 ? "FF00b894" : "FFe17055";
-    const accentClr = isCredit ? "FF00b894" : "FFe17055";
+    const row       = 6 + i;
+    const amt       = Number(t.amount) || 0;
+    runBal         += amt;
+    const isCredit  = amt >= 0;
+    const bg        = i % 2 === 0 ? WHITE : ROW_ALT;
+    const debitClr  = "FFe17055";
+    const creditClr = "FF00b894";
+    const accentClr = isCredit ? creditClr : debitClr;
+    const balClr    = runBal >= 0 ? creditClr : debitClr;
     const rowBorder = { top: bNone(), left: bNone(), bottom: bThin(), right: bNone() };
 
-    // A: Date — medium left border accent (credit=green, debit=coral)
-    const aCell = txSheet.getCell(`A${row}`);
-    sc(aCell, { v: toDateStr(t.date), bg, font: { size: 11, color: { argb: SEC_TXT } }, align: { horizontal: "left", indent: 1 }, border: { ...rowBorder, left: bMedium(accentClr) } });
-
-    // B: Description — subtle right separator
-    sc(txSheet.getCell(`B${row}`), { v: t.description || "", bg, align: { horizontal: "left", indent: 1 }, border: { ...rowBorder, right: bThin() } });
-
-    // C: Category
-    sc(txSheet.getCell(`C${row}`), { v: t.category || "", bg, font: { size: 11, color: { argb: SEC_TXT } }, align: { horizontal: "left", indent: 1 }, border: rowBorder });
-
-    // D: Amount
-    sc(txSheet.getCell(`D${row}`), { v: Math.abs(amt), bg, fmt: GBP, font: { size: 11, color: { argb: amtClr } }, align: { horizontal: "right" }, border: rowBorder });
-
-    // E: Type — tinted background
-    sc(txSheet.getCell(`E${row}`), { v: isCredit ? "Credit" : "Debit", bg: typeBg, font: { size: 10, color: { argb: amtClr } }, align: { horizontal: "center" }, border: rowBorder });
-
-    // F: Balance
-    sc(txSheet.getCell(`F${row}`), { v: runBal, bg, fmt: GBP, font: { size: 11, color: { argb: balClr } }, align: { horizontal: "right" }, border: rowBorder });
+    // A: Date
+    sc(txSheet.getCell(`A${row}`), { v: toDateStr(t.date), bg, font: { size: 11, color: { argb: SEC_TXT } }, align: { horizontal: "left", indent: 1 }, border: { ...rowBorder, left: bMedium(accentClr) } });
+    // B: Date YYYY-MM-DD
+    sc(txSheet.getCell(`B${row}`), { v: t.dateFormatted || toDateStr(t.date), bg, font: { size: 11, color: { argb: SEC_TXT } }, align: { horizontal: "left", indent: 1 }, border: rowBorder });
+    // C: Clean Merchant
+    sc(txSheet.getCell(`C${row}`), { v: t.cleanMerchant || t.description || "", bg, font: { bold: true, size: 11 }, align: { horizontal: "left", indent: 1 }, border: rowBorder });
+    // D: Original Description
+    sc(txSheet.getCell(`D${row}`), { v: t.description || "", bg, font: { size: 10, color: { argb: SEC_TXT } }, align: { horizontal: "left", indent: 1 }, border: { ...rowBorder, right: bThin() } });
+    // E: Category
+    sc(txSheet.getCell(`E${row}`), { v: t.category || "", bg, font: { size: 11, color: { argb: SEC_TXT } }, align: { horizontal: "left", indent: 1 }, border: rowBorder });
+    // F: Tax Category
+    sc(txSheet.getCell(`F${row}`), { v: TAX_CATEGORY_MAP[t.category] || "Uncategorised", bg, font: { size: 11, color: { argb: SEC_TXT } }, align: { horizontal: "left", indent: 1 }, border: rowBorder });
+    // G: Type
+    sc(txSheet.getCell(`G${row}`), { v: t.transactionType || (isCredit ? "Income" : "Transaction"), bg, font: { size: 10, color: { argb: accentClr } }, align: { horizontal: "center" }, border: rowBorder });
+    // H: Debit (£) — debit transactions only
+    sc(txSheet.getCell(`H${row}`), {
+      v: !isCredit ? Math.abs(amt) : null,
+      bg, fmt: GBP, font: { size: 11, color: { argb: debitClr } },
+      align: { horizontal: "right" }, border: rowBorder,
+    });
+    // I: Credit (£) — credit transactions only
+    sc(txSheet.getCell(`I${row}`), {
+      v: isCredit ? amt : null,
+      bg, fmt: GBP, font: { size: 11, color: { argb: creditClr } },
+      align: { horizontal: "right" }, border: rowBorder,
+    });
+    // J: VAT Est. (£)
+    sc(txSheet.getCell(`J${row}`), {
+      v: (t.vatAmount && t.vatAmount > 0) ? t.vatAmount : null,
+      bg, fmt: GBP, font: { size: 11, color: { argb: "FF7c6ff7" } },
+      align: { horizontal: "right" }, border: rowBorder,
+    });
+    // K: Running Balance
+    sc(txSheet.getCell(`K${row}`), { v: runBal, bg, fmt: GBP, font: { size: 11, color: { argb: balClr } }, align: { horizontal: "right" }, border: rowBorder });
 
     txSheet.getRow(row).height = 22;
   });
@@ -514,6 +564,64 @@ export async function POST(request) {
   catSheet.getRow(insightRow).height = 22;
 
   catSheet.pageSetup = { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1 };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SHEET 4 — Reconciliation
+  // ═══════════════════════════════════════════════════════════════════════════
+  const recSheet = wb.addWorksheet("Reconciliation");
+  recSheet.properties.tabColor = { argb: "FF1e3a5f" };
+  recSheet.columns = [
+    { width: 3  }, // A accent
+    { width: 40 }, // B label
+    { width: 20 }, // C value
+    { width: 14 }, // D count
+  ];
+
+  writeTitleHeader(recSheet, "D", "Reconciliation", `${bodyBankName || "Bank"} · ${dateRangeStr}`, `Generated: ${todayStr}`);
+
+  const adjTx     = transactions.filter(t => t.isAdjustment);
+  const intTx     = transactions.filter(t => t.isInternal);
+  const adjValue  = adjTx.reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+  const intValue  = intTx.reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+  const vatTotal  = vatSummary?.totalReclaimable ?? 0;
+  const netPos    = (realIncome ?? 0) - (realSpending ?? 0);
+
+  const recRows = [
+    { label: "Real Income (excl. internal transfers & adjustments)", value: realIncome,   fmt: GBP, count: null, accent: "FF00b894" },
+    { label: "Real Spending (excl. internal transfers & adjustments)", value: -(realSpending ?? 0), fmt: GBP, count: null, accent: "FFe17055" },
+    { label: "Net Position (Income − Spending)", value: netPos, fmt: GBP, count: null, accent: netPos >= 0 ? "FF00b894" : "FFe17055" },
+    { label: null },
+    { label: "Total Adjustments / Reversals (netted out)", value: adjValue, fmt: GBP, count: adjTx.length / 2, accent: "FFf59e0b" },
+    { label: "Total Internal Transfers", value: intValue, fmt: GBP, count: intTx.length, accent: "FF6366f1" },
+    { label: null },
+    { label: "Estimated VAT Reclaimable (20% standard rate)", value: vatTotal, fmt: GBP, count: vatSummary?.transactionCount ?? null, accent: "FF7c6ff7" },
+    { label: null },
+    { label: "All Transactions", value: null, fmt: null, count: transactions.length, accent: "FF74b9ff" },
+  ];
+
+  let recRow = 5;
+  recRows.forEach(({ label, value, fmt, count, accent }) => {
+    if (!label) { recSheet.getRow(recRow).height = 10; recRow++; return; }
+    recSheet.getCell(`A${recRow}`).fill   = solidFill(accent || "FF74b9ff");
+    recSheet.getCell(`A${recRow}`).border = noB();
+    sc(recSheet.getCell(`B${recRow}`), { v: label, align: { horizontal: "left", indent: 1 }, border: botThin() });
+    sc(recSheet.getCell(`C${recRow}`), { v: value, fmt, font: { bold: true, size: 12, color: { argb: accent || BODY_TXT } }, align: { horizontal: "right" }, border: botThin() });
+    sc(recSheet.getCell(`D${recRow}`), { v: count, font: { size: 11, color: { argb: SEC_TXT } }, align: { horizontal: "right" }, border: botThin() });
+    recSheet.getRow(recRow).height = 28;
+    recRow++;
+  });
+
+  const disclaimerRow = recRow + 1;
+  recSheet.mergeCells(`B${disclaimerRow}:D${disclaimerRow}`);
+  sc(recSheet.getCell(`B${disclaimerRow}`), {
+    v: "VAT figures are estimates only. Verify all claims with your accountant and HMRC.",
+    font: { italic: true, size: 9, color: { argb: "FFaaaaaa" } },
+    align: { horizontal: "left", indent: 1 },
+    border: noB(),
+  });
+  recSheet.getRow(disclaimerRow).height = 20;
+
+  recSheet.pageSetup = { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1 };
 
   // ── Stream ────────────────────────────────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();

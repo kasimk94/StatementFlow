@@ -311,6 +311,8 @@ export default function Home() {
       endBalance: data.endBalance ?? null,
       vatSummary: data.vatSummary ?? null,
       period: data.period ?? null,
+      realIncome: data.realIncome ?? null,
+      realSpending: data.realSpending ?? null,
     });
     setLoading(false);
     setApiDone(false);
@@ -362,6 +364,8 @@ export default function Home() {
             endBalance={parseResult?.endBalance ?? null}
             vatSummary={parseResult?.vatSummary ?? null}
             period={parseResult?.period ?? null}
+            realIncome={parseResult?.realIncome ?? null}
+            realSpending={parseResult?.realSpending ?? null}
           />
         </main>
         {showFeedback && <FeedbackPopup onClose={closeFeedback} />}

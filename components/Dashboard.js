@@ -985,7 +985,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   );
 }
 
-export default function Dashboard({ transactions, demoMode = false, confidence, bank, debug, insights, overdraftLimit = 500, internalTransferTotal = 0, reversalsCount = 0, statementIncome = null, statementExpenses = null, startBalance = null, endBalance = null, vatSummary = null, period = null }) {
+export default function Dashboard({ transactions, demoMode = false, confidence, bank, debug, insights, overdraftLimit = 500, internalTransferTotal = 0, reversalsCount = 0, statementIncome = null, statementExpenses = null, startBalance = null, endBalance = null, vatSummary = null, period = null, realIncome = null, realSpending = null }) {
   const [search, setSearch]                   = useState("");
   const [sortKey, setSortKey]                 = useState("date");
   const [sortDir, setSortDir]                 = useState("desc");
@@ -1166,7 +1166,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       const res = await fetch("/api/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transactions }),
+        body: JSON.stringify({ transactions, realIncome, realSpending, vatSummary, bankName }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -1186,26 +1186,82 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     }
   }, [transactions, demoMode, showDemoToast]);
 
-  // ── Export CSV ──
+  // ── Export CSV (professional accounting format) ──
   const handleCSV = useCallback(() => {
     if (demoMode) { showDemoToast(); return; }
-    const header = "Date,Description,Category,Amount\n";
-    const rows   = transactions
-      .map((t) => [
-        t.date,
-        `"${(t.description || "").replace(/"/g, '""')}"`,
-        `"${(t.category || "").replace(/"/g, '""')}"`,
-        t.amount,
-      ].join(","))
+
+    const taxCategoryMap = {
+      "Groceries":                "Subsistence",
+      "Eating Out":               "Subsistence",
+      "Travel & Transport":       "Travel",
+      "Online Shopping":          "Office/Admin",
+      "High Street":              "Retail",
+      "Direct Debits":            "Overheads",
+      "Household Bills":          "Overheads",
+      "Health & Fitness":         "Wellbeing",
+      "Entertainment & Leisure":  "Entertainment",
+      "Charity":                  "Charitable Donation",
+      "Cash & ATM":               "Cash",
+      "Transfers Sent":           "Internal Transfer",
+      "Transfers Received":       "Internal Transfer",
+      "Refunds":                  "Reversal",
+      "Finance & Bills":          "Finance",
+      "Rent & Mortgage":          "Property",
+      "Subscriptions & Streaming":"Subscriptions",
+      "Uncategorised":            "Uncategorised",
+    };
+
+    const headers = [
+      "Date","Date (YYYY-MM-DD)","Original Description","Clean Merchant",
+      "Via Processor","Category","Tax Category","Type",
+      "Debit (£)","Credit (£)","VAT Reclaimable","Est. VAT (£)",
+      "VAT Confidence","Is Adjustment","Balance",
+    ];
+
+    const rows = transactions.map(tx => [
+      tx.date || "",
+      tx.dateFormatted || "",
+      `"${(tx.description || "").replace(/"/g, '""')}"`,
+      `"${(tx.cleanMerchant || tx.description || "").replace(/"/g, '""')}"`,
+      tx.viaProcessor || "",
+      tx.category || "",
+      taxCategoryMap[tx.category] || "Uncategorised",
+      tx.transactionType || "Transaction",
+      tx.debit  != null ? Math.abs(tx.debit).toFixed(2)  : "",
+      tx.credit != null ? Math.abs(tx.credit).toFixed(2) : "",
+      tx.vatReclaimable ? "Yes" : "No",
+      tx.vatAmount != null ? tx.vatAmount.toFixed(2) : "0.00",
+      tx.vatConfidence || "",
+      tx.isAdjustment ? "Yes" : "No",
+      tx.balance != null ? tx.balance.toFixed(2) : "",
+    ]);
+
+    const periodStr = period
+      ? (period.from && period.to ? `${period.from} – ${period.to}` : (period.to || ""))
+      : (dateRange || "");
+
+    const csvContent = [
+      ["StatementFlow Export"],
+      [`Bank: ${bankName || "Unknown"}`],
+      [`Period: ${periodStr || "Unknown"}`],
+      [`Generated: ${new Date().toLocaleDateString("en-GB")}`],
+      [`Real Income (excl. transfers): £${realIncome != null ? realIncome.toFixed(2) : "0.00"}`],
+      [`Real Spending (excl. transfers): £${realSpending != null ? realSpending.toFixed(2) : "0.00"}`],
+      [],
+      headers,
+      ...rows,
+    ]
+      .map(row => row.join(","))
       .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href     = url;
-    a.download = "statement.csv";
+    a.download = `StatementFlow_${bankName || "export"}_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [transactions, demoMode, showDemoToast]);
+  }, [transactions, demoMode, showDemoToast, bankName, period, dateRange, realIncome, realSpending]);
 
   // ── Print PDF report ──
   const handlePrintReport = useCallback(() => {
