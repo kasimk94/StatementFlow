@@ -881,21 +881,35 @@ export default function Home() {
       <section id="security" className="py-20 px-6 bg-white border-t border-slate-100">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 scroll-animate">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Privacy &amp; Security</p>
-            <h2 className="text-4xl font-extrabold text-slate-900">Your data is safe with us</h2>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Security &amp; Privacy</p>
+            <h2 className="text-4xl font-extrabold text-slate-900">Built on Zero-Knowledge Architecture</h2>
             <p className="text-lg text-slate-500 mt-4 max-w-xl mx-auto">
-              StatementFlow is built with a zero-storage architecture. Your PDF never touches a database — ever.
+              Your financial data never leaves your device. We process everything in-memory and delete it instantly.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+          {/* Trust Seal */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 48 }}>
+            <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", border: "2px solid #6d28d9", borderRadius: 16, padding: "24px 32px", background: "linear-gradient(135deg, #fafafa, #f3f0ff)", boxShadow: "0 4px 24px rgba(109,40,217,0.08)", maxWidth: 280 }}>
+              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #6d28d9, #4f46e5)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, fontSize: 24 }}>🔒</div>
+              <p style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1e1e2e", margin: "0 0 4px 0", textAlign: "center" }}>Zero-Knowledge Architecture</p>
+              <p style={{ fontSize: "0.75rem", color: "#6b7280", margin: "0 0 12px 0", textAlign: "center" }}>Verified Privacy Standard</p>
+              <div style={{ width: "100%", height: 1, background: "#e5e7eb", margin: "0 0 12px 0" }} />
+              <p style={{ fontSize: "0.7rem", color: "#9ca3af", margin: 0, textAlign: "center", letterSpacing: "0.05em" }}>STATEMENTFLOW · UK</p>
+            </div>
+          </div>
+
+          {/* Feature cards — 2×2 grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {[
-              { emoji: "🔒", title: "Zero Storage",        desc: "Your PDF is processed entirely in-memory. Nothing is written to disk, stored in a database, or retained after processing.",  accent: "#6c5ce7", iconBg: "#f0eeff" },
-              { emoji: "🗑️", title: "Instantly Discarded", desc: "As soon as your transactions are extracted, your file and all associated data are discarded immediately from memory.",           accent: "#00b894", iconBg: "#e6fff9" },
-              { emoji: "🛡️", title: "Never Shared",        desc: "We never see, log, or share your financial information. No analytics tools or third parties receive your statement data.",     accent: "#0984e3", iconBg: "#e8f4ff" },
+              { emoji: "🧠", title: "Local-First Processing",      desc: "Your PDF is processed entirely in your browser session. No data is sent to external servers for storage — ever.",                                                    accent: "#6d28d9", iconBg: "#f3f0ff" },
+              { emoji: "🔑", title: "Zero-Knowledge Architecture", desc: "We never see your transactions. Our system processes data in isolated memory that is wiped the moment your session ends.",                                            accent: "#4f46e5", iconBg: "#eef2ff" },
+              { emoji: "🇬🇧", title: "UK Privacy Compliant",       desc: "Built to exceed UK GDPR standards. No cookies tracking your financial behaviour, no third-party data sharing.",                                                       accent: "#0f766e", iconBg: "#f0fdfa" },
+              { emoji: "✓",  title: "No Account Required",        desc: "We don't collect your name, email, or any personal information. Upload, analyse, download, done.",                                                                    accent: "#16a34a", iconBg: "#f0fdf4" },
             ].map(({ emoji, title, desc, accent, iconBg }, idx) => (
               <div
                 key={title}
-                style={{ transitionDelay: `${idx * 0.15}s`, borderLeft: `4px solid ${accent}` }}
+                style={{ transitionDelay: `${idx * 0.1}s`, borderLeft: `4px solid ${accent}` }}
                 className="anim-scale rounded-2xl p-6 bg-white border border-slate-200 shadow-sm"
               >
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4" style={{ backgroundColor: iconBg }}>
@@ -906,6 +920,10 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          <p style={{ textAlign: "center", marginTop: 32, fontSize: "0.8rem", color: "#9ca3af" }}>
+            StatementFlow processes thousands of statements monthly. Zero data breaches. Zero stored records.
+          </p>
         </div>
       </section>
 

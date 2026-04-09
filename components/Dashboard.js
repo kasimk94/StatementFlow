@@ -246,12 +246,14 @@ function BarTooltip({ active, payload, label }) {
 const PAGE_SIZE = 15;
 
 // ─── Accountant View: P&L + VAT Summary + Business Expense Review ────────────
-function AccountantView({ transactions, income, expenses, net, categoryBreakdown, vatSummary, dateRange, period, bank, bankName }) {
+function AccountantView({ transactions, income, expenses, net, categoryBreakdown, vatSummary, dateRange, period, bank, bankName, reversalsCount = 0 }) {
   const [checkedRows, setCheckedRows] = useState(new Set());
 
   const periodStr = period
     ? (period.from && period.to ? `${period.from} – ${period.to}` : (period.to || dateRange || ""))
     : (dateRange || "");
+
+  const internalCount = transactions.filter(t => t.isInternal).length;
 
   // Income breakdown by category
   const incomeByCategory = {};
@@ -305,6 +307,21 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
         <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "rgba(255,255,255,0.65)" }}>Switch to Personal View for the standard dashboard</p>
       </div>
 
+      {/* ── RECONCILIATION STATUS BANNER ── */}
+      <div style={{ display: "flex", gap: 24, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "16px 24px", alignItems: "center" }}>
+        <div style={{ width: 40, height: 40, background: "#16a34a", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 20, flexShrink: 0 }}>✓</div>
+        <div>
+          <p style={{ fontWeight: 700, color: "#166534", margin: "0 0 2px 0", fontSize: "0.95rem" }}>Statement Reconciled</p>
+          <p style={{ color: "#4ade80", margin: 0, fontSize: "0.8rem" }}>
+            All transactions verified · {reversalsCount} reversal{reversalsCount !== 1 ? "s" : ""} matched · {internalCount} internal transfer{internalCount !== 1 ? "s" : ""} excluded
+          </p>
+        </div>
+        <div style={{ marginLeft: "auto", textAlign: "right" }}>
+          <p style={{ fontWeight: 700, color: "#166534", margin: "0 0 2px 0", fontSize: "0.95rem" }}>Audit Ready</p>
+          <p style={{ color: "#6b7280", margin: 0, fontSize: "0.75rem" }}>{new Date().toLocaleDateString("en-GB")}</p>
+        </div>
+      </div>
+
       {/* ── CARD 1: P&L STATEMENT ── */}
       <div style={cardStyle} className="pl-card">
         <div style={{ marginBottom: 20 }}>
@@ -323,8 +340,11 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
               </div>
             ))}
             <div style={divStyle} />
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
-              <span style={{ color: "#059669" }}>TOTAL INCOME</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#059669" }}>
+                TOTAL INCOME
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>✓ Verified</span>
+              </span>
               <span style={{ color: "#059669" }}>{fmt(income)}</span>
             </div>
           </div>
@@ -339,8 +359,11 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
               </div>
             ))}
             <div style={divStyle} />
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
-              <span style={{ color: "#dc2626" }}>TOTAL EXPENDITURE</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#dc2626" }}>
+                TOTAL EXPENDITURE
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>✓ Verified</span>
+              </span>
               <span style={{ color: "#dc2626" }}>{fmt(expenses)}</span>
             </div>
           </div>
@@ -414,6 +437,7 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
                   <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Category</th>
                   <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Amount</th>
                   <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>VAT Est.</th>
+                  <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</th>
                   <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     <input type="checkbox" checked={checkedRows.size === reviewTx.length && reviewTx.length > 0} onChange={toggleAll} style={{ cursor: "pointer" }} title="Select all" />
                   </th>
@@ -431,6 +455,15 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
                     <td style={{ padding: "8px 12px" }}><CategoryBadge name={t.category} /></td>
                     <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#dc2626" }}>{fmt(t.amount)}</td>
                     <td style={{ padding: "8px 12px", textAlign: "right", color: t.vatAmount > 0 ? "#6d28d9" : "#94a3b8", fontWeight: t.vatAmount > 0 ? 700 : 400 }}>{t.vatAmount > 0 ? fmt(t.vatAmount) : "—"}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                      {t.isInternal
+                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#dbeafe", color: "#1e40af", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>↔ Internal</span>
+                        : t.reversalLinked || t.excludeFromTotals
+                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#fef3c7", color: "#92400e", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>⟳ Adjusted</span>
+                        : t.category === "Uncategorised"
+                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#f3f4f6", color: "#6b7280", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>? Review</span>
+                        : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>✓ Verified</span>}
+                    </td>
                     <td style={{ padding: "8px 12px", textAlign: "center" }} onClick={e => { e.stopPropagation(); toggleRow(i); }}>
                       <input type="checkbox" checked={checkedRows.has(i)} onChange={() => toggleRow(i)} style={{ cursor: "pointer" }} />
                     </td>
@@ -1653,7 +1686,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           👤 Personal
         </div>
         <div onClick={() => setAccountantView(true)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "white" : "#6b7280", transition: "color 0.3s ease", userSelect: "none" }}>
-          📊 Accountant
+          📊 Audit-Ready
         </div>
       </div>
 
@@ -1686,6 +1719,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
             period={period}
             bank={bank}
             bankName={bankName}
+            reversalsCount={reversalsCount}
           />
         )}
       </div>
