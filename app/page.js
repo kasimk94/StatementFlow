@@ -398,16 +398,28 @@ export default function Home() {
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#6d28d9", display: "inline-block" }} />
             Free · No account required · Instant results
           </div>
-          <h1 className="font-extrabold text-slate-900 leading-tight tracking-tight mb-6 scroll-animate" style={{ fontSize: "clamp(2rem, 5vw, 3.75rem)", transitionDelay: "0.05s" }}>
-            Your Bank Statement.<br />
+          <h1 className="leading-tight mb-6 scroll-animate" style={{ transitionDelay: "0.05s" }}>
+            <span style={{
+              fontFamily: "var(--font-playfair)",
+              fontWeight: 700,
+              fontSize: "clamp(2.4rem, 5.5vw, 4rem)",
+              color: "#1e1e2e",
+              display: "block",
+              lineHeight: 1.1,
+            }}>
+              Your Bank Statement.
+            </span>
             <span
               key={animatedWord}
               style={{
+                fontFamily: "var(--font-playfair)",
                 background: "linear-gradient(135deg, #6d28d9, #2563eb)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
-                display: "inline-block",
+                display: "block",
+                fontSize: "clamp(2.2rem, 5vw, 3.8rem)",
+                lineHeight: 1.2,
                 animation: "fadeSlideIn 0.5s ease forwards",
                 fontWeight: HERO_WORD_STYLES[animatedWord].fontWeight,
                 fontStyle: HERO_WORD_STYLES[animatedWord].fontStyle,
