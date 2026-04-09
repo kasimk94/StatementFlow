@@ -401,11 +401,13 @@ export default function Home() {
           <h1 className="leading-tight mb-6 scroll-animate" style={{ transitionDelay: "0.05s" }}>
             <span style={{
               fontFamily: "var(--font-playfair)",
-              fontWeight: 700,
-              fontSize: "clamp(2.4rem, 5.5vw, 4rem)",
-              color: "#1e1e2e",
+              fontWeight: 400,
+              fontSize: "clamp(1.4rem, 3vw, 2rem)",
+              color: "#6b7280",
               display: "block",
-              lineHeight: 1.1,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginBottom: "4px",
             }}>
               Your Bank Statement.
             </span>
@@ -418,8 +420,9 @@ export default function Home() {
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
                 display: "block",
-                fontSize: "clamp(2.2rem, 5vw, 3.8rem)",
-                lineHeight: 1.2,
+                fontSize: "clamp(2.8rem, 7vw, 5.5rem)",
+                lineHeight: 1.05,
+                marginBottom: "32px",
                 animation: "fadeSlideIn 0.5s ease forwards",
                 fontWeight: HERO_WORD_STYLES[animatedWord].fontWeight,
                 fontStyle: HERO_WORD_STYLES[animatedWord].fontStyle,
