@@ -379,204 +379,199 @@ export default function Home() {
 
       <Navbar onScrollToUpload={scrollToUpload} />
 
-      {/* ── HERO ── */}
-      <section id="hero" className="pt-28 pb-20 px-6 text-center" style={{ background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)" }}>
-        <div className="max-w-4xl mx-auto">
-          {/* Visually hidden SEO paragraph — accessible to screen readers and crawlers */}
-          <p className="visually-hidden">
-            StatementFlow is a free UK bank statement converter that transforms PDF bank statements into Excel reports and spending dashboards. Supporting all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo and Starling.
-          </p>
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-10 scroll-animate">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+      {/* ── SEO ── */}
+      <p className="visually-hidden">StatementFlow is a free UK bank statement converter that transforms PDF bank statements into Excel reports and spending dashboards. Supporting all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo and Starling.</p>
+
+      {/* ══ SECTION 1: HERO ══ */}
+      <section id="hero" className="pt-28 pb-20 px-6 text-center" style={{ background: "linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%)" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-8 scroll-animate" style={{ background: "#f3f0ff", border: "1px solid #ddd6fe", color: "#6d28d9" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#6d28d9", display: "inline-block" }} />
             Free · No account required · Instant results
           </div>
-
-          <h1
-            className="hero-headline font-extrabold text-slate-900 leading-tight tracking-tight mb-8"
-            style={{ fontSize: "clamp(1.75rem, 4vw, 3.5rem)" }}
-          >
-            <span className="block scroll-animate" style={{ transitionDelay: "0.1s" }}>Turn Any Bank Statement Into</span>
-            <span className="block scroll-animate" style={{ height: "1.35em", transitionDelay: "0.2s" }}>
-              {/*
-                Container: no overflow:hidden so the word is never clipped.
-                The word is centred via left:50% + translateX(-50%) inside the
-                keyframe, so it stays centred regardless of its width.
-              */}
-              <span
-                style={{
-                  display: "inline-block",
-                  minWidth: "10ch",
-                  verticalAlign: "bottom",
-                  height: "1.35em",
-                  position: "relative",
-                }}
-              >
-                <span
-                  key={wordIndex}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.3em",
-                    position: "absolute",
-                    left: "50%",
-                    whiteSpace: "nowrap",
-                    animation: animState === "in"
-                      ? "wordInC 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards"
-                      : "wordOutC 0.5s cubic-bezier(0.55, 0, 0.45, 1) forwards",
-                  }}
-                >
-                  <span style={{ fontSize: "0.85em", lineHeight: 1 }}>
-                    {CYCLING_WORDS[wordIndex].icon}
-                  </span>
-                  <span className="text-blue-600" style={{ fontWeight: "inherit" }}>
-                    {CYCLING_WORDS[wordIndex].text}
-                  </span>
-                </span>
-              </span>
-            </span>
+          <h1 className="font-extrabold text-slate-900 leading-tight tracking-tight mb-6 scroll-animate" style={{ fontSize: "clamp(2rem, 5vw, 3.75rem)", transitionDelay: "0.05s" }}>
+            Your Bank Statement.<br />Finally Working For You.
           </h1>
-
-          <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-10 scroll-animate" style={{ lineHeight: 1.75, transitionDelay: "0.3s" }}>
-            Upload any UK bank statement PDF and instantly get a spending dashboard, category insights, and a formatted Excel report — in seconds.
+          <p className="text-slate-500 mx-auto mb-10 scroll-animate" style={{ fontSize: "1.15rem", lineHeight: 1.75, maxWidth: 600, transitionDelay: "0.1s" }}>
+            Upload any UK bank statement and instantly turn it into a spending dashboard, budget tracker, or accountant-ready Excel report — in seconds. No bank login. No data stored. No nonsense.
           </p>
-
-          {/* CTA buttons */}
-          <div className="hero-cta-group mb-14 scroll-animate" style={{ transitionDelay: "0.4s" }}>
-            <button
-              onClick={scrollToUpload}
-              className="flex items-center gap-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-9 py-4 rounded-2xl text-base shadow-xl shadow-blue-200/60 btn-primary"
-              style={{ minHeight: 52 }}
-            >
-              Convert My Statement
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
+          <div className="hero-cta-group mb-10 scroll-animate" style={{ transitionDelay: "0.15s" }}>
+            <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, fontSize: "1rem", padding: "14px 32px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(109,40,217,0.35)", minHeight: 52 }}>
+              Convert My Statement →
             </button>
-            <button
-              onClick={() => { const el = document.getElementById("demo-preview"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-              className="flex items-center gap-2 border border-slate-300 hover:border-slate-400 text-slate-700 font-semibold px-9 py-4 rounded-2xl text-base shadow-sm btn-secondary"
-              style={{ minHeight: 52, justifyContent: "center" }}
-            >
-              See Example
+            <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ fontWeight: 600, fontSize: "1rem", padding: "14px 32px", borderRadius: 999, border: "2px solid #e2e8f0", background: "white", color: "#475569", cursor: "pointer", minHeight: 52 }}>
+              See How It Works
             </button>
           </div>
-
-          {/* Trust badges — staggered pop-in via IntersectionObserver */}
-          <div ref={badgesRef} className="flex flex-wrap items-center justify-center gap-3">
-            {[
-              { icon: "🔒", text: "Bank-level security" },
-              { icon: "⚡", text: "Results in seconds" },
-              { icon: "🗑️", text: "Data deleted instantly" },
-              { icon: "✅", text: "No account needed" },
-            ].map(({ icon, text }, i) => (
-              <span
-                key={text}
-                className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-600 font-medium text-sm px-4 py-2.5 rounded-xl shadow-sm"
-                style={{
-                  opacity:    badgesVisible ? 1 : 0,
-                  transform:  badgesVisible ? "scale(1)" : "scale(0.82)",
-                  transition: `opacity 0.4s ease-out ${i * 0.15}s, transform 0.4s ease-out ${i * 0.15}s`,
-                }}
-              >
-                <span className="text-base leading-none">{icon}</span>
-                {text}
-              </span>
+          <div ref={badgesRef} className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2" style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
+            {["🔒 No data stored", "🇬🇧 Built for UK banks", "⚡ Results in seconds", "✓ No account needed"].map((t, i) => (
+              <span key={t} style={{ opacity: badgesVisible ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.1}s` }}>{t}</span>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* ── DEMO DASHBOARD ── */}
-        <div id="demo-preview" className="mt-24 pb-10 px-6 scroll-animate" style={{ transitionDelay: "0.5s" }}>
-          <div className="text-center mb-10">
-            <p className="text-blue-600 font-bold text-xs uppercase tracking-widest mb-3">Live Preview</p>
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-2">See exactly what you'll get</h2>
-            <p className="text-slate-500 text-base">Here's a real example of your dashboard after uploading a statement</p>
-          </div>
-
-          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-            {/* Demo banner */}
-            <div className="demo-banner-row" style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10,
-              background: "#fffbeb", borderTop: "1px solid #fde68a", borderLeft: "1px solid #fde68a", borderRight: "1px solid #fde68a",
-              padding: "11px 20px", borderRadius: "16px 16px 0 0",
-            }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#92400e", display: "flex", alignItems: "center", gap: 7 }}>
-                <span>👀</span> This is a live demo with sample data
-              </span>
-              <button
-                onClick={scrollToUpload}
-                style={{
-                  fontSize: "0.82rem", fontWeight: 700, color: "#92400e",
-                  background: "#fde68a", border: "none", borderRadius: 8,
-                  padding: "6px 14px", cursor: "pointer", transition: "background 0.15s",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "#fcd34d"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "#fde68a"; }}
-              >
-                Try with your own statement →
-              </button>
-            </div>
-
-            {/* Dashboard card */}
-            <div className="demo-card-inner" style={{
-              position: "relative",
-              background: "#f8fafc",
-              border: "1px solid #fde68a",
-              borderTop: "none",
-              borderRadius: "0 0 20px 20px",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.10)",
-              padding: "28px 28px 32px",
-            }}>
-              {/* DEMO badge */}
-              <div
-                title="Sample data — upload your PDF to see your real results"
-                style={{
-                  position: "absolute", top: 18, right: 22, zIndex: 10,
-                  background: "#fdcb6e", color: "#1a1a2e",
-                  fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.05em",
-                  padding: "4px 10px", borderRadius: 20,
-                  boxShadow: "0 2px 8px rgba(253,203,110,0.45)",
-                  display: "flex", alignItems: "center", gap: 4,
-                  cursor: "default", userSelect: "none",
-                }}
-              >
-                ✨ DEMO
+      {/* ══ SECTION 2: PROBLEM ══ */}
+      <section style={{ background: "#f9fafb", padding: "80px 24px" }}>
+        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+          <p className="scroll-animate" style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 16 }}>Sound Familiar?</p>
+          <h2 className="scroll-animate text-slate-900 font-extrabold" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", lineHeight: 1.25, marginBottom: 56, transitionDelay: "0.05s" }}>
+            Your money is a mystery.<br />It doesn&apos;t have to be.
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 32, textAlign: "left" }}>
+            {[
+              { icon: "😤", heading: '"Where did my money go this month?"', body: "You check your balance and it's lower than expected. You scroll through transactions and still have no idea." },
+              { icon: "📊", heading: '"Copy-pasting statements takes hours."', body: "If you're an accountant or business owner, you know the pain of manually cleaning bank data for every client." },
+              { icon: "🔗", heading: '"Open Banking feels risky."', body: "You shouldn't need to hand over your login details just to understand your own finances." },
+            ].map(({ icon, heading, body }, i) => (
+              <div key={i} className="scroll-animate" style={{ display: "flex", gap: 20, alignItems: "flex-start", transitionDelay: `${i * 0.1}s` }}>
+                <span style={{ fontSize: "2rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+                <div>
+                  <p style={{ fontWeight: 800, fontSize: "1.05rem", color: "#1e293b", margin: "0 0 6px" }}>{heading}</p>
+                  <p style={{ color: "#64748b", fontSize: "0.92rem", lineHeight: 1.65, margin: 0 }}>{body}</p>
+                </div>
               </div>
+            ))}
+          </div>
+          <p className="scroll-animate" style={{ marginTop: 48, fontWeight: 800, fontSize: "1.2rem", color: "#6d28d9" }}>There&apos;s a better way.</p>
+        </div>
+      </section>
 
-              <Dashboard transactions={DEMO_TRANSACTIONS} demoMode={true} insights={DEMO_INSIGHTS} />
+      {/* ══ SECTION 3: HOW IT WORKS ══ */}
+      <section id="how-it-works" style={{ background: "white", padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>How It Works</p>
+            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>Upload Once. Understand Everything.</h2>
+            <p style={{ color: "#64748b", fontSize: "1rem", maxWidth: 560, margin: "0 auto" }}>StatementFlow reads your PDF bank statement and instantly structures it into something you can actually use.</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, position: "relative" }}>
+            {[
+              { num: "01", icon: "📄", title: "Upload your PDF", desc: "Download your statement from your bank app and drop it here. We support all major UK banks including Barclays, HSBC, Lloyds, Monzo, Starling and more." },
+              { num: "02", icon: "⚡", title: "We structure it instantly", desc: "Our engine reads every transaction, categorises your spending, detects patterns, and builds your complete financial picture — in seconds." },
+              { num: "03", icon: "✓",  title: "You get clarity", desc: "A live spending dashboard, downloadable Excel report, and CSV — ready for budgeting, tracking, or sending straight to your accountant." },
+            ].map(({ num, icon, title, desc }, i) => (
+              <div key={num} className="scroll-animate" style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 20, padding: "32px 28px", boxShadow: "0 2px 16px rgba(0,0,0,0.05)", textAlign: "center", transitionDelay: `${i * 0.1}s`, position: "relative" }}>
+                <div style={{ fontSize: "3rem", fontWeight: 900, color: "#f1f0ff", lineHeight: 1, marginBottom: 8, userSelect: "none" }}>{num}</div>
+                <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #f3f0ff, #ede9fe)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.6rem", margin: "0 auto 16px" }}>{icon}</div>
+                <h3 style={{ fontWeight: 800, fontSize: "1.05rem", color: "#1e293b", margin: "0 0 10px" }}>{title}</h3>
+                <p style={{ color: "#64748b", fontSize: "0.88rem", lineHeight: 1.65, margin: 0 }}>{desc}</p>
+                {i < 2 && <div style={{ position: "absolute", right: -20, top: "50%", transform: "translateY(-50%)", fontSize: "1.4rem", color: "#c4b5fd", zIndex: 2, display: "none" }} className="md:block">→</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ SECTION 4: TWO AUDIENCES ══ */}
+      <section style={{ background: "#f9fafb", padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Who It&apos;s For</p>
+            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)" }}>Built for individuals. Trusted by accountants.</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+            {/* Individuals card */}
+            <div className="scroll-animate" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "1px solid #ddd6fe", borderRadius: 24, padding: "40px 36px" }}>
+              <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>👤</div>
+              <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "#1e293b", margin: "0 0 6px" }}>Take control of your money</h3>
+              <p style={{ color: "#6d28d9", fontWeight: 600, fontSize: "0.82rem", margin: "0 0 20px" }}>For individuals &amp; families</p>
+              <p style={{ color: "#475569", fontSize: "0.9rem", lineHeight: 1.7, margin: "0 0 24px" }}>
+                Use your bank statement to finally understand where your money goes every month. Build a real budget based on actual spending — not guesses.<br /><br />
+                No bank login required. No risky connections. Just upload, understand, and take back control.
+              </p>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {["Spending breakdown by category", "Monthly dashboard with insights", "Budget tracker ready to use", "Your data never stored or shared"].map(t => (
+                  <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "#1e293b", fontSize: "0.88rem", fontWeight: 500 }}>
+                    <span style={{ color: "#16a34a", fontWeight: 700 }}>✓</span> {t}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>Try Free →</button>
+            </div>
+            {/* Accountants card */}
+            <div className="scroll-animate" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", borderRadius: 24, padding: "40px 36px", transitionDelay: "0.1s" }}>
+              <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>📊</div>
+              <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "white", margin: "0 0 6px" }}>Turn statements into structured data</h3>
+              <p style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: "0.82rem", margin: "0 0 20px" }}>For accountants, bookkeepers &amp; businesses</p>
+              <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9rem", lineHeight: 1.7, margin: "0 0 24px" }}>
+                Stop copying and pasting. Upload any client bank statement and get a clean, structured Excel or CSV instantly — ready for reconciliation, VAT analysis, and reporting.<br /><br />
+                No manual cleanup. No formatting headaches. Just accurate data, exactly how you need it.
+              </p>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {["Debit & credit split columns", "Tax category mapping", "VAT estimation built in", "Audit-ready reconciliation view"].map(t => (
+                  <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.9)", fontSize: "0.88rem", fontWeight: 500 }}>
+                    <span style={{ color: "#4ade80", fontWeight: 700 }}>✓</span> {t}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ background: "white", color: "#1e3a5f", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>See Business Features →</button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="pt-14 pb-4 px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10 scroll-animate">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
-            <h2 className="text-4xl font-extrabold text-slate-900">How It Works</h2>
+      {/* ══ SECTION 5: BEFORE / AFTER ══ */}
+      <section style={{ background: "white", padding: "80px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>The Transformation</p>
+            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>From messy PDF to complete clarity</h2>
+            <p style={{ color: "#64748b", fontSize: "1rem" }}>This is what happens the moment you upload.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connector line — thicker, blue */}
-            <div className="hidden md:block absolute top-10 left-[calc(16.67%+40px)] right-[calc(16.67%+40px)] h-0.5 bg-blue-200" style={{ top: 40 }} />
-            {[
-              { step: "01", emoji: "📤", title: "Upload",   desc: "Drop your PDF bank statement into the secure upload zone. We accept all major UK bank formats.", detail: "PDF, up to 10MB. No account needed." },
-              { step: "02", emoji: "⚡", title: "Analyse",  desc: "Our parser extracts and categorises every transaction automatically across 12+ spending categories.", detail: "Works with Barclays, HSBC, Lloyds, NatWest, Monzo & more." },
-              { step: "03", emoji: "📊", title: "Download", desc: "Instantly get your interactive dashboard and a beautifully formatted 3-sheet Excel workbook.", detail: "Excel workbook with 3 sheets — Dashboard, Transactions, Categories." },
-            ].map(({ step, emoji, title, desc, detail }, idx) => (
-              <div key={step} className="scroll-animate relative text-center bg-white border border-slate-100 rounded-2xl px-6 py-8 shadow-sm hover:shadow-md transition-shadow" style={{ transitionDelay: `${idx * 0.15}s` }}>
-                <div className="w-20 h-20 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-3xl mx-auto mb-6 relative z-10">
-                  {emoji}
-                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
-                    {step.replace("0","")}
-                  </span>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto mb-3">{desc}</p>
-                <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">{detail}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 24, alignItems: "center" }}>
+            {/* Before panel */}
+            <div className="scroll-animate" style={{ border: "2px solid #fecaca", borderRadius: 20, overflow: "hidden" }}>
+              <div style={{ background: "#fef2f2", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ background: "#fee2e2", color: "#991b1b", fontSize: "0.7rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>YOUR PDF STATEMENT</span>
               </div>
-            ))}
+              <div style={{ padding: "20px 20px 16px", background: "#fafafa" }}>
+                {[["03 Mar 2024","FPS OUT JOHN SMITH REF SN2024..","450.00"],["04 Mar 2024","CARD PAYMENT TO AMZNMKTPLACE*YH7G2...","23.99"],["04 Mar 2024","DD BARCLAYS PRTNR FIN SRV...","237.38"],["05 Mar 2024","FASTER PAYMENTS REC'D 004523...","1200.00"],["06 Mar 2024","CARD PAYMENT TO PAYPAL *PENNYAP...","10.00"]].map(([d,t,a],i) => (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "90px 1fr 60px", gap: 8, padding: "6px 0", borderBottom: "1px solid #f1f5f9", fontSize: "0.72rem", color: "#94a3b8", filter: i > 1 ? "blur(2px)" : "none", opacity: i > 2 ? 0.4 : 1 }}>
+                    <span style={{ whiteSpace: "nowrap" }}>{d}</span>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t}</span>
+                    <span style={{ textAlign: "right" }}>{a}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: 8, fontSize: "0.65rem", color: "#cbd5e1", fontStyle: "italic" }}>...47 more rows</div>
+              </div>
+              <p style={{ textAlign: "center", padding: "12px", color: "#94a3b8", fontSize: "0.78rem", fontStyle: "italic", background: "#fafafa" }}>A PDF only a bank could love</p>
+            </div>
+            {/* Arrow */}
+            <div style={{ fontSize: "2.5rem", color: "#6d28d9", fontWeight: 900, textAlign: "center" }}>→</div>
+            {/* After panel */}
+            <div className="scroll-animate" style={{ border: "2px solid #bbf7d0", borderRadius: 20, overflow: "hidden", transitionDelay: "0.1s" }}>
+              <div style={{ background: "#f0fdf4", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>YOUR STATEMENTFLOW DASHBOARD</span>
+              </div>
+              <div style={{ padding: "16px 20px", background: "white" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+                  {[{l:"Money In",v:"£3,240",c:"#00b894"},{l:"Money Out",v:"£1,890",c:"#dc2626"},{l:"Net Balance",v:"£1,350",c:"#6d28d9"},{l:"Transactions",v:"52",c:"#64748b"}].map(({l,v,c}) => (
+                    <div key={l} style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 12px", borderLeft: `3px solid ${c}` }}>
+                      <p style={{ margin: 0, fontSize: "0.65rem", color: "#94a3b8", fontWeight: 600 }}>{l}</p>
+                      <p style={{ margin: "2px 0 0", fontSize: "1rem", fontWeight: 800, color: c }}>{v}</p>
+                    </div>
+                  ))}
+                </div>
+                {[{d:"03 Mar","m":"John Smith","c":"Transfers Sent","a":"£450","cc":"#dc2626","pill":"#dc2626"},{d:"04 Mar","m":"Amazon Marketplace","c":"Online Shopping","a":"£23.99","cc":"#ca8a04","pill":"#ca8a04"},{d:"04 Mar","m":"Barclays Partner Finance","c":"Direct Debits","a":"£237.38","cc":"#4f46e5","pill":"#4f46e5"}].map(({d,m,c,a,cc,pill},i) => (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "48px 1fr auto", gap: 8, alignItems: "center", padding: "6px 0", borderBottom: "1px solid #f1f5f9" }}>
+                    <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>{d}</span>
+                    <div>
+                      <p style={{ margin: 0, fontSize: "0.78rem", fontWeight: 600, color: "#1e293b" }}>{m}</p>
+                      <span style={{ background: `${pill}20`, color: pill, fontSize: "0.62rem", fontWeight: 700, padding: "1px 6px", borderRadius: 999 }}>{c}</span>
+                    </div>
+                    <span style={{ fontSize: "0.82rem", fontWeight: 700, color: cc }}>{a}</span>
+                  </div>
+                ))}
+              </div>
+              <p style={{ textAlign: "center", padding: "12px", color: "#94a3b8", fontSize: "0.78rem", fontStyle: "italic", background: "white", borderTop: "1px solid #f1f5f9" }}>Clarity in seconds</p>
+            </div>
+          </div>
+          <div style={{ textAlign: "center", marginTop: 48 }}>
+            <p style={{ color: "#64748b", fontSize: "1rem", marginBottom: 20 }}>Join thousands of people who&apos;ve stopped guessing and started knowing.</p>
+            <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, fontSize: "1rem", padding: "14px 36px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(109,40,217,0.3)" }}>
+              Convert My Statement Free →
+            </button>
           </div>
         </div>
       </section>
@@ -877,6 +872,19 @@ export default function Home() {
       {/* ── REVIEWS ── */}
       <ReviewsSection onScrollToUpload={scrollToUpload} />
 
+      {/* ══ SECTION 6: SOCIAL PROOF BAR ══ */}
+      <section style={{ background: "#f5f3ff", borderTop: "1px solid #ede9fe", borderBottom: "1px solid #ede9fe", padding: "22px 24px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
+          <span style={{ fontSize: "1.2rem", letterSpacing: 2 }}>⭐⭐⭐⭐⭐</span>
+          <p style={{ margin: 0, fontWeight: 700, color: "#4c1d95", fontSize: "0.95rem" }}>Loved by individuals and accountants across the UK</p>
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
+            {["10,000+ statements converted", "All major UK banks supported", "Free forever · No signup"].map((t, i) => (
+              <span key={i} style={{ fontSize: "0.8rem", color: "#7c3aed", fontWeight: 600 }}>· {t}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── SECURITY ── */}
       <section id="security" className="py-20 px-6 bg-white border-t border-slate-100">
         <div className="max-w-5xl mx-auto">
@@ -924,6 +932,50 @@ export default function Home() {
           <p style={{ textAlign: "center", marginTop: 32, fontSize: "0.8rem", color: "#9ca3af" }}>
             StatementFlow processes thousands of statements monthly. Zero data breaches. Zero stored records.
           </p>
+        </div>
+      </section>
+
+      {/* ══ SECTION 7: COMPARISON TABLE ══ */}
+      <section style={{ background: "#f9fafb", padding: "80px 24px" }}>
+        <div style={{ maxWidth: 920, margin: "0 auto" }}>
+          <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Why StatementFlow</p>
+            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>The smarter way to handle your statement</h2>
+            <p style={{ color: "#64748b", fontSize: "1rem" }}>See how we compare to the alternatives.</p>
+          </div>
+          <div className="scroll-animate" style={{ overflowX: "auto", transitionDelay: "0.05s" }}>
+            <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, borderRadius: 16, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 2px 16px rgba(0,0,0,0.05)" }}>
+              <thead>
+                <tr>
+                  <th style={{ background: "#f8fafc", padding: "14px 20px", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Feature</th>
+                  <th style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "white", borderBottom: "1px solid #4f46e5" }}>StatementFlow</th>
+                  <th style={{ background: "#f8fafc", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Manual Copy-Paste</th>
+                  <th style={{ background: "#f8fafc", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Open Banking Apps</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Instant results",           "✅", "❌", "⚠️"],
+                  ["No bank login required",    "✅", "✅", "❌"],
+                  ["Spending categorisation",   "✅", "❌", "✅"],
+                  ["Excel & CSV export",        "✅", "⚠️", "❌"],
+                  ["Accountant-ready data",     "✅", "❌", "❌"],
+                  ["Zero data stored",          "✅", "✅", "❌"],
+                  ["Works with all UK banks",   "✅", "✅", "⚠️"],
+                  ["VAT estimation",            "✅", "❌", "❌"],
+                  ["Free to use",               "✅", "✅", "❌"],
+                ].map(([feature, sf, mc, ob], i, arr) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? "white" : "#f8fafc" }}>
+                    <td style={{ padding: "13px 20px", fontSize: "0.88rem", fontWeight: 500, color: "#1e293b", borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>{feature}</td>
+                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "1.1rem", background: i % 2 === 0 ? "#faf8ff" : "#f5f0ff", borderBottom: i < arr.length - 1 ? "1px solid #ede9fe" : "none" }}>{sf}</td>
+                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "1.1rem", borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>{mc}</td>
+                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "1.1rem", borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>{ob}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p style={{ textAlign: "center", marginTop: 14, fontSize: "0.75rem", color: "#94a3b8" }}>⚠️ = partial support or varies by provider</p>
+          </div>
         </div>
       </section>
 
@@ -1026,6 +1078,32 @@ export default function Home() {
             ))}
           </div>
 
+        </div>
+      </section>
+
+      {/* ══ SECTION 8: FINAL CTA ══ */}
+      <section style={{ background: "linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #4f46e5 100%)", padding: "96px 24px" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
+          <h2 className="font-extrabold scroll-animate" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "white", lineHeight: 1.2, marginBottom: 20 }}>
+            Your bank statement is trying<br />to tell you something.
+          </h2>
+          <p className="scroll-animate" style={{ color: "rgba(255,255,255,0.72)", fontSize: "1.1rem", lineHeight: 1.75, marginBottom: 40, transitionDelay: "0.05s" }}>
+            Every month you pay for things you&apos;ve forgotten. Every month you wonder where it all went. StatementFlow gives you the answer in seconds — completely free.
+          </p>
+          <div className="hero-cta-group scroll-animate" style={{ transitionDelay: "0.1s" }}>
+            <button onClick={scrollToUpload} style={{ background: "white", color: "#6d28d9", fontWeight: 800, fontSize: "1rem", padding: "16px 36px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 8px 32px rgba(0,0,0,0.25)", minHeight: 52 }}>
+              Convert My Statement Free →
+            </button>
+            <button
+              onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
+              style={{ fontWeight: 600, fontSize: "1rem", padding: "16px 32px", borderRadius: 999, border: "2px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.08)", color: "white", cursor: "pointer", minHeight: 52 }}
+            >
+              See How It Works
+            </button>
+          </div>
+          <p className="scroll-animate" style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.8rem", marginTop: 28, transitionDelay: "0.15s" }}>
+            Free forever · No account · No bank login · No data stored
+          </p>
         </div>
       </section>
 
