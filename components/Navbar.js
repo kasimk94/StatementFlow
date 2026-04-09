@@ -143,7 +143,11 @@ const NAV_LINKS = [
   { label: "Security",     href: "#security",     section: "security"     },
 ];
 
-export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
+export default function Navbar({ onScrollToUpload, onUploadAnother = null, showReviewsLink = false }) {
+  const visibleLinks = showReviewsLink
+    ? NAV_LINKS
+    : NAV_LINKS.filter((l) => l.section !== "reviews");
+
   const [topPx,         setTopPx]         = useState(-110);
   const [easing,        setEasing]        = useState("top 0.65s cubic-bezier(0.34,1.56,0.64,1)");
   const [activeSection, setActiveSection] = useState("");
@@ -192,7 +196,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
   }, []);
 
   // ── Sliding pill ──────────────────────────────────────────────────────────
-  const activeIdx = NAV_LINKS.findIndex((l) => l.section === activeSection);
+  const activeIdx = visibleLinks.findIndex((l) => l.section === activeSection);
   const targetIdx = hoveredIdx !== null ? hoveredIdx : activeIdx;
 
   const movePill = useCallback((idx) => {
@@ -363,7 +367,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
               pointerEvents: "none",
             }}
           />
-          {NAV_LINKS.map(({ label, href, section }, i) => {
+          {visibleLinks.map(({ label, href, section }, i) => {
             const isActive  = activeSection === section;
             const highlight = isActive || hoveredIdx === i;
             return (
@@ -449,7 +453,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
         }}
       >
         <nav style={{ padding: "6px 10px 14px" }}>
-          {NAV_LINKS.map(({ label, href, section }) => (
+          {visibleLinks.map(({ label, href, section }) => (
             <a
               key={section}
               href={href}

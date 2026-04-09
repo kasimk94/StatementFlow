@@ -36,6 +36,9 @@ export default function ReviewsSection({ onScrollToUpload }) {
     try { localStorage.setItem("sf_reviews", JSON.stringify(updated)); } catch {}
   }
 
+  // Hide entirely when no reviews (admin still sees it)
+  if (reviews.length === 0 && !isAdmin) return null;
+
   const shown = reviews.slice(0, 10);
   const avgRating = reviews.length > 0
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)

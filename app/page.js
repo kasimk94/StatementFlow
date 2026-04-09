@@ -193,6 +193,14 @@ export default function Home() {
     window.history.scrollRestoration = "manual";
   }, []);
 
+  // ── Check localStorage for reviews (client-side only) ────────────────────────
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("sf_reviews") || "[]");
+      setHasReviews(stored.length > 0);
+    } catch {}
+  }, []);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -204,6 +212,8 @@ export default function Home() {
     }, 2500);
     return () => clearInterval(interval);
   }, []);
+  const [uploadVisible,       setUploadVisible]       = useState(false);
+  const [hasReviews,          setHasReviews]          = useState(false);
   const [badgesVisible,       setBadgesVisible]       = useState(false);
   const [faqVisible,          setFaqVisible]          = useState(false);
   const [uploadBadgesVisible, setUploadBadgesVisible] = useState(false);
@@ -339,8 +349,11 @@ export default function Home() {
   }
 
   function scrollToUpload() {
-    const el = document.getElementById("get-started");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setUploadVisible(true);
+    setTimeout(() => {
+      const el = document.getElementById("get-started");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
   }
 
   // ── Dashboard view (after upload) ─────────────────────────────────────────
@@ -377,7 +390,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
 
-      <Navbar onScrollToUpload={scrollToUpload} />
+      <Navbar onScrollToUpload={scrollToUpload} showReviewsLink={hasReviews} />
 
       {/* ── SEO ── */}
       <p className="visually-hidden">StatementFlow is a free UK bank statement converter that transforms PDF bank statements into Excel reports and spending dashboards. Supporting all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo and Starling.</p>
@@ -875,10 +888,9 @@ export default function Home() {
       {/* ══ SECTION 6: SOCIAL PROOF BAR ══ */}
       <section style={{ background: "#f5f3ff", borderTop: "1px solid #ede9fe", borderBottom: "1px solid #ede9fe", padding: "22px 24px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
-          <span style={{ fontSize: "1.2rem", letterSpacing: 2 }}>⭐⭐⭐⭐⭐</span>
-          <p style={{ margin: 0, fontWeight: 700, color: "#4c1d95", fontSize: "0.95rem" }}>Loved by individuals and accountants across the UK</p>
+          <p style={{ margin: 0, fontWeight: 700, color: "#4c1d95", fontSize: "0.95rem" }}>Trusted by individuals and accountants across the UK</p>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
-            {["10,000+ statements converted", "All major UK banks supported", "Free forever · No signup"].map((t, i) => (
+            {["All major UK banks supported", "Free forever · No signup", "PDF to Excel in seconds"].map((t, i) => (
               <span key={i} style={{ fontSize: "0.8rem", color: "#7c3aed", fontWeight: 600 }}>· {t}</span>
             ))}
           </div>
@@ -979,21 +991,36 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── UPLOAD SECTION ── */}
-      <section ref={uploadRef} id="get-started" className="py-24 px-6 bg-white">
-        <div className="max-w-2xl mx-auto text-center">
+      {/* ── UPLOAD SECTION ── hidden until CTA clicked ── */}
+      <section
+        ref={uploadRef}
+        id="get-started"
+        className="px-6 bg-white"
+        style={{
+          overflow:   "hidden",
+          maxHeight:  uploadVisible ? "900px" : "0",
+          transition: uploadVisible ? "max-height 0.6s ease" : "none",
+        }}
+      >
+        <div
+          className="max-w-2xl mx-auto text-center"
+          style={{
+            padding:    "96px 0",
+            opacity:    uploadVisible ? 1 : 0,
+            transform:  uploadVisible ? "translateY(0)" : "translateY(24px)",
+            transition: "opacity 0.5s ease 0.15s, transform 0.5s ease 0.15s",
+          }}
+        >
 
-          {/* Title + subtitle — slide up */}
-          <div className="scroll-animate">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Get Started</p>
-            <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Ready to get started?</h2>
-            <p className="text-slate-500 mb-10">
-              Drop your PDF below. No sign-up, no credit card, no data stored — ever.
-            </p>
-          </div>
+          {/* Title + subtitle */}
+          <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Get Started</p>
+          <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Ready to get started?</h2>
+          <p className="text-slate-500 mb-10">
+            Drop your PDF below. No sign-up, no credit card, no data stored — ever.
+          </p>
 
-          {/* Upload zone — fades in 0.2s after title */}
-          <div className="flex justify-center scroll-animate" style={{ transitionDelay: "0.2s" }}>
+          {/* Upload zone */}
+          <div className="flex justify-center">
             <UploadZone onFile={handleFile} loading={loading} apiDone={apiDone} onAnimationDone={handleAnimationDone} error={error} />
           </div>
 
@@ -1009,7 +1036,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Mini trust badges — staggered pop-in */}
+          {/* Mini trust badges */}
           <div ref={uploadBadgesRef} className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
             {[
               { d: "M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z", label: "Your file is never uploaded to any server" },
