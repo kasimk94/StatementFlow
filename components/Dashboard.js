@@ -308,7 +308,7 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
       </div>
 
       {/* ── RECONCILIATION STATUS BANNER ── */}
-      <div style={{ display: "flex", gap: 24, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "16px 24px", alignItems: "center" }}>
+      <div className="recon-banner">
         <div style={{ width: 40, height: 40, background: "#16a34a", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 20, flexShrink: 0 }}>✓</div>
         <div>
           <p style={{ fontWeight: 700, color: "#166534", margin: "0 0 2px 0", fontSize: "0.95rem" }}>Statement Reconciled</p>
@@ -316,7 +316,7 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
             All transactions verified · {reversalsCount} reversal{reversalsCount !== 1 ? "s" : ""} matched · {internalCount} internal transfer{internalCount !== 1 ? "s" : ""} excluded
           </p>
         </div>
-        <div style={{ marginLeft: "auto", textAlign: "right" }}>
+        <div className="recon-banner-right">
           <p style={{ fontWeight: 700, color: "#166534", margin: "0 0 2px 0", fontSize: "0.95rem" }}>Audit Ready</p>
           <p style={{ color: "#6b7280", margin: 0, fontSize: "0.75rem" }}>{new Date().toLocaleDateString("en-GB")}</p>
         </div>
@@ -329,7 +329,7 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
           <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>{periodStr} · Prepared by StatementFlow</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+        <div className="pl-grid">
           {/* Income */}
           <div>
             <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#059669", textTransform: "uppercase", letterSpacing: "0.08em" }}>Income</p>
@@ -386,7 +386,7 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
           <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Standard rate 20% · Verify all claims with HMRC</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 28, alignItems: "start" }}>
+        <div className="vat-layout">
           {/* Left: total figure */}
           <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #f3f0ff, #ede9fe)", borderRadius: 12, textAlign: "center", minWidth: 160 }}>
             <p style={{ margin: "0 0 4px", fontSize: "0.7rem", fontWeight: 700, color: "#6d28d9", textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Est. VAT</p>
@@ -1669,7 +1669,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── VIEW TOGGLE ── */}
-      <div className="view-toggle" style={{ display: "inline-flex", background: "#f3f4f6", borderRadius: "999px", padding: "4px", position: "relative", cursor: "pointer" }}>
+      <div className="view-toggle view-toggle-full" style={{ background: "#f3f4f6", borderRadius: "999px", padding: "4px", position: "relative", cursor: "pointer" }}>
         {/* Sliding pill */}
         <div style={{
           position: "absolute",
@@ -1949,7 +1949,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       {/* ── TRANSACTIONS TABLE ── */}
       <div ref={txTableRef} className="transaction-table-section" style={sectionStyle(550)}>
         {/* Collapse toggle */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: txExpanded ? 12 : 0 }}>
+        <div className="tx-toggle-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: txExpanded ? 12 : 0 }}>
           <button
             onClick={() => setTxExpanded(v => !v)}
             style={{
@@ -2052,7 +2052,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                 <th className="px-5 py-3.5 text-left font-bold cursor-pointer hover:text-slate-700 select-none" onClick={() => toggleSort("description")}>
                   Description <SortIcon col="description" />
                 </th>
-                <th className="px-5 py-3.5 text-left font-bold cursor-pointer hover:text-slate-700 select-none" onClick={() => toggleSort("category")}>
+                <th className="px-5 py-3.5 text-left font-bold cursor-pointer hover:text-slate-700 select-none tx-col-category" onClick={() => toggleSort("category")}>
                   Category <SortIcon col="category" />
                 </th>
                 <th className="px-5 py-3.5 text-right font-bold cursor-pointer hover:text-slate-700 select-none" onClick={() => toggleSort("amount")}>
@@ -2107,7 +2107,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                         </div>
                       </td>
                       {/* Category badge */}
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 tx-col-category">
                         <CategoryBadge name={t.category || UNKNOWN_CAT} />
                       </td>
                       {/* Amount */}

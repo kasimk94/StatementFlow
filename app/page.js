@@ -416,7 +416,7 @@ export default function Home() {
               See How It Works
             </button>
           </div>
-          <div ref={badgesRef} className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2" style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
+          <div ref={badgesRef} className="hero-trust-bar" style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
             {["🔒 No data stored", "🇬🇧 Built for UK banks", "⚡ Results in seconds", "✓ No account needed"].map((t, i) => (
               <span key={t} style={{ opacity: badgesVisible ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.1}s` }}>{t}</span>
             ))}
@@ -425,7 +425,7 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 2: PROBLEM ══ */}
-      <section style={{ background: "#f9fafb", padding: "80px 24px" }}>
+      <section className="hp-section" style={{ background: "#f9fafb" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
           <p className="scroll-animate" style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 16 }}>Sound Familiar?</p>
           <h2 className="scroll-animate text-slate-900 font-extrabold" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", lineHeight: 1.25, marginBottom: 56, transitionDelay: "0.05s" }}>
@@ -451,7 +451,7 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 3: HOW IT WORKS ══ */}
-      <section id="how-it-works" style={{ background: "white", padding: "80px 24px" }}>
+      <section id="how-it-works" className="hp-section" style={{ background: "white" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>How It Works</p>
@@ -477,7 +477,7 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 4: TWO AUDIENCES ══ */}
-      <section style={{ background: "#f9fafb", padding: "80px 24px" }}>
+      <section className="hp-section" style={{ background: "#f9fafb" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Who It&apos;s For</p>
@@ -485,7 +485,7 @@ export default function Home() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
             {/* Individuals card */}
-            <div className="scroll-animate" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "1px solid #ddd6fe", borderRadius: 24, padding: "40px 36px" }}>
+            <div className="scroll-animate audience-card-pad" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "1px solid #ddd6fe", borderRadius: 24 }}>
               <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>👤</div>
               <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "#1e293b", margin: "0 0 6px" }}>Take control of your money</h3>
               <p style={{ color: "#6d28d9", fontWeight: 600, fontSize: "0.82rem", margin: "0 0 20px" }}>For individuals &amp; families</p>
@@ -503,7 +503,7 @@ export default function Home() {
               <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>Try Free →</button>
             </div>
             {/* Accountants card */}
-            <div className="scroll-animate" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", borderRadius: 24, padding: "40px 36px", transitionDelay: "0.1s" }}>
+            <div className="scroll-animate audience-card-pad" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", borderRadius: 24, transitionDelay: "0.1s" }}>
               <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>📊</div>
               <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "white", margin: "0 0 6px" }}>Turn statements into structured data</h3>
               <p style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: "0.82rem", margin: "0 0 20px" }}>For accountants, bookkeepers &amp; businesses</p>
@@ -525,14 +525,14 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 5: BEFORE / AFTER ══ */}
-      <section style={{ background: "white", padding: "80px 24px" }}>
+      <section className="hp-section" style={{ background: "white" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>The Transformation</p>
             <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>From messy PDF to complete clarity</h2>
             <p style={{ color: "#64748b", fontSize: "1rem" }}>This is what happens the moment you upload.</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 24, alignItems: "center" }}>
+          <div className="before-after-grid">
             {/* Before panel */}
             <div className="scroll-animate" style={{ border: "2px solid #fecaca", borderRadius: 20, overflow: "hidden" }}>
               <div style={{ background: "#fef2f2", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -551,7 +551,8 @@ export default function Home() {
               <p style={{ textAlign: "center", padding: "12px", color: "#94a3b8", fontSize: "0.78rem", fontStyle: "italic", background: "#fafafa" }}>A PDF only a bank could love</p>
             </div>
             {/* Arrow */}
-            <div style={{ fontSize: "2.5rem", color: "#6d28d9", fontWeight: 900, textAlign: "center" }}>→</div>
+            <div className="before-after-arrow-h" style={{ fontSize: "2.5rem", color: "#6d28d9", fontWeight: 900, textAlign: "center" }}>→</div>
+            <div className="before-after-arrow-v">↓</div>
             {/* After panel */}
             <div className="scroll-animate" style={{ border: "2px solid #bbf7d0", borderRadius: 20, overflow: "hidden", transitionDelay: "0.1s" }}>
               <div style={{ background: "#f0fdf4", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -887,7 +888,7 @@ export default function Home() {
 
       {/* ══ SECTION 6: SOCIAL PROOF BAR ══ */}
       <section style={{ background: "#f5f3ff", borderTop: "1px solid #ede9fe", borderBottom: "1px solid #ede9fe", padding: "22px 24px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
+        <div className="social-proof-bar" style={{ maxWidth: 960, margin: "0 auto" }}>
           <p style={{ margin: 0, fontWeight: 700, color: "#4c1d95", fontSize: "0.95rem" }}>Trusted by individuals and accountants across the UK</p>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
             {["All major UK banks supported", "Free forever · No signup", "PDF to Excel in seconds"].map((t, i) => (
@@ -920,7 +921,7 @@ export default function Home() {
           </div>
 
           {/* Feature cards — 2×2 grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 security-grid-2col">
             {[
               { emoji: "🧠", title: "Local-First Processing",      desc: "Your PDF is processed entirely in your browser session. No data is sent to external servers for storage — ever.",                                                    accent: "#6d28d9", iconBg: "#f3f0ff" },
               { emoji: "🔑", title: "Zero-Knowledge Architecture", desc: "We never see your transactions. Our system processes data in isolated memory that is wiped the moment your session ends.",                                            accent: "#4f46e5", iconBg: "#eef2ff" },
@@ -948,15 +949,16 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 7: COMPARISON TABLE ══ */}
-      <section style={{ background: "#f9fafb", padding: "80px 24px" }}>
+      <section className="hp-section" style={{ background: "#f9fafb" }}>
         <div style={{ maxWidth: 920, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Why StatementFlow</p>
             <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>The smarter way to handle your statement</h2>
             <p style={{ color: "#64748b", fontSize: "1rem" }}>See how we compare to the alternatives.</p>
           </div>
-          <div className="scroll-animate" style={{ overflowX: "auto", transitionDelay: "0.05s" }}>
-            <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, borderRadius: 16, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 2px 16px rgba(0,0,0,0.05)" }}>
+          <p className="comparison-table-hint">← Scroll to see more →</p>
+          <div className="scroll-animate comparison-table-wrap" style={{ transitionDelay: "0.05s" }}>
+            <table className="comparison-table" style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, borderRadius: 16, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 2px 16px rgba(0,0,0,0.05)" }}>
               <thead>
                 <tr>
                   <th style={{ background: "#f8fafc", padding: "14px 20px", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Feature</th>
@@ -1109,7 +1111,7 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 8: FINAL CTA ══ */}
-      <section style={{ background: "linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #4f46e5 100%)", padding: "96px 24px" }}>
+      <section className="hp-section" style={{ background: "linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #4f46e5 100%)" }}>
         <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
           <h2 className="font-extrabold scroll-animate" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "white", lineHeight: 1.2, marginBottom: 20 }}>
             Your bank statement is trying<br />to tell you something.
@@ -1176,7 +1178,7 @@ export default function Home() {
             </div>
 
             {/* Right – made with love + copyright */}
-            <div className="md:text-right">
+            <div className="md:text-right footer-col-right">
               <p className="text-sm text-slate-300 font-medium mb-2">Made with ❤️ in the UK</p>
               <p className="text-xs text-slate-500">© 2026 StatementFlow. All rights reserved.</p>
             </div>

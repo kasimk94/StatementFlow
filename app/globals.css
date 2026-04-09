@@ -355,3 +355,285 @@ html {
     padding: 12px 8px 16px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   FULL MOBILE RESPONSIVENESS — 320px–768px
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Global resets */
+*, *::before, *::after { box-sizing: border-box; }
+img, video { max-width: 100%; height: auto; }
+
+/* ── Homepage section padding reduction on mobile ───────────────── */
+.hp-section {
+  padding: 80px 24px;
+}
+
+/* ── Before/After transformation grid ──────────────────────────── */
+.before-after-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 24px;
+  align-items: center;
+}
+.before-after-arrow-h { display: block; }
+.before-after-arrow-v { display: none; }
+
+/* ── Hero trust bar ─────────────────────────────────────────────── */
+.hero-trust-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 24px;
+}
+
+/* ── Comparison table ───────────────────────────────────────────── */
+.comparison-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.comparison-table-hint {
+  display: none;
+}
+.comparison-table th:first-child,
+.comparison-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: inherit;
+}
+.comparison-table thead th:first-child {
+  background: #f8fafc;
+}
+.comparison-table tr:nth-child(odd) td:first-child  { background: white; }
+.comparison-table tr:nth-child(even) td:first-child { background: #f8fafc; }
+
+/* ── Dashboard: view toggle full-width ──────────────────────────── */
+.view-toggle-full {
+  display: inline-flex;
+}
+
+/* ── Dashboard: P&L grid (Income/Expenditure columns) ───────────── */
+.pl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+/* ── Dashboard: VAT layout (big number + table) ─────────────────── */
+.vat-layout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ── Dashboard: reconciliation banner ──────────────────────────── */
+.recon-banner {
+  display: flex;
+  gap: 24px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px 24px;
+  align-items: center;
+}
+.recon-banner-right {
+  margin-left: auto;
+  text-align: right;
+}
+
+/* ── Dashboard: transaction table category column ───────────────── */
+/* visible by default on desktop */
+
+/* ── Social proof bar ──────────────────────────────────────────── */
+.social-proof-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MOBILE BREAKPOINT (≤ 768px)
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Section padding ── */
+  .hp-section {
+    padding: 48px 16px !important;
+  }
+
+  /* ── Hero: font clamp ── */
+  #hero h1 {
+    font-size: clamp(1.8rem, 6vw, 3rem) !important;
+  }
+  #hero p {
+    font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+  }
+
+  /* ── Trust bar: 2×2 grid on mobile ── */
+  .hero-trust-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    text-align: left;
+  }
+
+  /* ── Before/After: stack vertically ── */
+  .before-after-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .before-after-arrow-h { display: none; }
+  .before-after-arrow-v {
+    display: block;
+    text-align: center;
+    font-size: 2rem;
+    color: #6d28d9;
+    font-weight: 900;
+    padding: 12px 0;
+  }
+
+  /* ── Comparison table: scroll + hint ── */
+  .comparison-table-hint {
+    display: block;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 10px;
+  }
+
+  /* ── Pricing: already handled, ensure proper spacing ── */
+  .pricing-grid-mobile {
+    gap: 1rem !important;
+  }
+
+  /* ── Dashboard: view toggle full-width ── */
+  .view-toggle-full {
+    width: 100%;
+  }
+  .view-toggle-full > div {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* ── Dashboard: P&L stacked ── */
+  .pl-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .pl-grid > div:first-child {
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  /* ── Dashboard: VAT stacked ── */
+  .vat-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .vat-layout > div:first-child {
+    min-width: unset !important;
+    width: 100%;
+  }
+
+  /* ── Dashboard: reconciliation banner stacked ── */
+  .recon-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .recon-banner-right {
+    margin-left: 0 !important;
+    text-align: left;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* ── Dashboard: hide category column in transaction table ── */
+  .tx-col-category {
+    display: none !important;
+  }
+
+  /* ── Dashboard: stat card numbers ── */
+  .stat-card-num {
+    font-size: clamp(1.4rem, 4vw, 2rem) !important;
+  }
+
+  /* ── Footer: centre-align all columns ── */
+  .footer-col-right {
+    text-align: center !important;
+  }
+
+  /* ── Social proof bar tighter ── */
+  .social-proof-bar {
+    gap: 10px;
+    flex-direction: column;
+    text-align: center;
+  }
+  .social-proof-bar > div {
+    justify-content: center;
+  }
+
+  /* ── Security & features: 2-col grid on mobile ── */
+  .security-grid-2col {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* ── General section horizontal padding ── */
+  section.px-6 {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  .px-6 {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* ── Audience cards: reduce padding ── */
+  .audience-card-pad {
+    padding: 28px 20px !important;
+  }
+
+  /* ── Transaction toggle row: stack on mobile ── */
+  .tx-toggle-row {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .tx-toggle-row > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ── Tap targets ── */
+  button, a[href] {
+    min-height: 44px;
+  }
+
+  /* ── Hide text-only labels on mobile ── */
+  .hide-mobile {
+    display: none !important;
+  }
+  .show-mobile {
+    display: block !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small: even tighter */
+  .hp-section {
+    padding: 40px 12px !important;
+  }
+  .hero-trust-bar {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
