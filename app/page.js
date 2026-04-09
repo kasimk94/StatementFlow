@@ -581,7 +581,7 @@ export default function Home() {
             </div>
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
-            <p style={{ color: "#64748b", fontSize: "1rem", marginBottom: 20 }}>Join thousands of people who&apos;ve stopped guessing and started knowing.</p>
+            <p style={{ color: "#64748b", fontSize: "1rem", marginBottom: 20 }}>Join people across the UK who&apos;ve stopped guessing and started knowing.</p>
             <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, fontSize: "1rem", padding: "14px 36px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(109,40,217,0.3)" }}>
               Convert My Statement Free →
             </button>
