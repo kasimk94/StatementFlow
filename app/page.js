@@ -539,40 +539,44 @@ export default function Home() {
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Who It&apos;s For</p>
             <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)" }}>Built for individuals. Trusted by accountants.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+          <div className="audience-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "stretch" }}>
             {/* Individuals card */}
-            <div className="scroll-animate audience-card-pad" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "1px solid #ddd6fe", borderRadius: 24 }}>
-              <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>👤</div>
+            <div className="scroll-animate audience-card-pad" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "1px solid #ddd6fe", borderRadius: 24, display: "flex", flexDirection: "column", height: "100%" }}>
+              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #6d28d9, #4f46e5)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, marginBottom: 20 }}>👤</div>
               <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "#1e293b", margin: "0 0 6px" }}>Take control of your money</h3>
-              <p style={{ color: "#6d28d9", fontWeight: 600, fontSize: "0.82rem", margin: "0 0 20px" }}>For individuals &amp; families</p>
-              <p style={{ color: "#475569", fontSize: "0.9rem", lineHeight: 1.7, margin: "0 0 24px" }}>
+              <p style={{ color: "#6d28d9", fontWeight: 600, fontSize: "0.82rem", margin: "0" }}>For individuals &amp; families</p>
+              <p style={{ color: "#475569", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>
                 Upload your bank statement and finally see exactly where your money goes. Build your own budget tracker using data you trust — not estimates, not guesses. No bank login ever required.
               </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0", display: "flex", flexDirection: "column", gap: 10 }}>
                 {["Spending breakdown by category", "Monthly dashboard with insights", "Budget tracker ready to use", "Your data never stored or shared"].map(t => (
                   <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "#1e293b", fontSize: "0.88rem", fontWeight: 500 }}>
                     <span style={{ color: "#16a34a", fontWeight: 700 }}>✓</span> {t}
                   </li>
                 ))}
               </ul>
-              <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>Try Free →</button>
+              <div style={{ marginTop: "auto", paddingTop: 24 }}>
+                <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>Try Free →</button>
+              </div>
             </div>
             {/* Accountants card */}
-            <div className="scroll-animate audience-card-pad" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", borderRadius: 24, transitionDelay: "0.1s" }}>
-              <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>📊</div>
+            <div className="scroll-animate audience-card-pad" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", borderRadius: 24, transitionDelay: "0.1s", display: "flex", flexDirection: "column", height: "100%" }}>
+              <div style={{ width: 56, height: 56, background: "rgba(255,255,255,0.2)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, marginBottom: 20 }}>📊</div>
               <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "white", margin: "0 0 6px" }}>Turn statements into structured data</h3>
-              <p style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: "0.82rem", margin: "0 0 20px" }}>For accountants, bookkeepers &amp; businesses</p>
-              <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9rem", lineHeight: 1.7, margin: "0 0 24px" }}>
+              <p style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: "0.82rem", margin: "0" }}>For accountants, bookkeepers &amp; businesses</p>
+              <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>
                 Convert any client bank statement into clean, structured data instantly. Ready for reconciliation, VAT prep, and reporting — without a single minute of copy-pasting.
               </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0", display: "flex", flexDirection: "column", gap: 10 }}>
                 {["Debit & credit split columns", "Tax category mapping", "VAT estimation built in", "Audit-ready reconciliation view"].map(t => (
                   <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.9)", fontSize: "0.88rem", fontWeight: 500 }}>
                     <span style={{ color: "#4ade80", fontWeight: 700 }}>✓</span> {t}
                   </li>
                 ))}
               </ul>
-              <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ background: "white", color: "#1e3a5f", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>See Business Features →</button>
+              <div style={{ marginTop: "auto", paddingTop: 24 }}>
+                <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ background: "white", color: "#1e3a5f", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>See Business Features →</button>
+              </div>
             </div>
           </div>
         </div>
