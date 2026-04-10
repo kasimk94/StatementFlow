@@ -418,7 +418,18 @@ function isMonzoExcluded(desc) {
 }
 
 function parseMonzoStatement(rawText) {
-  const allLines = rawText.split("\n").map((l) => l.trimEnd());
+  // unpdf collapses all text into one line — re-split on date boundaries
+  let allLines;
+  if ((rawText.match(/\n/g) || []).length < 5) {
+    // Single-line mode: inject newlines before each date pattern
+    const relined = rawText
+      .replace(/(\d{2}\/\d{2}\/\d{4})/g, "\n$1")
+      .replace(/(Pot statement)/g, "\nPot statement\n")
+      .replace(/(Date Description \(GBP\) Amount \(GBP\) Balance)/g, "\nDate Description (GBP) Amount (GBP) Balance\n");
+    allLines = relined.split("\n").map((l) => l.trimEnd());
+  } else {
+    allLines = rawText.split("\n").map((l) => l.trimEnd());
+  }
 
   // STEP 1 — Cut at "Pot statement" page
   let cutAt = allLines.length;
