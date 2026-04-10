@@ -55,23 +55,9 @@ export async function POST(req) {
     const bankName = detectBank(rawText);
     console.log("Bank detected:", bankName);
 
-    // ── 5b. Detect Monzo and route to dedicated parser ──────────────────────
-    const isMonzo = /monzo\.com|MONZGB2L|Monzo Bank Limited/i.test(rawText);
-    console.log("isMonzo result:", isMonzo);
-    console.log("First 500 chars of rawText:", rawText.substring(0, 500));
-    console.log("Monzo keyword check:", rawText.includes("monzo.com"), rawText.includes("MONZGB2L"), rawText.includes("Monzo Bank Limited"), rawText.toLowerCase().includes("monzo"));
-
-    let parsed;
-    if (isMonzo) {
-      console.log("Monzo statement detected — using dedicated Monzo parser");
-      const monzoTransactions = parseMonzoStatement(rawText);
-      console.log(`Monzo parser produced ${monzoTransactions.length} transactions`);
-      parsed = monzoTransactions;
-    } else {
-      // ── 6. Structure transactions via Claude (text already extracted) ──────
-      parsed = await structureTransactions(rawText);
-      console.log("Transactions structured:", parsed.length);
-    }
+    // ── 6. Structure transactions via Claude ────────────────────────────────
+    const parsed = await structureTransactions(rawText);
+    console.log("Transactions structured:", parsed.length);
 
     if (parsed.length === 0) {
       return NextResponse.json(
@@ -244,6 +230,18 @@ export async function POST(req) {
 }
 
 // ---------------------------------------------------------------------------
+// Re-liner — unpdf sometimes collapses all text to one line; inject newlines
+// before date tokens so the rest of the pipeline sees one transaction per line
+// ---------------------------------------------------------------------------
+function relineText(text) {
+  if ((text.match(/\n/g) || []).length > 20) return text; // already has real lines
+  return text
+    .replace(/(\d{2}\/\d{2}\/\d{4})/g, "\n$1")
+    .replace(/(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})/g, "\n$1")
+    .replace(/(\d{2}-[A-Z][a-z]{2}-\d{4})/g, "\n$1");
+}
+
+// ---------------------------------------------------------------------------
 // PDF text extraction — pdf-parse (free, local, zero API cost)
 // ---------------------------------------------------------------------------
 async function extractTextFromPDF(buffer) {
@@ -260,7 +258,7 @@ async function extractTextFromPDF(buffer) {
     console.log("First 300 chars:", text?.substring(0, 300));
 
     if (text && text.trim().length > 50) {
-      return { text, method: "unpdf", cost: 0 };
+      return { text: relineText(text), method: "unpdf", cost: 0 };
     }
 
     return {
@@ -291,47 +289,24 @@ async function structureTransactions(rawText) {
       messages: [
         {
           role: "user",
-          content: `Extract ALL transactions from this UK bank statement text.
-The text may be garbled due to PDF column extraction - use context to reconstruct dates, descriptions and amounts correctly.
-
-Return ONLY a JSON array, no other text:
-[{
-  "date": "15 Mar 2024",
-  "description": "Card Payment to Tesco Stores",
-  "amount": 3.20,
-  "type": "debit",
-  "balance": null
-}]
+          content: `You are a bank statement parser. Extract ALL transactions from the text below.
 
 Rules:
-- type is "debit" for Money out, "credit" for Money in
-- amount is always positive
-- Include ALL transactions including refunds, transfers, direct debits
-- date format: DD Mon YYYY
-- Do not include opening/closing balance rows
-- Do not include summary rows (Money in, Money out totals)
-
-TRANSFERS RULE:
-- Any transaction starting with 'Received From' is ALWAYS type 'credit'. Keep the full description including the name and reference e.g. 'Received From Kasam Khalid Ref Car'
-- Any transaction starting with 'Bill Payment to' is ALWAYS type 'debit'. Keep full description e.g. 'Bill Payment to Waleed Naeem Ref Money'
-- Any transaction starting with 'Giro' is type 'credit'
-
-CRITICAL UNPAID DIRECT DEBIT RULE: If you see a transaction containing 'Unpaid Direct Debit' or 'Unpaid DD', the bank RETURNED the money to the account. It must ALWAYS be type 'credit' not 'debit'. Example: 'RCI Financial Serv Unpaid Direct Debit £237.38' → type: 'credit', amount: 237.38. Similarly any transaction with 'Returned' in the description is always a credit.
-
-CRITICAL PAYPAL RULE: When you see a transaction containing 'Paypal' or 'PayPal', you MUST look at what comes after it and use that as the description. Examples:
-- 'Card Payment to Paypal *Pennyappea' → description: 'PayPal Penny Appeal'
-- 'Card Payment to Paypal *Humanappea' → description: 'PayPal Human Appeal'
-- 'Card Payment to Paypal *Muslimglob' → description: 'PayPal Muslim Global'
-- 'Card Payment to Paypal *Argosdirec' → description: 'PayPal Argos Direct'
-- 'Card Payment to Paypal *Asdastores' → description: 'PayPal Asda Stores'
-Never use just 'PayPal' as the description - always include what follows it, expanding truncated names where obvious.
-
-MONZO RULES (apply if this looks like a Monzo statement):
-- EXCLUDE any transaction where description contains "Transfer from Pot" or "Transfer to Pot" — these are internal Monzo savings pot movements, not real income or spending. Do not include them in the output at all.
-- EXCLUDE any line containing only "This relates to a previous transaction" — it is a note, not a transaction.
-- MULTI-LINE TRANSACTIONS: Some Monzo transactions split across two lines. If a line starts with a date (DD/MM/YYYY) but has no amount, look at the next line and combine them into a single transaction. Example: "31/03/2026 Kasam Khalid (Faster Payments) Reference:" followed by "Revolut -99.00 4.94" → one transaction with description "Kasam Khalid (Faster Payments)" and amount 99.00.
-- Descriptions containing "(P2P Payment)" or "(Faster Payments)" → these are bank transfers between people.
-- "Flex" entries → type is "debit" (Monzo's buy-now-pay-later product).
+- Return ONLY a JSON array, no other text
+- Each transaction: { "date": "DD Mon YYYY", "description": "merchant name", "amount": number (always positive), "type": "debit" or "credit" }
+- Debits = money out (payments, purchases, withdrawals)
+- Credits = money in (salary, transfers in, refunds received)
+- EXCLUDE any internal pot transfers: lines containing "Transfer from Pot" or "Transfer to Pot"
+- EXCLUDE lines that say only "Withdrawal" or "Deposit" without a real merchant name
+- EXCLUDE "This relates to a previous transaction"
+- EXCLUDE opening/closing balance rows and summary rows (Money in, Money out totals)
+- Clean merchant names: remove trailing country codes like "GBR", "USA", remove location suffixes
+- Multi-line transactions: combine them into one entry with the correct amount
+- Do not invent transactions — only extract what is explicitly in the text
+- Any transaction containing 'Unpaid Direct Debit' or 'Unpaid DD' is ALWAYS type 'credit' (bank returned the money)
+- Any transaction starting with 'Received From' or 'Giro' is ALWAYS type 'credit'
+- Any transaction starting with 'Bill Payment to' is ALWAYS type 'debit'
+- For PayPal transactions, use what follows "PayPal *" as the description, expanding truncated names (e.g. 'Paypal *Pennyappea' → 'PayPal Penny Appeal')
 
 Bank statement text:
 ${text}`,
@@ -386,211 +361,6 @@ ${text}`,
     console.error("Claude structuring error:", err.message);
     return [];
   }
-}
-
-// ---------------------------------------------------------------------------
-// Bank detection from raw extracted text
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// Monzo dedicated parser
-// Handles Monzo's unique PDF layout: multi-line transactions, pot pages,
-// and internal pot transfers.
-// ---------------------------------------------------------------------------
-
-const MONZO_DATE_RE = /^\d{2}\/\d{2}\/\d{4}/;
-// A "complete" transaction line ends with two numbers: amount and balance
-const MONZO_COMPLETE_RE = /-?\d[\d,]*\.\d{2}\s+-?\d[\d,]*\.\d{2}\s*$/;
-
-// Descriptions to exclude entirely (case-insensitive, matched after trim)
-const MONZO_EXCLUDE_DESC = [
-  "transfer from pot",
-  "transfer to pot",
-  "from pot",
-  "to pot",
-  "this relates to a previous transaction",
-  "withdrawal",
-  "deposit",
-];
-
-function isMonzoExcluded(desc) {
-  const d = (desc || "").trim().toLowerCase();
-  return (
-    d.includes("transfer from pot") ||
-    d.includes("transfer to pot") ||
-    d === "withdrawal" ||
-    d === "deposit" ||
-    d.includes("this relates to a previous transaction")
-  );
-}
-
-function parseMonzoStatement(rawText) {
-  // unpdf collapses all text into one line — re-split on date boundaries
-  let allLines;
-  if ((rawText.match(/\n/g) || []).length < 5) {
-    // Single-line mode: inject newlines before each date pattern
-    const relined = rawText
-      .replace(/(\d{2}\/\d{2}\/\d{4})/g, "\n$1")
-      .replace(/(Pot statement)/g, "\nPot statement\n")
-      .replace(/(Date Description \(GBP\) Amount \(GBP\) Balance)/g, "\nDate Description (GBP) Amount (GBP) Balance\n");
-    allLines = relined.split("\n").map((l) => l.trimEnd());
-  } else {
-    allLines = rawText.split("\n").map((l) => l.trimEnd());
-  }
-
-  // STEP 1 — Cut at "Pot statement" page
-  let cutAt = allLines.length;
-  for (let i = 0; i < allLines.length; i++) {
-    if (/^Pot statement\s*$/i.test(allLines[i].trim())) {
-      cutAt = i;
-      break;
-    }
-  }
-  const lines = allLines.slice(0, cutAt);
-  console.log(`Monzo: using ${lines.length} lines (cut ${allLines.length - cutAt} pot-page lines)`);
-
-  // STEP 2 — Skip header, find transaction start
-  let startIdx = 0;
-  for (let i = 0; i < lines.length; i++) {
-    if (/Date\s+Description.*Amount.*Balance/i.test(lines[i])) {
-      startIdx = i + 1;
-      break;
-    }
-  }
-  console.log(`Monzo: transaction lines start at index ${startIdx}`);
-
-  // STEP 3 — Reconstruct multi-line transactions
-  // Each reconstructed entry: { raw: "DD/MM/YYYY <desc> <amount> <balance>" }
-  const reconstructed = [];
-  let i = startIdx;
-
-  while (i < lines.length) {
-    const line = lines[i].trim();
-    if (!line) { i++; continue; }
-
-    // Skip known noise lines early
-    if (isMonzoExcluded(line)) { i++; continue; }
-
-    const hasDate    = MONZO_DATE_RE.test(line);
-    const hasNumbers = MONZO_COMPLETE_RE.test(line);
-
-    if (hasDate && hasNumbers) {
-      // Complete transaction on this line — check if next line is a continuation
-      let full = line;
-      let j = i + 1;
-      while (j < lines.length) {
-        const next = lines[j].trim();
-        if (!next) { j++; break; }
-        // Stop if next line is a new transaction or noise
-        if (MONZO_DATE_RE.test(next)) break;
-        if (isMonzoExcluded(next)) { j++; break; }
-        if (/^Pot statement\s*$/i.test(next)) break;
-        // Continuation: insert before the trailing two numbers
-        // Strip trailing numbers from full, append continuation, re-append numbers
-        const trailingMatch = full.match(/(-?\d[\d,]*\.\d{2}\s+-?\d[\d,]*\.\d{2})\s*$/);
-        if (trailingMatch) {
-          const nums = trailingMatch[1];
-          full = full.slice(0, full.lastIndexOf(nums)).trimEnd() + " " + next + " " + nums;
-        }
-        j++;
-        break; // Only one continuation line
-      }
-      reconstructed.push(full);
-      i = j;
-      continue;
-    }
-
-    if (!hasDate && hasNumbers) {
-      // Orphan line with amounts but no date — skip (e.g. closing balance rows)
-      i++;
-      continue;
-    }
-
-    if (!hasDate && !hasNumbers) {
-      // Possible description prefix for the NEXT line
-      const next = lines[i + 1]?.trim() || "";
-      if (MONZO_DATE_RE.test(next) && MONZO_COMPLETE_RE.test(next)) {
-        // Prepend this line's text as description prefix to the next line
-        const combined = line + " " + next;
-        // Check if there's a further continuation after that
-        let full = combined;
-        const afterNext = lines[i + 2]?.trim() || "";
-        if (afterNext && !MONZO_DATE_RE.test(afterNext) && !isMonzoExcluded(afterNext) && !/^Pot statement/i.test(afterNext)) {
-          const trailingMatch = full.match(/(-?\d[\d,]*\.\d{2}\s+-?\d[\d,]*\.\d{2})\s*$/);
-          if (trailingMatch) {
-            const nums = trailingMatch[1];
-            full = full.slice(0, full.lastIndexOf(nums)).trimEnd() + " " + afterNext + " " + nums;
-          }
-          i += 3;
-        } else {
-          i += 2;
-        }
-        if (!isMonzoExcluded(full)) reconstructed.push(full);
-      } else {
-        i++;
-      }
-      continue;
-    }
-
-    // hasDate && !hasNumbers — date line missing amounts, look ahead
-    const next = lines[i + 1]?.trim() || "";
-    if (next && !MONZO_DATE_RE.test(next) && MONZO_COMPLETE_RE.test(next)) {
-      const combined = line + " " + next;
-      if (!isMonzoExcluded(combined)) reconstructed.push(combined);
-      i += 2;
-    } else {
-      i++;
-    }
-  }
-
-  console.log(`Monzo: ${reconstructed.length} raw transaction lines reconstructed`);
-
-  // STEP 5 — Parse each reconstructed line into a transaction object
-  const transactions = [];
-  for (const raw of reconstructed) {
-    // Extract trailing two numbers (amount, balance)
-    const numMatch = raw.match(/(-?\d[\d,]*\.\d{2})\s+(-?\d[\d,]*\.\d{2})\s*$/);
-    if (!numMatch) continue;
-
-    const amount  = parseFloat(numMatch[1].replace(/,/g, ""));
-    // balance = numMatch[2] (available if needed)
-
-    // Extract date from start
-    const dateMatch = raw.match(/(\d{2}\/\d{2}\/\d{4})/);
-    if (!dateMatch) continue;
-    const rawDate = dateMatch[1]; // DD/MM/YYYY
-
-    // Description = everything between date and the trailing two numbers
-    const afterDate = raw.slice(raw.indexOf(rawDate) + rawDate.length).trimStart();
-    const descRaw = afterDate.slice(0, afterDate.lastIndexOf(numMatch[0])).trim();
-    // Clean up "GBR" suffix and extra whitespace
-    const description = descRaw.replace(/\s+GBR\s*$/i, "").replace(/\s+/g, " ").trim();
-
-    if (description.toLowerCase().includes("pot") || description.toLowerCase().includes("transfer")) {
-      console.log("POT/TRANSFER found in description:", JSON.stringify(description));
-    }
-
-    if (!description || isMonzoExcluded(description)) continue;
-
-    // Convert DD/MM/YYYY → "DD Mon YYYY" for normaliseDate
-    const [dd, mm, yyyy] = rawDate.split("/");
-    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const dateStr = `${dd} ${MONTHS[parseInt(mm, 10) - 1]} ${yyyy}`;
-
-    const type = amount < 0 ? "debit" : "credit";
-
-    transactions.push({
-      date: dateStr,
-      description,
-      amount: Math.abs(amount),
-      type,
-      balance: parseFloat(numMatch[2].replace(/,/g, "")),
-    });
-  }
-
-  console.log(`Monzo: ${transactions.length} transactions parsed`);
-  const potRemoved = reconstructed.length - transactions.length;
-  console.log(`Monzo pot transfers / noise removed: ${potRemoved}`);
-  return transactions;
 }
 
 // ---------------------------------------------------------------------------
