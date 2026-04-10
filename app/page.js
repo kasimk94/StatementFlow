@@ -420,27 +420,28 @@ export default function Home() {
             }}>
               Your Bank Statement.
             </span>
-            <span
-              key={animatedWord}
-              style={{
-                fontFamily: "var(--font-playfair)",
-                background: "linear-gradient(135deg, #6d28d9, #2563eb)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                display: "block",
-                fontSize: "clamp(2.8rem, 7vw, 5.5rem)",
-                lineHeight: 1.05,
-                marginBottom: "32px",
-                animation: "fadeSlideIn 0.5s ease forwards",
-                fontWeight: HERO_WORD_STYLES[animatedWord].fontWeight,
-                fontStyle: HERO_WORD_STYLES[animatedWord].fontStyle,
-                letterSpacing: HERO_WORD_STYLES[animatedWord].letterSpacing,
-                transition: "all 0.3s ease",
-              }}
-            >
-              {HERO_WORDS[animatedWord]}
-            </span>
+            <div className="hero-animated-line" style={{ minHeight: "120px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "32px" }}>
+              <span
+                key={animatedWord}
+                style={{
+                  fontFamily: "var(--font-playfair)",
+                  background: "linear-gradient(135deg, #6d28d9, #2563eb)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  display: "block",
+                  fontSize: "clamp(2.4rem, 5.5vw, 4.8rem)",
+                  lineHeight: 1.05,
+                  animation: "fadeSlideIn 0.5s ease forwards",
+                  fontWeight: HERO_WORD_STYLES[animatedWord].fontWeight,
+                  fontStyle: HERO_WORD_STYLES[animatedWord].fontStyle,
+                  letterSpacing: HERO_WORD_STYLES[animatedWord].letterSpacing,
+                  transition: "all 0.3s ease",
+                }}
+              >
+                {HERO_WORDS[animatedWord]}
+              </span>
+            </div>
           </h1>
           <p className="text-slate-500 mx-auto mb-10 scroll-animate" style={{ fontSize: "1.15rem", lineHeight: 1.75, maxWidth: 600, transitionDelay: "0.1s" }}>
             Upload a bank statement. Get clean, usable data in seconds.<br />

@@ -620,6 +620,11 @@ img, video { max-width: 100%; height: auto; }
     padding-right: 16px !important;
   }
 
+  /* ── Hero animated line: taller on mobile to handle wrapping ── */
+  .hero-animated-line {
+    min-height: 160px !important;
+  }
+
   /* ── Audience cards: stack on mobile, reduce padding ── */
   .audience-cards-grid {
     grid-template-columns: 1fr !important;
