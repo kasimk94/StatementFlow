@@ -605,51 +605,85 @@ export default function Home() {
           </div>
           <div className="before-after-grid">
             {/* Before panel */}
-            <div className="scroll-animate" style={{ border: "2px solid #fecaca", borderRadius: 20, overflow: "hidden" }}>
+            <div className="scroll-animate" style={{ border: "2px solid #fecaca", borderRadius: 20, overflow: "hidden", minHeight: 420, display: "flex", flexDirection: "column", background: "rgba(254,242,242,0.8)" }}>
               <div style={{ background: "#fef2f2", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ background: "#fee2e2", color: "#991b1b", fontSize: "0.7rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>YOUR PDF STATEMENT</span>
               </div>
-              <div style={{ padding: "20px 20px 16px", background: "#fafafa" }}>
-                {[["03 Mar 2024","FPS OUT JOHN SMITH REF SN2024..","450.00"],["04 Mar 2024","CARD PAYMENT TO AMZNMKTPLACE*YH7G2...","23.99"],["04 Mar 2024","DD BARCLAYS PRTNR FIN SRV...","237.38"],["05 Mar 2024","FASTER PAYMENTS REC'D 004523...","1200.00"],["06 Mar 2024","CARD PAYMENT TO PAYPAL *PENNYAP...","10.00"]].map(([d,t,a],i) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "90px 1fr 60px", gap: 8, padding: "6px 0", borderBottom: "1px solid #f1f5f9", fontSize: "0.72rem", color: "#94a3b8", filter: i > 1 ? "blur(2px)" : "none", opacity: i > 2 ? 0.4 : 1 }}>
+              <div style={{ padding: "20px 20px 16px", flex: 1 }}>
+                {[
+                  ["03 Mar 2024","FPS OUT JOHN SMITH REF SN2024..","450.00"],
+                  ["04 Mar 2024","CARD PAYMENT TO AMZNMKTPLACE*YH7G2...","23.99"],
+                  ["04 Mar 2024","DD BARCLAYS PRTNR FIN SRV...","237.38"],
+                  ["05 Mar 2024","FASTER PAYMENTS REC'D 004523...","1200.00"],
+                  ["06 Mar 2024","CARD PAYMENT TO PAYPAL *PENNYAP...","10.00"],
+                ].map(([d,t,a],i) => (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "96px 1fr 64px", gap: 8, padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: "0.85rem", color: "#94a3b8", filter: i > 2 ? `blur(${(i-2)*1.5}px)` : "none", opacity: i > 3 ? 0.3 : 1 }}>
                     <span style={{ whiteSpace: "nowrap" }}>{d}</span>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t}</span>
                     <span style={{ textAlign: "right" }}>{a}</span>
                   </div>
                 ))}
-                <div style={{ marginTop: 8, fontSize: "0.65rem", color: "#cbd5e1", fontStyle: "italic" }}>...47 more rows</div>
+                <div style={{ marginTop: 10, fontSize: "0.72rem", color: "#cbd5e1", fontStyle: "italic" }}>...47 more rows</div>
               </div>
-              <p style={{ textAlign: "center", padding: "12px", color: "#94a3b8", fontSize: "0.78rem", fontStyle: "italic", background: "#fafafa" }}>A PDF only a bank could love</p>
+              <p style={{ textAlign: "center", padding: "14px", color: "#94a3b8", fontSize: "0.78rem", fontStyle: "italic" }}>A PDF only a bank could love</p>
             </div>
+
             {/* Arrow */}
-            <div className="before-after-arrow-h" style={{ fontSize: "2.5rem", color: "#6d28d9", fontWeight: 900, textAlign: "center" }}>→</div>
-            <div className="before-after-arrow-v">↓</div>
+            <div className="before-after-arrow-h" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "2.5rem", color: "#6d28d9", fontWeight: 900, lineHeight: 1 }}>→</div>
+              <div style={{ fontSize: "0.65rem", color: "#6d28d9", fontWeight: 600, letterSpacing: "0.05em", marginTop: 4 }}>StatementFlow</div>
+            </div>
+            <div className="before-after-arrow-v" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "2.5rem", color: "#6d28d9", fontWeight: 900, lineHeight: 1 }}>↓</div>
+              <div style={{ fontSize: "0.65rem", color: "#6d28d9", fontWeight: 600, letterSpacing: "0.05em", marginTop: 4 }}>StatementFlow</div>
+            </div>
+
             {/* After panel */}
-            <div className="scroll-animate" style={{ border: "2px solid #bbf7d0", borderRadius: 20, overflow: "hidden", transitionDelay: "0.1s" }}>
+            <div className="scroll-animate" style={{ border: "1px solid #bbf7d0", borderRadius: 20, overflow: "hidden", transitionDelay: "0.1s", minHeight: 420, display: "flex", flexDirection: "column", background: "rgba(240,253,244,0.9)" }}>
               <div style={{ background: "#f0fdf4", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>YOUR STATEMENTFLOW DASHBOARD</span>
+                <span style={{ background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>YOUR MONEY, CATEGORISED</span>
               </div>
-              <div style={{ padding: "16px 20px", background: "white" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-                  {[{l:"Money In",v:"£3,240",c:"#00b894"},{l:"Money Out",v:"£1,890",c:"#dc2626"},{l:"Net Balance",v:"£1,350",c:"#6d28d9"},{l:"Transactions",v:"52",c:"#64748b"}].map(({l,v,c}) => (
-                    <div key={l} style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 12px", borderLeft: `3px solid ${c}` }}>
-                      <p style={{ margin: 0, fontSize: "0.65rem", color: "#94a3b8", fontWeight: 600 }}>{l}</p>
-                      <p style={{ margin: "2px 0 0", fontSize: "1rem", fontWeight: 800, color: c }}>{v}</p>
-                    </div>
-                  ))}
+              <div style={{ padding: "20px 24px", flex: 1, display: "flex", flexDirection: "column" }}>
+                {/* Donut chart */}
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 20, position: "relative" }}>
+                  <svg viewBox="0 0 120 120" width="120" height="120" style={{ transform: "rotate(-90deg)" }}>
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
+                    {/* strokeDasharray: segment_length total_circumference(≈283) */}
+                    {/* Groceries 6% = 17, Direct Debits 21% = 59, Online Shopping 8% = 23, Cash&ATM 22% = 62, Charity 6% = 17 */}
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="#16a34a" strokeWidth="20" strokeDasharray="17 266" strokeDashoffset="0"/>
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="#4f46e5" strokeWidth="20" strokeDasharray="59 224" strokeDashoffset="-17"/>
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="#ca8a04" strokeWidth="20" strokeDasharray="23 260" strokeDashoffset="-76"/>
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="#78716c" strokeWidth="20" strokeDasharray="62 221" strokeDashoffset="-99"/>
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="#e11d48" strokeWidth="20" strokeDasharray="17 266" strokeDashoffset="-161"/>
+                  </svg>
+                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", textAlign: "center" }}>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#1e293b", lineHeight: 1.2 }}>5</div>
+                    <div style={{ fontSize: "0.6rem", color: "#94a3b8", lineHeight: 1.2 }}>categories</div>
+                  </div>
                 </div>
-                {[{d:"03 Mar","m":"John Smith","c":"Transfers Sent","a":"£450","cc":"#dc2626","pill":"#dc2626"},{d:"04 Mar","m":"Amazon Marketplace","c":"Online Shopping","a":"£23.99","cc":"#ca8a04","pill":"#ca8a04"},{d:"04 Mar","m":"Barclays Partner Finance","c":"Direct Debits","a":"£237.38","cc":"#4f46e5","pill":"#4f46e5"}].map(({d,m,c,a,cc,pill},i) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "48px 1fr auto", gap: 8, alignItems: "center", padding: "6px 0", borderBottom: "1px solid #f1f5f9" }}>
-                    <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>{d}</span>
-                    <div>
-                      <p style={{ margin: 0, fontSize: "0.78rem", fontWeight: 600, color: "#1e293b" }}>{m}</p>
-                      <span style={{ background: `${pill}20`, color: pill, fontSize: "0.62rem", fontWeight: 700, padding: "1px 6px", borderRadius: 999 }}>{c}</span>
-                    </div>
-                    <span style={{ fontSize: "0.82rem", fontWeight: 700, color: cc }}>{a}</span>
+                {/* Category rows */}
+                {[
+                  { icon: "🏧", label: "Cash & ATM",       amount: "£810", pct: "22%", color: "#78716c" },
+                  { icon: "📋", label: "Direct Debits",    amount: "£771", pct: "21%", color: "#4f46e5" },
+                  { icon: "🛍️", label: "Online Shopping", amount: "£282", pct: "8%",  color: "#ca8a04" },
+                  { icon: "🛒", label: "Groceries",        amount: "£224", pct: "6%",  color: "#16a34a" },
+                  { icon: "❤️", label: "Charity",          amount: "£216", pct: "6%",  color: "#e11d48" },
+                ].map(({ icon, label, amount, pct, color }, i) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: i < 4 ? "1px solid #dcfce7" : "none", fontSize: "0.8rem" }}>
+                    <span style={{ fontSize: "1rem", flexShrink: 0 }}>{icon}</span>
+                    <span style={{ flex: 1, color: "#374151", fontWeight: 500 }}>{label}</span>
+                    <span style={{ fontWeight: 700, color: "#1e293b", marginRight: 8 }}>{amount}</span>
+                    <span style={{ background: `${color}20`, color, fontSize: "0.68rem", fontWeight: 700, padding: "2px 7px", borderRadius: 999, flexShrink: 0 }}>{pct}</span>
                   </div>
                 ))}
+                {/* Insight line */}
+                <div style={{ marginTop: "auto", paddingTop: 16 }}>
+                  <div style={{ background: "#f8fafc", borderLeft: "3px solid #6d28d9", borderRadius: "0 8px 8px 0", padding: "10px 14px", fontSize: "0.75rem", color: "#64748b", lineHeight: 1.5 }}>
+                    💡 Your bank statement never shows this. StatementFlow does — instantly.
+                  </div>
+                </div>
               </div>
-              <p style={{ textAlign: "center", padding: "12px", color: "#94a3b8", fontSize: "0.78rem", fontStyle: "italic", background: "white", borderTop: "1px solid #f1f5f9" }}>Clarity in seconds</p>
+              <p style={{ textAlign: "center", padding: "14px", color: "#94a3b8", fontSize: "0.78rem", fontStyle: "italic", borderTop: "1px solid #dcfce7" }}>Clarity in seconds</p>
             </div>
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
