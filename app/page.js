@@ -639,51 +639,60 @@ export default function Home() {
             </div>
 
             {/* After panel */}
-            <div className="scroll-animate" style={{ border: "1px solid #bbf7d0", borderRadius: 20, overflow: "hidden", transitionDelay: "0.1s", minHeight: 420, display: "flex", flexDirection: "column", background: "rgba(240,253,244,0.9)" }}>
-              <div style={{ background: "#f0fdf4", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>YOUR MONEY, CATEGORISED</span>
-              </div>
-              <div style={{ padding: "20px 24px", flex: 1, display: "flex", flexDirection: "column" }}>
-                {/* Donut chart */}
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 20, position: "relative" }}>
-                  <svg viewBox="0 0 120 120" width="120" height="120" style={{ transform: "rotate(-90deg)" }}>
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
-                    {/* strokeDasharray: segment_length total_circumference(≈283) */}
-                    {/* Groceries 6% = 17, Direct Debits 21% = 59, Online Shopping 8% = 23, Cash&ATM 22% = 62, Charity 6% = 17 */}
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="#16a34a" strokeWidth="20" strokeDasharray="17 266" strokeDashoffset="0"/>
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="#4f46e5" strokeWidth="20" strokeDasharray="59 224" strokeDashoffset="-17"/>
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="#ca8a04" strokeWidth="20" strokeDasharray="23 260" strokeDashoffset="-76"/>
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="#78716c" strokeWidth="20" strokeDasharray="62 221" strokeDashoffset="-99"/>
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="#e11d48" strokeWidth="20" strokeDasharray="17 266" strokeDashoffset="-161"/>
-                  </svg>
-                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", textAlign: "center" }}>
-                    <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#1e293b", lineHeight: 1.2 }}>5</div>
-                    <div style={{ fontSize: "0.6rem", color: "#94a3b8", lineHeight: 1.2 }}>categories</div>
-                  </div>
+            <div className="scroll-animate" style={{ border: "1px solid #e5e7eb", borderRadius: 20, transitionDelay: "0.1s", minHeight: 420, display: "flex", flexDirection: "column", background: "white", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", padding: 24 }}>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <div>
+                  <div style={{ background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 700, padding: "4px 12px", borderRadius: 999, display: "inline-block", marginBottom: 6, letterSpacing: "0.05em" }}>✓ ANALYSED</div>
+                  <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>March 2024 · Barclays</div>
                 </div>
-                {/* Category rows */}
-                {[
-                  { icon: "🏧", label: "Cash & ATM",       amount: "£810", pct: "22%", color: "#78716c" },
-                  { icon: "📋", label: "Direct Debits",    amount: "£771", pct: "21%", color: "#4f46e5" },
-                  { icon: "🛍️", label: "Online Shopping", amount: "£282", pct: "8%",  color: "#ca8a04" },
-                  { icon: "🛒", label: "Groceries",        amount: "£224", pct: "6%",  color: "#16a34a" },
-                  { icon: "❤️", label: "Charity",          amount: "£216", pct: "6%",  color: "#e11d48" },
-                ].map(({ icon, label, amount, pct, color }, i) => (
-                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: i < 4 ? "1px solid #dcfce7" : "none", fontSize: "0.8rem" }}>
-                    <span style={{ fontSize: "1rem", flexShrink: 0 }}>{icon}</span>
-                    <span style={{ flex: 1, color: "#374151", fontWeight: 500 }}>{label}</span>
-                    <span style={{ fontWeight: 700, color: "#1e293b", marginRight: 8 }}>{amount}</span>
-                    <span style={{ background: `${color}20`, color, fontSize: "0.68rem", fontWeight: 700, padding: "2px 7px", borderRadius: 999, flexShrink: 0 }}>{pct}</span>
-                  </div>
-                ))}
-                {/* Insight line */}
-                <div style={{ marginTop: "auto", paddingTop: 16 }}>
-                  <div style={{ background: "#f8fafc", borderLeft: "3px solid #6d28d9", borderRadius: "0 8px 8px 0", padding: "10px 14px", fontSize: "0.75rem", color: "#64748b", lineHeight: 1.5 }}>
-                    💡 Your bank statement never shows this. StatementFlow does — instantly.
-                  </div>
+                <div style={{ background: "#6d28d9", color: "white", fontSize: "0.7rem", fontWeight: 600, padding: "6px 12px", borderRadius: 999 }}>82 transactions</div>
+              </div>
+              {/* KPI row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
+                <div style={{ background: "linear-gradient(135deg, #16a34a, #15803d)", borderRadius: 12, padding: 12, color: "white" }}>
+                  <div style={{ fontSize: "0.65rem", opacity: 0.8 }}>Money In</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 800 }}>£3,522</div>
+                </div>
+                <div style={{ background: "linear-gradient(135deg, #dc2626, #b91c1c)", borderRadius: 12, padding: 12, color: "white" }}>
+                  <div style={{ fontSize: "0.65rem", opacity: 0.8 }}>Money Out</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 800 }}>£3,608</div>
+                </div>
+                <div style={{ background: "linear-gradient(135deg, #4f46e5, #4338ca)", borderRadius: 12, padding: 12, color: "white" }}>
+                  <div style={{ fontSize: "0.65rem", opacity: 0.8 }}>Net</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 800 }}>-£170</div>
                 </div>
               </div>
-              <p style={{ textAlign: "center", padding: "14px", color: "#94a3b8", fontSize: "0.78rem", fontStyle: "italic", borderTop: "1px solid #dcfce7" }}>Clarity in seconds</p>
+              {/* Breakdown title */}
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#374151", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Spending Breakdown</div>
+              {/* Category rows with progress bars */}
+              {[
+                { icon: "🏧", label: "Cash & ATM",       amount: "£810", bar: 100, color: "#78716c" },
+                { icon: "📋", label: "Direct Debits",    amount: "£771", bar: 95,  color: "#4f46e5" },
+                { icon: "🛍️", label: "Online Shopping", amount: "£282", bar: 35,  color: "#ca8a04" },
+                { icon: "🛒", label: "Groceries",        amount: "£224", bar: 28,  color: "#16a34a" },
+                { icon: "❤️", label: "Charity",          amount: "£216", bar: 26,  color: "#e11d48" },
+              ].map(({ icon, label, amount, bar, color }) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: "0.78rem", color: "#374151", display: "flex", alignItems: "center", gap: 6 }}>{icon} {label}</span>
+                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#111827" }}>{amount}</span>
+                  </div>
+                  <div style={{ height: 6, background: "#f3f4f6", borderRadius: 999, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${bar}%`, background: color, borderRadius: 999 }} />
+                  </div>
+                </div>
+              ))}
+              {/* AI insight box */}
+              <div style={{ marginTop: 16, background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", border: "1px solid #c4b5fd", borderRadius: 12, padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 18 }}>✨</span>
+                <div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6d28d9", marginBottom: 2 }}>StatementFlow AI</div>
+                  <div style={{ fontSize: "0.72rem", color: "#374151", lineHeight: 1.5 }}>£810 withdrawn as cash — harder to track. Your top category is Cash &amp; ATM at 22%.</div>
+                </div>
+              </div>
+              {/* Caption */}
+              <div style={{ textAlign: "center", marginTop: 16, fontSize: "0.72rem", color: "#9ca3af", fontStyle: "italic" }}>✓ Categorised instantly · Your bank never shows this</div>
             </div>
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
