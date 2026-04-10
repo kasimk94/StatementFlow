@@ -539,10 +539,15 @@ export default function Home() {
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Who It&apos;s For</p>
             <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)" }}>Built for individuals. Trusted by accountants.</h2>
           </div>
-          <div className="audience-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "stretch" }}>
+          <div className="audience-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "stretch", maxWidth: 1100, margin: "0 auto" }}>
             {/* Individuals card */}
-            <div className="scroll-animate audience-card-pad" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "1px solid #ddd6fe", borderRadius: 24, display: "flex", flexDirection: "column", height: "100%" }}>
-              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #6d28d9, #4f46e5)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, marginBottom: 20 }}>👤</div>
+            <div className="scroll-animate" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "1px solid #ddd6fe", borderRadius: 24, padding: "40px 36px", display: "flex", flexDirection: "column", height: "100%" }}>
+              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #6d28d9, #4f46e5)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, flexShrink: 0 }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
               <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "#1e293b", margin: "0 0 6px" }}>Take control of your money</h3>
               <p style={{ color: "#6d28d9", fontWeight: 600, fontSize: "0.82rem", margin: "0" }}>For individuals &amp; families</p>
               <p style={{ color: "#475569", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>
@@ -555,13 +560,20 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <div style={{ marginTop: "auto", paddingTop: 24 }}>
-                <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>Try Free →</button>
+              <div style={{ flex: 1 }} />
+              <div style={{ paddingTop: 32 }}>
+                <button onClick={scrollToUpload} style={{ width: "100%", textAlign: "center", background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 600, padding: "14px 24px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.95rem" }}>Try Free →</button>
               </div>
             </div>
             {/* Accountants card */}
-            <div className="scroll-animate audience-card-pad" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", borderRadius: 24, transitionDelay: "0.1s", display: "flex", flexDirection: "column", height: "100%" }}>
-              <div style={{ width: 56, height: 56, background: "rgba(255,255,255,0.2)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, marginBottom: 20 }}>📊</div>
+            <div className="scroll-animate" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", borderRadius: 24, padding: "40px 36px", transitionDelay: "0.1s", display: "flex", flexDirection: "column", height: "100%" }}>
+              <div style={{ width: 56, height: 56, background: "rgba(255,255,255,0.15)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, flexShrink: 0 }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+              </div>
               <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "white", margin: "0 0 6px" }}>Turn statements into structured data</h3>
               <p style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: "0.82rem", margin: "0" }}>For accountants, bookkeepers &amp; businesses</p>
               <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>
@@ -574,8 +586,9 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <div style={{ marginTop: "auto", paddingTop: 24 }}>
-                <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ background: "white", color: "#1e3a5f", fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.9rem" }}>See Business Features →</button>
+              <div style={{ flex: 1 }} />
+              <div style={{ paddingTop: 32 }}>
+                <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ width: "100%", textAlign: "center", background: "white", color: "#1e3a5f", fontWeight: 600, padding: "14px 24px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.95rem" }}>See Business Features →</button>
               </div>
             </div>
           </div>

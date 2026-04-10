@@ -620,12 +620,12 @@ img, video { max-width: 100%; height: auto; }
     padding-right: 16px !important;
   }
 
-  /* ── Audience cards: reduce padding, stack on mobile ── */
-  .audience-card-pad {
-    padding: 28px 20px !important;
-  }
+  /* ── Audience cards: stack on mobile, reduce padding ── */
   .audience-cards-grid {
     grid-template-columns: 1fr !important;
+  }
+  .audience-cards-grid > div {
+    padding: 28px 24px !important;
   }
 
   /* ── Transaction toggle row: stack on mobile ── */
