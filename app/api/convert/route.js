@@ -76,7 +76,11 @@ export async function POST(req) {
     // ── 7. Categorise + normalise via local regex engine (zero cost) ─────────
     // Filter out Monzo internal pot movements and noise lines
     const filteredParsed = isMonzo
-      ? parsed.filter((t) => !isMonzoPotTransfer(t.description))
+      ? (() => {
+          const filtered = parsed.filter((t) => !isMonzoPotTransfer(t.description));
+          console.log(`Monzo pot transfers removed: ${parsed.length - filtered.length}`);
+          return filtered;
+        })()
       : parsed;
 
     const rawTransactions = filteredParsed
@@ -397,8 +401,14 @@ function stripMonzoPotPages(text) {
 // Returns true if a description is a Monzo internal pot transfer to filter out
 function isMonzoPotTransfer(description) {
   if (!description) return false;
-  return /transfer (from|to) pot/i.test(description) ||
-    /this relates to a previous transaction/i.test(description);
+  const d = description.trim().toLowerCase();
+  return (
+    d.includes("transfer from pot") ||
+    d.includes("transfer to pot") ||
+    d.includes("from pot") ||
+    d.includes("to pot") ||
+    d.includes("this relates to a previous transaction")
+  );
 }
 
 // ---------------------------------------------------------------------------
