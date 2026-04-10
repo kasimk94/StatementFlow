@@ -57,6 +57,9 @@ export async function POST(req) {
 
     // ── 5b. Detect Monzo and route to dedicated parser ──────────────────────
     const isMonzo = /monzo\.com|MONZGB2L|Monzo Bank Limited/i.test(rawText);
+    console.log("isMonzo result:", isMonzo);
+    console.log("First 500 chars of rawText:", rawText.substring(0, 500));
+    console.log("Monzo keyword check:", rawText.includes("monzo.com"), rawText.includes("MONZGB2L"), rawText.includes("Monzo Bank Limited"), rawText.toLowerCase().includes("monzo"));
 
     let parsed;
     if (isMonzo) {
