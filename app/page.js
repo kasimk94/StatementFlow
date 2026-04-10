@@ -394,9 +394,18 @@ export default function Home() {
       {/* ══ SECTION 1: HERO ══ */}
       <section id="hero" className="pt-28 pb-20 px-6 text-center" style={{ background: "linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%)" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-8 scroll-animate" style={{ background: "#f3f0ff", border: "1px solid #ddd6fe", color: "#6d28d9" }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#6d28d9", display: "inline-block" }} />
-            Free · No account required · Instant results
+          <div style={{
+            display: "inline-block",
+            background: "#f3f0ff",
+            color: "#6d28d9",
+            fontSize: "0.8rem",
+            fontWeight: 600,
+            padding: "6px 16px",
+            borderRadius: "999px",
+            marginBottom: "16px",
+            letterSpacing: "0.02em",
+          }}>
+            Structured data — not another finance app
           </div>
           <h1 className="leading-tight mb-6 scroll-animate" style={{ transitionDelay: "0.05s" }}>
             <span style={{
@@ -434,7 +443,8 @@ export default function Home() {
             </span>
           </h1>
           <p className="text-slate-500 mx-auto mb-10 scroll-animate" style={{ fontSize: "1.15rem", lineHeight: 1.75, maxWidth: 600, transitionDelay: "0.1s" }}>
-            Upload any UK bank statement and instantly turn it into a spending dashboard, budget tracker, or accountant-ready Excel report — in seconds. No bank login. No data stored. No nonsense.
+            Upload a bank statement. Get clean, usable data in seconds.<br />
+            No bank login. No account. No data stored. Ever.
           </p>
           <div className="hero-cta-group mb-10 scroll-animate" style={{ transitionDelay: "0.15s" }}>
             <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, fontSize: "1rem", padding: "14px 32px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(109,40,217,0.35)", minHeight: 52 }}>
@@ -444,9 +454,27 @@ export default function Home() {
               See How It Works
             </button>
           </div>
-          <div ref={badgesRef} className="hero-trust-bar" style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
-            {["🔒 No data stored", "🇬🇧 Built for UK banks", "⚡ Results in seconds", "✓ No account needed"].map((t, i) => (
-              <span key={t} style={{ opacity: badgesVisible ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.1}s` }}>{t}</span>
+          <div style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: "12px 24px",
+            padding: "16px 24px",
+            background: "rgba(255,255,255,0.7)",
+            borderRadius: "16px",
+            border: "1px solid #e5e7eb",
+            maxWidth: "640px",
+            margin: "0 auto",
+          }}>
+            {[
+              { icon: "🚫", text: "We never connect to your bank" },
+              { icon: "🗑️", text: "Files deleted immediately after processing" },
+              { icon: "👁️", text: "We never see your transactions" },
+              { icon: "🇬🇧", text: "UK GDPR compliant" },
+            ].map(({ icon, text }) => (
+              <span key={text} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "#6b7280" }}>
+                {icon} {text}
+              </span>
             ))}
           </div>
         </div>
@@ -518,8 +546,7 @@ export default function Home() {
               <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "#1e293b", margin: "0 0 6px" }}>Take control of your money</h3>
               <p style={{ color: "#6d28d9", fontWeight: 600, fontSize: "0.82rem", margin: "0 0 20px" }}>For individuals &amp; families</p>
               <p style={{ color: "#475569", fontSize: "0.9rem", lineHeight: 1.7, margin: "0 0 24px" }}>
-                Use your bank statement to finally understand where your money goes every month. Build a real budget based on actual spending — not guesses.<br /><br />
-                No bank login required. No risky connections. Just upload, understand, and take back control.
+                Upload your bank statement and finally see exactly where your money goes. Build your own budget tracker using data you trust — not estimates, not guesses. No bank login ever required.
               </p>
               <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
                 {["Spending breakdown by category", "Monthly dashboard with insights", "Budget tracker ready to use", "Your data never stored or shared"].map(t => (
@@ -536,8 +563,7 @@ export default function Home() {
               <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "white", margin: "0 0 6px" }}>Turn statements into structured data</h3>
               <p style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: "0.82rem", margin: "0 0 20px" }}>For accountants, bookkeepers &amp; businesses</p>
               <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9rem", lineHeight: 1.7, margin: "0 0 24px" }}>
-                Stop copying and pasting. Upload any client bank statement and get a clean, structured Excel or CSV instantly — ready for reconciliation, VAT analysis, and reporting.<br /><br />
-                No manual cleanup. No formatting headaches. Just accurate data, exactly how you need it.
+                Convert any client bank statement into clean, structured data instantly. Ready for reconciliation, VAT prep, and reporting — without a single minute of copy-pasting.
               </p>
               <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
                 {["Debit & credit split columns", "Tax category mapping", "VAT estimation built in", "Audit-ready reconciliation view"].map(t => (
