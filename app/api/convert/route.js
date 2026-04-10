@@ -55,13 +55,20 @@ export async function POST(req) {
     const bankName = detectBank(rawText);
     console.log("Bank detected:", bankName);
 
-    // ── 5b. Monzo: strip Pot statement pages before parsing ─────────────────
+    // ── 5b. Detect Monzo and route to dedicated parser ──────────────────────
     const isMonzo = /monzo\.com|MONZGB2L|Monzo Bank Limited/i.test(rawText);
-    const textToParse = isMonzo ? stripMonzoPotPages(rawText) : rawText;
 
-    // ── 6. Structure transactions via Claude (text already extracted) ────────
-    const parsed = await structureTransactions(textToParse);
-    console.log("Transactions structured:", parsed.length);
+    let parsed;
+    if (isMonzo) {
+      console.log("Monzo statement detected — using dedicated Monzo parser");
+      const monzoTransactions = parseMonzoStatement(rawText);
+      console.log(`Monzo parser produced ${monzoTransactions.length} transactions`);
+      parsed = monzoTransactions;
+    } else {
+      // ── 6. Structure transactions via Claude (text already extracted) ──────
+      parsed = await structureTransactions(rawText);
+      console.log("Transactions structured:", parsed.length);
+    }
 
     if (parsed.length === 0) {
       return NextResponse.json(
@@ -74,14 +81,7 @@ export async function POST(req) {
     }
 
     // ── 7. Categorise + normalise via local regex engine (zero cost) ─────────
-    // Filter out Monzo internal pot movements and noise lines
-    const filteredParsed = isMonzo
-      ? (() => {
-          const filtered = parsed.filter((t) => !isMonzoPotTransfer(t.description));
-          console.log(`Monzo pot transfers removed: ${parsed.length - filtered.length}`);
-          return filtered;
-        })()
-      : parsed;
+    const filteredParsed = parsed;
 
     const rawTransactions = filteredParsed
       .map((t) => {
@@ -389,26 +389,184 @@ ${text}`,
 // Bank detection from raw extracted text
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// Monzo helpers
+// Monzo dedicated parser
+// Handles Monzo's unique PDF layout: multi-line transactions, pot pages,
+// and internal pot transfers.
 // ---------------------------------------------------------------------------
 
-// Strip everything from "Pot statement" onwards — Monzo appends pot pages
-function stripMonzoPotPages(text) {
-  const idx = text.search(/Pot statement/i);
-  return idx === -1 ? text : text.substring(0, idx);
+const MONZO_DATE_RE = /^\d{2}\/\d{2}\/\d{4}/;
+// A "complete" transaction line ends with two numbers: amount and balance
+const MONZO_COMPLETE_RE = /-?\d[\d,]*\.\d{2}\s+-?\d[\d,]*\.\d{2}\s*$/;
+
+// Descriptions to exclude entirely (case-insensitive, matched after trim)
+const MONZO_EXCLUDE_DESC = [
+  "transfer from pot",
+  "transfer to pot",
+  "from pot",
+  "to pot",
+  "this relates to a previous transaction",
+  "withdrawal",
+  "deposit",
+];
+
+function isMonzoExcluded(desc) {
+  const d = (desc || "").trim().toLowerCase();
+  return MONZO_EXCLUDE_DESC.some((ex) => d === ex || d.includes(ex));
 }
 
-// Returns true if a description is a Monzo internal pot transfer to filter out
-function isMonzoPotTransfer(description) {
-  if (!description) return false;
-  const d = description.trim().toLowerCase();
-  return (
-    d.includes("transfer from pot") ||
-    d.includes("transfer to pot") ||
-    d.includes("from pot") ||
-    d.includes("to pot") ||
-    d.includes("this relates to a previous transaction")
-  );
+function parseMonzoStatement(rawText) {
+  const allLines = rawText.split("\n").map((l) => l.trimEnd());
+
+  // STEP 1 — Cut at "Pot statement" page
+  let cutAt = allLines.length;
+  for (let i = 0; i < allLines.length; i++) {
+    if (/^Pot statement\s*$/i.test(allLines[i].trim())) {
+      cutAt = i;
+      break;
+    }
+  }
+  const lines = allLines.slice(0, cutAt);
+  console.log(`Monzo: using ${lines.length} lines (cut ${allLines.length - cutAt} pot-page lines)`);
+
+  // STEP 2 — Skip header, find transaction start
+  let startIdx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (/Date\s+Description.*Amount.*Balance/i.test(lines[i])) {
+      startIdx = i + 1;
+      break;
+    }
+  }
+  console.log(`Monzo: transaction lines start at index ${startIdx}`);
+
+  // STEP 3 — Reconstruct multi-line transactions
+  // Each reconstructed entry: { raw: "DD/MM/YYYY <desc> <amount> <balance>" }
+  const reconstructed = [];
+  let i = startIdx;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (!line) { i++; continue; }
+
+    // Skip known noise lines early
+    if (isMonzoExcluded(line)) { i++; continue; }
+
+    const hasDate    = MONZO_DATE_RE.test(line);
+    const hasNumbers = MONZO_COMPLETE_RE.test(line);
+
+    if (hasDate && hasNumbers) {
+      // Complete transaction on this line — check if next line is a continuation
+      let full = line;
+      let j = i + 1;
+      while (j < lines.length) {
+        const next = lines[j].trim();
+        if (!next) { j++; break; }
+        // Stop if next line is a new transaction or noise
+        if (MONZO_DATE_RE.test(next)) break;
+        if (isMonzoExcluded(next)) { j++; break; }
+        if (/^Pot statement\s*$/i.test(next)) break;
+        // Continuation: insert before the trailing two numbers
+        // Strip trailing numbers from full, append continuation, re-append numbers
+        const trailingMatch = full.match(/(-?\d[\d,]*\.\d{2}\s+-?\d[\d,]*\.\d{2})\s*$/);
+        if (trailingMatch) {
+          const nums = trailingMatch[1];
+          full = full.slice(0, full.lastIndexOf(nums)).trimEnd() + " " + next + " " + nums;
+        }
+        j++;
+        break; // Only one continuation line
+      }
+      reconstructed.push(full);
+      i = j;
+      continue;
+    }
+
+    if (!hasDate && hasNumbers) {
+      // Orphan line with amounts but no date — skip (e.g. closing balance rows)
+      i++;
+      continue;
+    }
+
+    if (!hasDate && !hasNumbers) {
+      // Possible description prefix for the NEXT line
+      const next = lines[i + 1]?.trim() || "";
+      if (MONZO_DATE_RE.test(next) && MONZO_COMPLETE_RE.test(next)) {
+        // Prepend this line's text as description prefix to the next line
+        const combined = line + " " + next;
+        // Check if there's a further continuation after that
+        let full = combined;
+        const afterNext = lines[i + 2]?.trim() || "";
+        if (afterNext && !MONZO_DATE_RE.test(afterNext) && !isMonzoExcluded(afterNext) && !/^Pot statement/i.test(afterNext)) {
+          const trailingMatch = full.match(/(-?\d[\d,]*\.\d{2}\s+-?\d[\d,]*\.\d{2})\s*$/);
+          if (trailingMatch) {
+            const nums = trailingMatch[1];
+            full = full.slice(0, full.lastIndexOf(nums)).trimEnd() + " " + afterNext + " " + nums;
+          }
+          i += 3;
+        } else {
+          i += 2;
+        }
+        if (!isMonzoExcluded(full)) reconstructed.push(full);
+      } else {
+        i++;
+      }
+      continue;
+    }
+
+    // hasDate && !hasNumbers — date line missing amounts, look ahead
+    const next = lines[i + 1]?.trim() || "";
+    if (next && !MONZO_DATE_RE.test(next) && MONZO_COMPLETE_RE.test(next)) {
+      const combined = line + " " + next;
+      if (!isMonzoExcluded(combined)) reconstructed.push(combined);
+      i += 2;
+    } else {
+      i++;
+    }
+  }
+
+  console.log(`Monzo: ${reconstructed.length} raw transaction lines reconstructed`);
+
+  // STEP 5 — Parse each reconstructed line into a transaction object
+  const transactions = [];
+  for (const raw of reconstructed) {
+    // Extract trailing two numbers (amount, balance)
+    const numMatch = raw.match(/(-?\d[\d,]*\.\d{2})\s+(-?\d[\d,]*\.\d{2})\s*$/);
+    if (!numMatch) continue;
+
+    const amount  = parseFloat(numMatch[1].replace(/,/g, ""));
+    // balance = numMatch[2] (available if needed)
+
+    // Extract date from start
+    const dateMatch = raw.match(/(\d{2}\/\d{2}\/\d{4})/);
+    if (!dateMatch) continue;
+    const rawDate = dateMatch[1]; // DD/MM/YYYY
+
+    // Description = everything between date and the trailing two numbers
+    const afterDate = raw.slice(raw.indexOf(rawDate) + rawDate.length).trimStart();
+    const descRaw = afterDate.slice(0, afterDate.lastIndexOf(numMatch[0])).trim();
+    // Clean up "GBR" suffix and extra whitespace
+    const description = descRaw.replace(/\s+GBR\s*$/i, "").replace(/\s+/g, " ").trim();
+
+    if (!description || isMonzoExcluded(description)) continue;
+
+    // Convert DD/MM/YYYY → "DD Mon YYYY" for normaliseDate
+    const [dd, mm, yyyy] = rawDate.split("/");
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const dateStr = `${dd} ${MONTHS[parseInt(mm, 10) - 1]} ${yyyy}`;
+
+    const type = amount < 0 ? "debit" : "credit";
+
+    transactions.push({
+      date: dateStr,
+      description,
+      amount: Math.abs(amount),
+      type,
+      balance: parseFloat(numMatch[2].replace(/,/g, "")),
+    });
+  }
+
+  console.log(`Monzo: ${transactions.length} transactions parsed`);
+  const potRemoved = reconstructed.length - transactions.length;
+  console.log(`Monzo pot transfers / noise removed: ${potRemoved}`);
+  return transactions;
 }
 
 // ---------------------------------------------------------------------------
