@@ -444,7 +444,9 @@ export default function Home() {
             </div>
           </h1>
           <p className="text-slate-500 mx-auto mb-10 scroll-animate" style={{ fontSize: "1.15rem", lineHeight: 1.75, maxWidth: 600, transitionDelay: "0.1s" }}>
-            Upload a bank statement. Get clean, usable data in seconds.<br />
+            Stop guessing where your money goes.<br />
+            Upload your bank statement and get instant clarity —<br />
+            spending categories, insights, and clean data.<br />
             No bank login. No account. No data stored. Ever.
           </p>
           <div className="hero-cta-group mb-10 scroll-animate" style={{ transitionDelay: "0.15s" }}>
@@ -456,26 +458,28 @@ export default function Home() {
             </button>
           </div>
           <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: "12px 24px",
-            padding: "16px 24px",
-            background: "rgba(255,255,255,0.7)",
-            borderRadius: "16px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "8px 24px",
+            marginTop: 32,
+            padding: "20px 28px",
+            background: "white",
+            borderRadius: 16,
             border: "1px solid #e5e7eb",
-            maxWidth: "640px",
-            margin: "0 auto",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            maxWidth: 520,
+            margin: "32px auto 0 auto",
           }}>
             {[
-              { icon: "🚫", text: "We never connect to your bank" },
-              { icon: "🗑️", text: "Files deleted immediately after processing" },
-              { icon: "👁️", text: "We never see your transactions" },
-              { icon: "🇬🇧", text: "UK GDPR compliant" },
-            ].map(({ icon, text }) => (
-              <span key={text} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "#6b7280" }}>
-                {icon} {text}
-              </span>
+              "No bank connections — ever",
+              "Files deleted immediately",
+              "Your data is never sold",
+              "Built for privacy by design",
+            ].map((text) => (
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.82rem", color: "#374151", fontWeight: 500 }}>
+                <span style={{ color: "#16a34a", fontSize: 16, flexShrink: 0 }}>✓</span>
+                {text}
+              </div>
             ))}
           </div>
         </div>
@@ -538,7 +542,15 @@ export default function Home() {
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Who It&apos;s For</p>
-            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)" }}>Built for individuals. Trusted by accountants.</h2>
+            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 24 }}>Which one are you?</h2>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 32, flexWrap: "wrap" }}>
+              <div style={{ padding: "8px 20px", borderRadius: 999, background: "#f3f0ff", color: "#6d28d9", fontWeight: 600, fontSize: "0.875rem", border: "2px solid #6d28d9" }}>
+                👤 I manage my own money
+              </div>
+              <div style={{ padding: "8px 20px", borderRadius: 999, background: "#eff6ff", color: "#1d4ed8", fontWeight: 600, fontSize: "0.875rem", border: "2px solid #2563eb" }}>
+                📊 I work with client statements
+              </div>
+            </div>
           </div>
           <div className="audience-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "stretch", maxWidth: 1100, margin: "0 auto" }}>
             {/* Individuals card */}
@@ -1260,7 +1272,7 @@ export default function Home() {
                 <span className="text-white font-bold text-lg">StatementFlow</span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-                Turn any bank statement into instant insights.
+                Finally understand your money.
               </p>
             </div>
 

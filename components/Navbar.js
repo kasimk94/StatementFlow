@@ -342,13 +342,19 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
           style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none", flexShrink: 0 }}
         >
           <LogoIcon size={30} />
-          <span style={{
-            fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
-            background: "linear-gradient(135deg, #1a1a2e 0%, #6c5ce7 100%)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-          }}>
-            StatementFlow
-          </span>
+          <div>
+            <span style={{
+              fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
+              background: "linear-gradient(135deg, #1a1a2e 0%, #6c5ce7 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+              display: "block",
+            }}>
+              StatementFlow
+            </span>
+            <div style={{ fontSize: "0.65rem", color: "#9ca3af", letterSpacing: "0.05em", marginTop: 2 }}>
+              Finally understand your money
+            </div>
+          </div>
         </Link>
 
         {/* Desktop nav links with sliding pill */}
