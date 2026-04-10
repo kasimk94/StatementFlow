@@ -351,9 +351,6 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
             }}>
               StatementFlow
             </span>
-            <div style={{ fontSize: "0.65rem", color: "#9ca3af", letterSpacing: "0.05em", marginTop: 2 }}>
-              Finally understand your money
-            </div>
           </div>
         </Link>
 
