@@ -55,8 +55,12 @@ export async function POST(req) {
     const bankName = detectBank(rawText);
     console.log("Bank detected:", bankName);
 
+    // ── 5b. Monzo: strip Pot statement pages before parsing ─────────────────
+    const isMonzo = /monzo\.com|MONZGB2L|Monzo Bank Limited/i.test(rawText);
+    const textToParse = isMonzo ? stripMonzoPotPages(rawText) : rawText;
+
     // ── 6. Structure transactions via Claude (text already extracted) ────────
-    const parsed = await structureTransactions(rawText);
+    const parsed = await structureTransactions(textToParse);
     console.log("Transactions structured:", parsed.length);
 
     if (parsed.length === 0) {
@@ -70,7 +74,12 @@ export async function POST(req) {
     }
 
     // ── 7. Categorise + normalise via local regex engine (zero cost) ─────────
-    const rawTransactions = parsed
+    // Filter out Monzo internal pot movements and noise lines
+    const filteredParsed = isMonzo
+      ? parsed.filter((t) => !isMonzoPotTransfer(t.description))
+      : parsed;
+
+    const rawTransactions = filteredParsed
       .map((t) => {
         const amount =
           typeof t.amount === "number"
@@ -310,6 +319,13 @@ CRITICAL PAYPAL RULE: When you see a transaction containing 'Paypal' or 'PayPal'
 - 'Card Payment to Paypal *Asdastores' → description: 'PayPal Asda Stores'
 Never use just 'PayPal' as the description - always include what follows it, expanding truncated names where obvious.
 
+MONZO RULES (apply if this looks like a Monzo statement):
+- EXCLUDE any transaction where description contains "Transfer from Pot" or "Transfer to Pot" — these are internal Monzo savings pot movements, not real income or spending. Do not include them in the output at all.
+- EXCLUDE any line containing only "This relates to a previous transaction" — it is a note, not a transaction.
+- MULTI-LINE TRANSACTIONS: Some Monzo transactions split across two lines. If a line starts with a date (DD/MM/YYYY) but has no amount, look at the next line and combine them into a single transaction. Example: "31/03/2026 Kasam Khalid (Faster Payments) Reference:" followed by "Revolut -99.00 4.94" → one transaction with description "Kasam Khalid (Faster Payments)" and amount 99.00.
+- Descriptions containing "(P2P Payment)" or "(Faster Payments)" → these are bank transfers between people.
+- "Flex" entries → type is "debit" (Monzo's buy-now-pay-later product).
+
 Bank statement text:
 ${text}`,
         },
@@ -368,10 +384,30 @@ ${text}`,
 // ---------------------------------------------------------------------------
 // Bank detection from raw extracted text
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Monzo helpers
+// ---------------------------------------------------------------------------
+
+// Strip everything from "Pot statement" onwards — Monzo appends pot pages
+function stripMonzoPotPages(text) {
+  const idx = text.search(/Pot statement/i);
+  return idx === -1 ? text : text.substring(0, idx);
+}
+
+// Returns true if a description is a Monzo internal pot transfer to filter out
+function isMonzoPotTransfer(description) {
+  if (!description) return false;
+  return /transfer (from|to) pot/i.test(description) ||
+    /this relates to a previous transaction/i.test(description);
+}
+
+// ---------------------------------------------------------------------------
+// Bank detection from raw extracted text
+// ---------------------------------------------------------------------------
 function detectBank(text) {
   const t = text.toLowerCase();
   if (t.includes("barclays"))                                    return "Barclays";
-  if (t.includes("monzo"))                                       return "Monzo";
+  if (t.includes("monzo.com") || t.includes("monzgb2l") || t.includes("monzo bank limited") || t.includes("monzo")) return "Monzo";
   if (t.includes("starling"))                                    return "Starling Bank";
   if (t.includes("hsbc"))                                        return "HSBC";
   if (t.includes("lloyds"))                                      return "Lloyds";
@@ -791,6 +827,12 @@ function looksLikePersonName(desc) {
 function categoriseTransaction(rawDesc, amount, type) {
   const raw     = (rawDesc || "").toLowerCase();
   const cleaned = cleanDescription(rawDesc || "");
+
+  // Step 0 — Monzo-specific rules (before all other checks)
+  if (/\(p2p payment\)|\(faster payments\)/i.test(raw))
+    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false };
+  if (/\bflex\b/i.test(raw) && type === "debit")
+    return { category: "Finance & Bills", exclude: false };
 
   // Step 0a — Explicit credit transfer patterns (must beat all other rules)
   if (
