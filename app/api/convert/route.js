@@ -414,7 +414,13 @@ const MONZO_EXCLUDE_DESC = [
 
 function isMonzoExcluded(desc) {
   const d = (desc || "").trim().toLowerCase();
-  return MONZO_EXCLUDE_DESC.some((ex) => d === ex || d.includes(ex));
+  return (
+    d.includes("transfer from pot") ||
+    d.includes("transfer to pot") ||
+    d === "withdrawal" ||
+    d === "deposit" ||
+    d.includes("this relates to a previous transaction")
+  );
 }
 
 function parseMonzoStatement(rawText) {
@@ -558,6 +564,10 @@ function parseMonzoStatement(rawText) {
     const descRaw = afterDate.slice(0, afterDate.lastIndexOf(numMatch[0])).trim();
     // Clean up "GBR" suffix and extra whitespace
     const description = descRaw.replace(/\s+GBR\s*$/i, "").replace(/\s+/g, " ").trim();
+
+    if (description.toLowerCase().includes("pot") || description.toLowerCase().includes("transfer")) {
+      console.log("POT/TRANSFER found in description:", JSON.stringify(description));
+    }
 
     if (!description || isMonzoExcluded(description)) continue;
 
