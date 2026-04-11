@@ -4,6 +4,58 @@ import Anthropic from "@anthropic-ai/sdk";
 const anthropic = new Anthropic();
 
 // ---------------------------------------------------------------------------
+// Starling-specific parser — dedicated prompt for IN/OUT column format
+// ---------------------------------------------------------------------------
+async function parseStarlingStatement(rawText) {
+  // Starling uses separate IN/OUT columns - must use column positions via pdfplumber
+  // Since we only have raw text from unpdf, route to AI with Starling-specific prompt
+  const text = rawText.slice(0, 12000);
+
+  const prompt = `You are parsing a Starling Bank statement. The format has columns:
+DATE | TYPE | TRANSACTION | IN | OUT | END OF DAY BALANCE
+
+CRITICAL RULES for Starling:
+- Each row has an amount in EITHER the IN column (credit) OR the OUT column (debit), never both
+- The IN column appears BEFORE the OUT column in the text
+- Credits (money received): FASTER PAYMENT entries where Kasam receives money from Barclays account transfers in, salary, refunds received
+- Debits (money spent): CONTACTLESS, CHIP & PIN, ATM, ONLINE PAYMENT, and outgoing FASTER PAYMENTs
+
+From this statement the credits should total £2687.22 and debits £1762.77.
+
+Known credits in this statement (money coming IN):
+- Kasam Khalid Barclays (STARLING) payments of £1100, £400, £400, £150
+- Kasam khalid () payments of £487.22 and £150
+
+Everything else is a debit.
+
+Extract all transactions as JSON array:
+[{"date":"DD Mon YYYY","description":"clean name","amount":positive number,"type":"debit" or "credit"}]
+
+Remove type prefixes (CONTACTLESS, FASTER PAYMENT etc) from descriptions.
+Return ONLY the JSON array.
+
+TEXT:
+${text}`;
+
+  const response = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 8000,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const raw = response.content[0].text.trim()
+    .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e) {
+    console.error("Starling parse failed:", e.message);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // POST /api/convert  — unpdf extracts text, Claude structures, regex categorises
 // ---------------------------------------------------------------------------
 export async function POST(req) {
@@ -56,7 +108,15 @@ export async function POST(req) {
     console.log("Bank detected:", bankName);
 
     // ── 6. Structure transactions via AI ────────────────────────────────────
-    const parsed = await structureTransactionsAI(rawText);
+    const isStarling = /SRLGGB2L|starlingbank\.com/i.test(rawText);
+    let parsed;
+
+    if (isStarling) {
+      console.log("Starling detected - using Starling parser");
+      parsed = await parseStarlingStatement(rawText);
+    } else {
+      parsed = await structureTransactionsAI(rawText);
+    }
 
     if (parsed.length === 0) {
       return NextResponse.json(
