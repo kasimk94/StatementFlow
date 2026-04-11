@@ -70,7 +70,17 @@ export async function POST(req) {
     }
 
     // ── 7. Categorise + normalise via local regex engine (zero cost) ─────────
-    const filteredParsed = parsed;
+    const filteredParsed = parsed.filter(t => {
+      const d = (t.description || '').toLowerCase();
+      return !d.includes('transfer from pot') &&
+             !d.includes('transfer to pot') &&
+             !d.includes('to pot') &&
+             !d.includes('from pot') &&
+             d !== 'withdrawal' &&
+             d !== 'deposit';
+    });
+
+    console.log(`Filtered ${parsed.length - filteredParsed.length} pot transfers. Remaining: ${filteredParsed.length}`);
 
     const rawTransactions = filteredParsed
       .map((t) => {
