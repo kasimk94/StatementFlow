@@ -330,7 +330,7 @@ ${text}`;
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 4000,
+    max_tokens: 8000,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -344,8 +344,20 @@ ${text}`;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed;
-  } catch (e) {
+  } catch(e) {
     console.error("Parse failed:", e.message, raw.slice(0, 300));
+    // Try to salvage partial JSON by finding last complete object
+    const lastBrace = raw.lastIndexOf('},');
+    if (lastBrace > 100) {
+      try {
+        const salvaged = raw.slice(0, lastBrace + 1) + ']';
+        const partial = JSON.parse(salvaged);
+        if (Array.isArray(partial) && partial.length > 0) {
+          console.log("Salvaged", partial.length, "transactions from partial JSON");
+          return partial;
+        }
+      } catch(e2) {}
+    }
     return [];
   }
 }
