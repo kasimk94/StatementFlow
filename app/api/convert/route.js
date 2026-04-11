@@ -55,11 +55,8 @@ export async function POST(req) {
     const bankName = detectBank(rawText);
     console.log("Bank detected:", bankName);
 
-    // ── 6. Structure transactions — deterministic first, AI fallback ────────
-    let parsed = parseUniversal(rawText);
-    if (parsed.length === 0) {
-      parsed = await structureTransactionsAI(rawText);
-    }
+    // ── 6. Structure transactions via AI ────────────────────────────────────
+    const parsed = await structureTransactionsAI(rawText);
 
     if (parsed.length === 0) {
       return NextResponse.json(
@@ -245,95 +242,6 @@ export async function POST(req) {
 }
 
 // ---------------------------------------------------------------------------
-// Deterministic universal parser — regex-based, zero cost, zero latency
-// Falls back to AI (structureTransactionsAI) if it finds nothing
-// ---------------------------------------------------------------------------
-function parseUniversal(rawText) {
-  // Detect Starling format (has separate IN/OUT columns with £ signs)
-  const isStarling = /SRLGGB2L|starlingbank\.com|Starling Bank/i.test(rawText);
-  if (isStarling) {
-    console.log("Starling format detected — routing to AI parser");
-    return []; // Force fallback to AI parser
-  }
-
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const EXCLUDE = ['transfer from pot','transfer to pot','this relates to a previous transaction'];
-  const NUM_PAIR = /(-?\d[\d,]*\.\d{2})\s+(\d[\d,]*\.\d{2})/;
-
-  // Collapse to single line (handles both unpdf and newline-separated output)
-  let raw = rawText.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-
-  // Cut pot pages
-  const potIdx = raw.indexOf('Pot statement');
-  if (potIdx > 0) raw = raw.slice(0, potIdx);
-
-  // Cut header
-  const header = 'Date Description (GBP) Amount (GBP) Balance';
-  const hIdx = raw.indexOf(header);
-  if (hIdx > 0) raw = raw.slice(hIdx + header.length);
-
-  // Find all date positions
-  const dates = [];
-  let m;
-  const pat = /\d{2}\/\d{2}\/\d{4}/g;
-  while ((m = pat.exec(raw)) !== null) {
-    dates.push({ start: m.index, end: m.index + m[0].length, date: m[0] });
-  }
-
-  if (dates.length === 0) return [];
-
-  function fmtDate(d) {
-    const [dd,mm,yyyy] = d.split('/');
-    return `${dd} ${MONTHS[parseInt(mm)-1]} ${yyyy}`;
-  }
-
-  const transactions = [];
-
-  for (let i = 0; i < dates.length; i++) {
-    const { start, end, date } = dates[i];
-    const nextStart = i + 1 < dates.length ? dates[i+1].start : raw.length;
-
-    // Text after this date up to next date
-    const after = raw.slice(end, nextStart).trim();
-
-    // Find first number pair
-    const nm = NUM_PAIR.exec(after);
-    if (!nm) continue;
-
-    const amount = parseFloat(nm[1].replace(/,/g, ''));
-    let desc = after.slice(0, nm.index).trim();
-
-    // Check for pre-date description (text between prev transaction numbers and this date)
-    if (i > 0) {
-      const prevEnd = dates[i-1].end;
-      const prevAfter = raw.slice(prevEnd, start);
-      const prevNm = NUM_PAIR.exec(prevAfter);
-      const prevNumEnd = prevNm ? prevEnd + prevNm.index + prevNm[0].length : prevEnd;
-      const between = raw.slice(prevNumEnd, start).trim().replace(/\s+/g, ' ');
-      if (between.length > 3 && !/^(Revolut|MONZO|GBR|USA|Zakat|Perfumes|amazon|novera|Sadaqa|Haircut|Reference:\s*\S+\s*)$/i.test(between)) {
-        desc = between + (desc ? ' ' + desc : '');
-      }
-    }
-
-    desc = desc.replace(/\s+GBR\s*$/i,'').replace(/\s+USA\s*$/i,'').replace(/\s+/g,' ').trim();
-
-    const dl = desc.toLowerCase();
-    if (EXCLUDE.some(ex => dl.includes(ex))) continue;
-    if (['withdrawal','deposit',''].includes(dl)) continue;
-
-    transactions.push({
-      date: fmtDate(date),
-      description: desc,
-      amount: Math.abs(amount),
-      type: amount < 0 ? 'debit' : 'credit'
-    });
-  }
-
-  console.log(`Universal parser: ${transactions.length} transactions`);
-  return transactions;
-}
-
-// ---------------------------------------------------------------------------
 // Re-liner — unpdf sometimes collapses all text to one line; inject newlines
 // before date tokens so the rest of the pipeline sees one transaction per line
 // ---------------------------------------------------------------------------
@@ -388,43 +296,47 @@ async function structureTransactionsAI(rawText) {
   const cleanText = potIdx > 0 ? rawText.slice(0, potIdx) : rawText;
   const text = cleanText.slice(0, 12000);
 
-  const prompt = `You are a Financial Auditor extracting data from a UK bank statement. You must be precise and follow these rules exactly.
+  const prompt = `You are a Financial Auditor extracting transactions from a UK bank statement. You must handle any bank format including Barclays, Monzo, Starling, HSBC, Lloyds, NatWest, Revolut, and others.
 
-STEP 1 - CLASSIFY every row into exactly one of these three buckets:
-- EXTERNAL_OUT: Real money leaving the account (purchases, bills, payments to people, transfers to other banks)
-- EXTERNAL_IN: Real money entering the account (salary, refunds, P2P received, transfers from other banks)
-- INTERNAL: Transfers between the person's own accounts/pots/vaults - these must be EXCLUDED from output
+STEP 1 - Pre-process the text:
+- Cut everything after "Pot statement" (Monzo pot pages)
+- Ignore page headers, bank registration details, FSCS text, interest rate tables
+- The statement period is between the opening and closing balance lines
 
-INTERNAL transfers to exclude:
-- Anything called "Transfer from Pot", "Transfer to Pot"
-- Anything called "Withdrawal" or "Deposit" without a merchant name
-- "This relates to a previous transaction"
-- Monzo Flex internal entries
-- Any pot statement pages (ignore everything after "Pot statement" heading)
+STEP 2 - Identify the format:
+FORMAT A - Single signed amount per row: DATE DESCRIPTION AMOUNT BALANCE
+  Example: "31/03/2026 TESCO STORES -6.45 4.94"
+  Negative = debit, positive = credit
 
-STEP 2 - For each EXTERNAL_OUT and EXTERNAL_IN transaction output:
+FORMAT B - Separate IN/OUT columns: DATE TYPE DESCRIPTION IN OUT BALANCE
+  Example: "01/03/2026 CONTACTLESS TESCO STORES £8.85 £4612.87"
+  Amount in IN column = credit, amount in OUT column = debit
+
+FORMAT C - Barclays style: DATE DESCRIPTION MONEY_OUT MONEY_IN BALANCE
+  Separate money out and money in columns, balance only shown periodically
+
+STEP 3 - Extract every real transaction with:
 {
   "date": "DD Mon YYYY",
-  "description": "clean merchant or sender name, no trailing GBR/USA/country codes",
+  "description": "clean merchant or person name",
   "amount": positive number always,
-  "type": "debit" for EXTERNAL_OUT, "credit" for EXTERNAL_IN
+  "type": "debit" or "credit"
 }
 
-STEP 3 - Transaction line format in the text:
-DATE | DESCRIPTION | AMOUNT | RUNNING_BALANCE
-The second-to-last number is the AMOUNT. The last number is the running balance — do NOT use it as the amount.
-Negative AMOUNT = debit. Positive AMOUNT = credit.
+STEP 4 - EXCLUDE these completely:
+- Monzo: "Transfer from Pot", "Transfer to Pot", "This relates to a previous transaction"
+- Any row that is just "Withdrawal" or "Deposit" with no merchant
+- Opening balance, closing balance, end balance rows
+- Interest rate rows, charge rows
 
-STEP 4 - Multi-line transactions: some descriptions wrap across lines. Combine them into one entry.
+STEP 5 - Clean descriptions:
+- Remove trailing GBR, USA, country codes
+- Remove payment type prefixes like "CONTACTLESS", "FASTER PAYMENT", "CHIP & PIN", "ATM", "DIRECT DEBIT", "Card Payment to", "Received From"
+- Keep the actual merchant or person name only
 
-STEP 5 - Some statements (like Starling) have separate IN and OUT columns with £ signs:
-"DATE TYPE DESCRIPTION IN OUT BALANCE"
-In this case, amounts in the IN column are credits, amounts in the OUT column are debits.
-Strip £ signs when parsing amounts.
+Return ONLY a valid JSON array. No markdown. No explanation. Start with [ end with ].
 
-Return ONLY a valid JSON array. No markdown, no explanation, no commentary. Start with [ and end with ].
-
-BANK STATEMENT TEXT:
+STATEMENT TEXT:
 ${text}`;
 
   const response = await anthropic.messages.create({
