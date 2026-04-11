@@ -284,98 +284,49 @@ async function extractTextFromPDF(buffer) {
 // Cost: ~$0.001 per statement with Haiku (16k chars ≈ 4k tokens input)
 // ---------------------------------------------------------------------------
 async function structureTransactions(rawText) {
+  // Truncate to avoid token limits
+  const text = rawText.slice(0, 15000);
+
+  const prompt = `You are an expert UK bank statement parser. Extract every real financial transaction from the text below.
+
+The text may be poorly formatted with multiple transactions on one line. Use dates (DD/MM/YYYY) and amounts to identify transactions.
+
+CRITICAL - DO NOT INCLUDE:
+- Lines containing "Transfer from Pot" or "Transfer to Pot"
+- Lines where description is only "Withdrawal" or "Deposit"
+- Lines saying "This relates to a previous transaction"
+- Page headers, bank details, FSCS text
+
+Each transaction line format is: DATE DESCRIPTION AMOUNT BALANCE
+The AMOUNT is second-to-last number. BALANCE is the last number. Use AMOUNT not BALANCE.
+Negative amount = debit (money out). Positive amount = credit (money in).
+
+Return ONLY a JSON array. No markdown, no explanation, just the array.
+Format: [{"date":"DD Mon YYYY","description":"merchant name","amount":1.23,"type":"debit"},...]
+
+Clean descriptions: remove trailing GBR, USA, country codes.
+
+TEXT:
+${text}`;
+
+  const response = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 4000,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const raw = response.content[0].text.trim();
+
+  // Strip markdown if present
+  const clean = raw.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/```\s*$/, "").trim();
+
   try {
-    // Truncate to keep costs minimal — first 50k chars covers any real statement
-    const text = rawText.length > 50000 ? rawText.substring(0, 50000) : rawText;
-
-    const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 8000,
-      messages: [
-        {
-          role: "user",
-          content: `You are an expert UK bank statement parser. Extract every real financial transaction from the text below.
-
-IMPORTANT CONTEXT: The text may be poorly formatted — multiple transactions may appear on one line, or one transaction may span multiple lines. Use the pattern of dates (DD/MM/YYYY) and amounts (numbers ending in .XX) to identify transaction boundaries.
-
-RETURN FORMAT: A JSON array only, no other text, no markdown, no explanation.
-Each item: { "date": "DD Mon YYYY", "description": "cleaned merchant name", "amount": number (always positive), "type": "debit" or "credit" }
-
-RULES:
-1. Debits = money leaving the account (negative amounts, purchases, payments out)
-2. Credits = money entering the account (positive amounts, income, refunds, transfers in)
-3. Each transaction line has: DATE | DESCRIPTION | AMOUNT | RUNNING BALANCE
-   The AMOUNT is the second-to-last number, the BALANCE is the last number
-4. SKIP these — they are NOT real transactions:
-   - Any entry containing "Transfer from Pot" or "Transfer to Pot" (Monzo internal movements)
-   - Any entry where description is only "Withdrawal" or "Deposit"
-   - Any entry saying "This relates to a previous transaction"
-   - Page headers, bank registration details, FSCS information
-5. Multi-line transactions: if a description appears before or after a date+amount pair, combine them into one transaction
-6. Clean descriptions: remove trailing "GBR", "USA", country codes, excessive whitespace
-7. Do not include the running balance as the amount — only the actual transaction amount
-
-Bank statement text:
-${text}
-
-Return only the JSON array.`,
-        },
-      ],
-    });
-
-    console.log(
-      "Claude tokens used:",
-      response.usage.input_tokens, "in,",
-      response.usage.output_tokens, "out"
-    );
-
-    const content = response.content[0].text;
-    console.log("Claude raw response length:", content.length);
-    console.log("Claude response preview:", content.substring(0, 200));
-
-    // Strip markdown fences and trim
-    const cleaned = content.replace(/```json|```/g, "").trim();
-
-    // Find the JSON array boundaries
-    const arrayStart = cleaned.indexOf("[");
-    const arrayEnd   = cleaned.lastIndexOf("]");
-
-    if (arrayStart === -1) {
-      console.error("No JSON array in Claude response:", cleaned.substring(0, 500));
-      return [];
-    }
-
-    // Try full parse first (arrayEnd may be -1 if truncated — fall through to salvage)
-    if (arrayEnd > arrayStart) {
-      try {
-        const parsed = JSON.parse(cleaned.substring(arrayStart, arrayEnd + 1));
-        if (!Array.isArray(parsed)) {
-          console.error("Claude returned non-array JSON");
-          return [];
-        }
-        console.log("Claude structured transactions:", parsed.length);
-        return parsed;
-      } catch (e) {
-        console.log("Full parse failed, attempting salvage...", e.message);
-      }
-    }
-
-    // Salvage: find the last complete object and close the array
-    const partial = cleaned.substring(arrayStart);
-    const lastComplete = partial.lastIndexOf("},");
-    if (lastComplete > 0) {
-      try {
-        const salvaged = JSON.parse(partial.substring(0, lastComplete + 1) + "]");
-        console.log("Salvaged transactions:", salvaged.length);
-        return Array.isArray(salvaged) ? salvaged : [];
-      } catch (e2) {
-        console.error("Salvage also failed:", e2.message);
-      }
-    }
-
+    const parsed = JSON.parse(clean);
+    if (Array.isArray(parsed)) return parsed;
     return [];
-  } catch (err) {
-    console.error("Claude structuring error:", err.message);
+  } catch (e) {
+    console.error("JSON parse failed:", e.message);
+    console.error("Raw response:", clean.slice(0, 500));
     return [];
   }
 }
