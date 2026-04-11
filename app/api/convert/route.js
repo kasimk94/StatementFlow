@@ -292,7 +292,10 @@ async function extractTextFromPDF(buffer) {
 // Cost: ~$0.001 per statement with Haiku (16k chars ≈ 4k tokens input)
 // ---------------------------------------------------------------------------
 async function structureTransactions(rawText) {
-  const text = rawText.slice(0, 15000);
+  // Strip everything from "Pot statement" onwards to reduce token usage
+  const potIdx = rawText.indexOf('Pot statement');
+  const cleanText = potIdx > 0 ? rawText.slice(0, potIdx) : rawText;
+  const text = cleanText.slice(0, 12000);
 
   const prompt = `You are a Financial Auditor extracting data from a UK bank statement. You must be precise and follow these rules exactly.
 
@@ -330,7 +333,7 @@ ${text}`;
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 8000,
+    max_tokens: 16000,
     messages: [{ role: "user", content: prompt }],
   });
 
