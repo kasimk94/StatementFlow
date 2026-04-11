@@ -298,6 +298,16 @@ async function structureTransactionsAI(rawText) {
 
   const prompt = `You are a Financial Auditor extracting transactions from a UK bank statement. You must handle any bank format including Barclays, Monzo, Starling, HSBC, Lloyds, NatWest, Revolut, and others.
 
+CRITICAL FOR STARLING FORMAT:
+Starling statements have columns: DATE | TYPE | TRANSACTION | IN | OUT | END OF DAY BALANCE
+Each row has either an IN amount OR an OUT amount, never both.
+The IN column comes before the OUT column in the text.
+To determine debit vs credit: if the amount appears in the OUT column position it is a debit, if in the IN column it is a credit.
+In Starling text the IN and OUT amounts appear as £X.XX after the description.
+The last £X.XX on each line is always the running balance - ignore it.
+The second-to-last £X.XX is the transaction amount.
+If there are two £X.XX values before the balance, the first is IN (credit) and second is OUT (debit).
+
 STEP 1 - Pre-process the text:
 - Cut everything after "Pot statement" (Monzo pot pages)
 - Ignore page headers, bank registration details, FSCS text, interest rate tables
@@ -378,9 +388,9 @@ ${text}`;
 // ---------------------------------------------------------------------------
 function detectBank(text) {
   const t = text.toLowerCase();
+  if (t.includes("srlggb2l") || t.includes("starlingbank.com") || t.includes("starling bank")) return "Starling Bank";
   if (t.includes("barclays"))                                    return "Barclays";
   if (t.includes("monzo.com") || t.includes("monzgb2l") || t.includes("monzo bank limited") || t.includes("monzo")) return "Monzo";
-  if (t.includes("starling"))                                    return "Starling Bank";
   if (t.includes("hsbc"))                                        return "HSBC";
   if (t.includes("lloyds"))                                      return "Lloyds";
   if (t.includes("natwest"))                                     return "NatWest";
