@@ -120,8 +120,13 @@ export async function POST(req) {
       );
     }
 
+    // ── 7b. Safety filter — strip any pot transfers Claude missed ──────────
+    const cleanedTransactions = rawTransactions.filter(t =>
+      !/(transfer (from|to) pot)/i.test(t.description || "")
+    );
+
     // ── 8. Apply reversal / refund netting + transactionType ───────────────
-    const transactions = applyReversals(rawTransactions).map(tx => ({
+    const transactions = applyReversals(cleanedTransactions).map(tx => ({
       ...tx,
       transactionType: classifyTransactionType(tx),
     }));
@@ -296,9 +301,17 @@ Rules:
 - Each transaction: { "date": "DD Mon YYYY", "description": "merchant name", "amount": number (always positive), "type": "debit" or "credit" }
 - Debits = money out (payments, purchases, withdrawals)
 - Credits = money in (salary, transfers in, refunds received)
-- EXCLUDE any internal pot transfers: lines containing "Transfer from Pot" or "Transfer to Pot"
-- EXCLUDE lines that say only "Withdrawal" or "Deposit" without a real merchant name
-- EXCLUDE "This relates to a previous transaction"
+CRITICAL EXCLUSIONS - do NOT include these as transactions under any circumstances:
+- Any line containing "Transfer from Pot" — this is an internal Monzo movement, not real income
+- Any line containing "Transfer to Pot" — this is an internal Monzo movement, not real spending
+- Any line where description is exactly "Withdrawal" or "Deposit" (pot page entries)
+- Any line saying "This relates to a previous transaction"
+- Any line saying "Pot statement" or anything after it
+
+These are NOT real transactions. If you include them the financial totals will be wrong.
+Only include transactions where money genuinely left or entered the person's life — purchases, payments to people, salary, refunds.
+
+OTHER EXCLUSIONS:
 - EXCLUDE opening/closing balance rows and summary rows (Money in, Money out totals)
 - Clean merchant names: remove trailing country codes like "GBR", "USA", remove location suffixes
 - Multi-line transactions: combine them into one entry with the correct amount
