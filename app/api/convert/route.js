@@ -74,8 +74,6 @@ export async function POST(req) {
       const d = (t.description || '').toLowerCase();
       return !d.includes('transfer from pot') &&
              !d.includes('transfer to pot') &&
-             !d.includes('to pot') &&
-             !d.includes('from pot') &&
              d !== 'withdrawal' &&
              d !== 'deposit';
     });
@@ -294,29 +292,40 @@ async function extractTextFromPDF(buffer) {
 // Cost: ~$0.001 per statement with Haiku (16k chars ≈ 4k tokens input)
 // ---------------------------------------------------------------------------
 async function structureTransactions(rawText) {
-  // Truncate to avoid token limits
   const text = rawText.slice(0, 15000);
 
-  const prompt = `You are an expert UK bank statement parser. Extract every real financial transaction from the text below.
+  const prompt = `You are a Financial Auditor extracting data from a UK bank statement. You must be precise and follow these rules exactly.
 
-The text may be poorly formatted with multiple transactions on one line. Use dates (DD/MM/YYYY) and amounts to identify transactions.
+STEP 1 - CLASSIFY every row into exactly one of these three buckets:
+- EXTERNAL_OUT: Real money leaving the account (purchases, bills, payments to people, transfers to other banks)
+- EXTERNAL_IN: Real money entering the account (salary, refunds, P2P received, transfers from other banks)
+- INTERNAL: Transfers between the person's own accounts/pots/vaults - these must be EXCLUDED from output
 
-CRITICAL - DO NOT INCLUDE:
-- Lines containing "Transfer from Pot" or "Transfer to Pot"
-- Lines where description is only "Withdrawal" or "Deposit"
-- Lines saying "This relates to a previous transaction"
-- Page headers, bank details, FSCS text
+INTERNAL transfers to exclude:
+- Anything called "Transfer from Pot", "Transfer to Pot"
+- Anything called "Withdrawal" or "Deposit" without a merchant name
+- "This relates to a previous transaction"
+- Monzo Flex internal entries
+- Any pot statement pages (ignore everything after "Pot statement" heading)
 
-Each transaction line format is: DATE DESCRIPTION AMOUNT BALANCE
-The AMOUNT is second-to-last number. BALANCE is the last number. Use AMOUNT not BALANCE.
-Negative amount = debit (money out). Positive amount = credit (money in).
+STEP 2 - For each EXTERNAL_OUT and EXTERNAL_IN transaction output:
+{
+  "date": "DD Mon YYYY",
+  "description": "clean merchant or sender name, no trailing GBR/USA/country codes",
+  "amount": positive number always,
+  "type": "debit" for EXTERNAL_OUT, "credit" for EXTERNAL_IN
+}
 
-Return ONLY a JSON array. No markdown, no explanation, just the array.
-Format: [{"date":"DD Mon YYYY","description":"merchant name","amount":1.23,"type":"debit"},...]
+STEP 3 - Transaction line format in the text:
+DATE | DESCRIPTION | AMOUNT | RUNNING_BALANCE
+The second-to-last number is the AMOUNT. The last number is the running balance — do NOT use it as the amount.
+Negative AMOUNT = debit. Positive AMOUNT = credit.
 
-Clean descriptions: remove trailing GBR, USA, country codes.
+STEP 4 - Multi-line transactions: some descriptions wrap across lines. Combine them into one entry.
 
-TEXT:
+Return ONLY a valid JSON array. No markdown, no explanation, no commentary. Start with [ and end with ].
+
+BANK STATEMENT TEXT:
 ${text}`;
 
   const response = await anthropic.messages.create({
@@ -325,18 +334,18 @@ ${text}`;
     messages: [{ role: "user", content: prompt }],
   });
 
-  const raw = response.content[0].text.trim();
-
-  // Strip markdown if present
-  const clean = raw.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/```\s*$/, "").trim();
+  const raw = response.content[0].text.trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
 
   try {
-    const parsed = JSON.parse(clean);
-    if (Array.isArray(parsed)) return parsed;
-    return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
   } catch (e) {
-    console.error("JSON parse failed:", e.message);
-    console.error("Raw response:", clean.slice(0, 500));
+    console.error("Parse failed:", e.message, raw.slice(0, 300));
     return [];
   }
 }
