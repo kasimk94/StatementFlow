@@ -294,35 +294,31 @@ async function structureTransactions(rawText) {
       messages: [
         {
           role: "user",
-          content: `You are a bank statement parser. Extract ALL transactions from the text below.
+          content: `You are an expert UK bank statement parser. Extract every real financial transaction from the text below.
 
-Rules:
-- Return ONLY a JSON array, no other text
-- Each transaction: { "date": "DD Mon YYYY", "description": "merchant name", "amount": number (always positive), "type": "debit" or "credit" }
-- Debits = money out (payments, purchases, withdrawals)
-- Credits = money in (salary, transfers in, refunds received)
-CRITICAL EXCLUSIONS - do NOT include these as transactions under any circumstances:
-- Any line containing "Transfer from Pot" — this is an internal Monzo movement, not real income
-- Any line containing "Transfer to Pot" — this is an internal Monzo movement, not real spending
-- Any line where description is exactly "Withdrawal" or "Deposit" (pot page entries)
-- Any line saying "This relates to a previous transaction"
-- Any line saying "Pot statement" or anything after it
+IMPORTANT CONTEXT: The text may be poorly formatted — multiple transactions may appear on one line, or one transaction may span multiple lines. Use the pattern of dates (DD/MM/YYYY) and amounts (numbers ending in .XX) to identify transaction boundaries.
 
-These are NOT real transactions. If you include them the financial totals will be wrong.
-Only include transactions where money genuinely left or entered the person's life — purchases, payments to people, salary, refunds.
+RETURN FORMAT: A JSON array only, no other text, no markdown, no explanation.
+Each item: { "date": "DD Mon YYYY", "description": "cleaned merchant name", "amount": number (always positive), "type": "debit" or "credit" }
 
-OTHER EXCLUSIONS:
-- EXCLUDE opening/closing balance rows and summary rows (Money in, Money out totals)
-- Clean merchant names: remove trailing country codes like "GBR", "USA", remove location suffixes
-- Multi-line transactions: combine them into one entry with the correct amount
-- Do not invent transactions — only extract what is explicitly in the text
-- Any transaction containing 'Unpaid Direct Debit' or 'Unpaid DD' is ALWAYS type 'credit' (bank returned the money)
-- Any transaction starting with 'Received From' or 'Giro' is ALWAYS type 'credit'
-- Any transaction starting with 'Bill Payment to' is ALWAYS type 'debit'
-- For PayPal transactions, use what follows "PayPal *" as the description, expanding truncated names (e.g. 'Paypal *Pennyappea' → 'PayPal Penny Appeal')
+RULES:
+1. Debits = money leaving the account (negative amounts, purchases, payments out)
+2. Credits = money entering the account (positive amounts, income, refunds, transfers in)
+3. Each transaction line has: DATE | DESCRIPTION | AMOUNT | RUNNING BALANCE
+   The AMOUNT is the second-to-last number, the BALANCE is the last number
+4. SKIP these — they are NOT real transactions:
+   - Any entry containing "Transfer from Pot" or "Transfer to Pot" (Monzo internal movements)
+   - Any entry where description is only "Withdrawal" or "Deposit"
+   - Any entry saying "This relates to a previous transaction"
+   - Page headers, bank registration details, FSCS information
+5. Multi-line transactions: if a description appears before or after a date+amount pair, combine them into one transaction
+6. Clean descriptions: remove trailing "GBR", "USA", country codes, excessive whitespace
+7. Do not include the running balance as the amount — only the actual transaction amount
 
 Bank statement text:
-${text}`,
+${text}
+
+Return only the JSON array.`,
         },
       ],
     });
@@ -337,39 +333,47 @@ ${text}`,
     console.log("Claude raw response length:", content.length);
     console.log("Claude response preview:", content.substring(0, 200));
 
-    // Try to extract JSON array even if response is truncated
+    // Strip markdown fences and trim
     const cleaned = content.replace(/```json|```/g, "").trim();
 
-    // Find the JSON array start
+    // Find the JSON array boundaries
     const arrayStart = cleaned.indexOf("[");
+    const arrayEnd   = cleaned.lastIndexOf("]");
+
     if (arrayStart === -1) {
       console.error("No JSON array in Claude response:", cleaned.substring(0, 500));
       return [];
     }
 
-    // Try full parse first
-    try {
-      const transactions = JSON.parse(cleaned.substring(arrayStart));
-      console.log("Claude structured transactions:", transactions.length);
-      return transactions;
-    } catch (e) {
-      // If truncated, try to salvage complete objects
-      console.log("Full parse failed, attempting salvage...");
-      const partial = cleaned.substring(arrayStart);
-      // Find last complete object (ends with })
-      const lastComplete = partial.lastIndexOf("},");
-      if (lastComplete > 0) {
-        try {
-          const salvaged = JSON.parse(partial.substring(0, lastComplete + 1) + "]");
-          console.log("Salvaged transactions:", salvaged.length);
-          return salvaged;
-        } catch (e2) {
-          console.error("Salvage also failed:", e2.message);
+    // Try full parse first (arrayEnd may be -1 if truncated — fall through to salvage)
+    if (arrayEnd > arrayStart) {
+      try {
+        const parsed = JSON.parse(cleaned.substring(arrayStart, arrayEnd + 1));
+        if (!Array.isArray(parsed)) {
+          console.error("Claude returned non-array JSON");
           return [];
         }
+        console.log("Claude structured transactions:", parsed.length);
+        return parsed;
+      } catch (e) {
+        console.log("Full parse failed, attempting salvage...", e.message);
       }
-      return [];
     }
+
+    // Salvage: find the last complete object and close the array
+    const partial = cleaned.substring(arrayStart);
+    const lastComplete = partial.lastIndexOf("},");
+    if (lastComplete > 0) {
+      try {
+        const salvaged = JSON.parse(partial.substring(0, lastComplete + 1) + "]");
+        console.log("Salvaged transactions:", salvaged.length);
+        return Array.isArray(salvaged) ? salvaged : [];
+      } catch (e2) {
+        console.error("Salvage also failed:", e2.message);
+      }
+    }
+
+    return [];
   } catch (err) {
     console.error("Claude structuring error:", err.message);
     return [];
