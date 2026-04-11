@@ -55,9 +55,11 @@ export async function POST(req) {
     const bankName = detectBank(rawText);
     console.log("Bank detected:", bankName);
 
-    // ── 6. Structure transactions via Claude ────────────────────────────────
-    const parsed = await structureTransactions(rawText);
-    console.log("Transactions structured:", parsed.length);
+    // ── 6. Structure transactions — deterministic first, AI fallback ────────
+    let parsed = parseUniversal(rawText);
+    if (parsed.length === 0) {
+      parsed = await structureTransactionsAI(rawText);
+    }
 
     if (parsed.length === 0) {
       return NextResponse.json(
@@ -243,6 +245,88 @@ export async function POST(req) {
 }
 
 // ---------------------------------------------------------------------------
+// Deterministic universal parser — regex-based, zero cost, zero latency
+// Falls back to AI (structureTransactionsAI) if it finds nothing
+// ---------------------------------------------------------------------------
+function parseUniversal(rawText) {
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const EXCLUDE = ['transfer from pot','transfer to pot','this relates to a previous transaction'];
+  const NUM_PAIR = /(-?\d[\d,]*\.\d{2})\s+(\d[\d,]*\.\d{2})/;
+
+  // Collapse to single line (handles both unpdf and newline-separated output)
+  let raw = rawText.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Cut pot pages
+  const potIdx = raw.indexOf('Pot statement');
+  if (potIdx > 0) raw = raw.slice(0, potIdx);
+
+  // Cut header
+  const header = 'Date Description (GBP) Amount (GBP) Balance';
+  const hIdx = raw.indexOf(header);
+  if (hIdx > 0) raw = raw.slice(hIdx + header.length);
+
+  // Find all date positions
+  const dates = [];
+  let m;
+  const pat = /\d{2}\/\d{2}\/\d{4}/g;
+  while ((m = pat.exec(raw)) !== null) {
+    dates.push({ start: m.index, end: m.index + m[0].length, date: m[0] });
+  }
+
+  if (dates.length === 0) return [];
+
+  function fmtDate(d) {
+    const [dd,mm,yyyy] = d.split('/');
+    return `${dd} ${MONTHS[parseInt(mm)-1]} ${yyyy}`;
+  }
+
+  const transactions = [];
+
+  for (let i = 0; i < dates.length; i++) {
+    const { start, end, date } = dates[i];
+    const nextStart = i + 1 < dates.length ? dates[i+1].start : raw.length;
+
+    // Text after this date up to next date
+    const after = raw.slice(end, nextStart).trim();
+
+    // Find first number pair
+    const nm = NUM_PAIR.exec(after);
+    if (!nm) continue;
+
+    const amount = parseFloat(nm[1].replace(/,/g, ''));
+    let desc = after.slice(0, nm.index).trim();
+
+    // Check for pre-date description (text between prev transaction numbers and this date)
+    if (i > 0) {
+      const prevEnd = dates[i-1].end;
+      const prevAfter = raw.slice(prevEnd, start);
+      const prevNm = NUM_PAIR.exec(prevAfter);
+      const prevNumEnd = prevNm ? prevEnd + prevNm.index + prevNm[0].length : prevEnd;
+      const between = raw.slice(prevNumEnd, start).trim().replace(/\s+/g, ' ');
+      if (between.length > 3 && !/^(Revolut|MONZO|GBR|USA|Zakat|Perfumes|amazon|novera|Sadaqa|Haircut|Reference:\s*\S+\s*)$/i.test(between)) {
+        desc = between + (desc ? ' ' + desc : '');
+      }
+    }
+
+    desc = desc.replace(/\s+GBR\s*$/i,'').replace(/\s+USA\s*$/i,'').replace(/\s+/g,' ').trim();
+
+    const dl = desc.toLowerCase();
+    if (EXCLUDE.some(ex => dl.includes(ex))) continue;
+    if (['withdrawal','deposit',''].includes(dl)) continue;
+
+    transactions.push({
+      date: fmtDate(date),
+      description: desc,
+      amount: Math.abs(amount),
+      type: amount < 0 ? 'debit' : 'credit'
+    });
+  }
+
+  console.log(`Universal parser: ${transactions.length} transactions`);
+  return transactions;
+}
+
+// ---------------------------------------------------------------------------
 // Re-liner — unpdf sometimes collapses all text to one line; inject newlines
 // before date tokens so the rest of the pipeline sees one transaction per line
 // ---------------------------------------------------------------------------
@@ -291,7 +375,7 @@ async function extractTextFromPDF(buffer) {
 // Text extraction already done by unpdf; Claude only does data structuring.
 // Cost: ~$0.001 per statement with Haiku (16k chars ≈ 4k tokens input)
 // ---------------------------------------------------------------------------
-async function structureTransactions(rawText) {
+async function structureTransactionsAI(rawText) {
   // Strip everything from "Pot statement" onwards to reduce token usage
   const potIdx = rawText.indexOf('Pot statement');
   const cleanText = potIdx > 0 ? rawText.slice(0, potIdx) : rawText;
