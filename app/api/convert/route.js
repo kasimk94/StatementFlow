@@ -249,6 +249,13 @@ export async function POST(req) {
 // Falls back to AI (structureTransactionsAI) if it finds nothing
 // ---------------------------------------------------------------------------
 function parseUniversal(rawText) {
+  // Detect Starling format (has separate IN/OUT columns with £ signs)
+  const isStarling = /SRLGGB2L|starlingbank\.com|Starling Bank/i.test(rawText);
+  if (isStarling) {
+    console.log("Starling format detected — routing to AI parser");
+    return []; // Force fallback to AI parser
+  }
+
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const EXCLUDE = ['transfer from pot','transfer to pot','this relates to a previous transaction'];
   const NUM_PAIR = /(-?\d[\d,]*\.\d{2})\s+(\d[\d,]*\.\d{2})/;
@@ -409,6 +416,11 @@ The second-to-last number is the AMOUNT. The last number is the running balance 
 Negative AMOUNT = debit. Positive AMOUNT = credit.
 
 STEP 4 - Multi-line transactions: some descriptions wrap across lines. Combine them into one entry.
+
+STEP 5 - Some statements (like Starling) have separate IN and OUT columns with £ signs:
+"DATE TYPE DESCRIPTION IN OUT BALANCE"
+In this case, amounts in the IN column are credits, amounts in the OUT column are debits.
+Strip £ signs when parsing amounts.
 
 Return ONLY a valid JSON array. No markdown, no explanation, no commentary. Start with [ and end with ].
 
