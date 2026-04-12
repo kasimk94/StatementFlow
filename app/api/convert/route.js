@@ -4,38 +4,74 @@ import Anthropic from "@anthropic-ai/sdk";
 const anthropic = new Anthropic();
 
 // ---------------------------------------------------------------------------
-// Direct PDF vision parsing — sends raw PDF buffer to Claude as base64 document
+// Extract text from PDF via unpdf (free, local)
 // ---------------------------------------------------------------------------
-async function parseWithClaude(buffer) {
-  const base64 = buffer.toString('base64');
+async function extractTextFromPDF(buffer) {
+  try {
+    const { extractText } = await import("unpdf");
+    const uint8Array = new Uint8Array(buffer);
+    const { text } = await extractText(uint8Array, { mergePages: true });
+    return text && text.trim().length > 50 ? text : null;
+  } catch (err) {
+    console.error("unpdf error:", err.message);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Clean extracted text — strip legal pages and pot pages to reduce tokens
+// ---------------------------------------------------------------------------
+function cleanStatementText(rawText) {
+  const cutMarkers = [
+    'Information about the Financial Services Compensation Scheme',
+    'FSCS Information Sheet',
+    'Credit Interest Rates',
+    'Arranged Overdraft Interest Rates',
+    'Commercial Banking Customers',
+    'Dispute Resolution',
+    'Lost and Stolen Cards',
+    'How we pay interest',
+    'Using your Barclays debit card',
+    'www.FSCS.org.uk',
+  ];
+
+  let text = rawText;
+  for (const marker of cutMarkers) {
+    const idx = text.indexOf(marker);
+    if (idx > 500) {
+      text = text.slice(0, idx);
+      break;
+    }
+  }
+
+  const potIdx = text.indexOf('Pot statement');
+  if (potIdx > 500) text = text.slice(0, potIdx);
+
+  return text.trim();
+}
+
+// ---------------------------------------------------------------------------
+// Parse clean text via Sonnet — structured text prompt, no PDF vision overhead
+// ---------------------------------------------------------------------------
+async function parseWithClaude(rawText) {
+  const cleanText = cleanStatementText(rawText).slice(0, 30000);
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 8000,
     messages: [{
       role: "user",
-      content: [
-        {
-          type: "document",
-          source: {
-            type: "base64",
-            media_type: "application/pdf",
-            data: base64,
-          },
-        },
-        {
-          type: "text",
-          text: `You are a Financial Auditor. Extract every real transaction from this bank statement PDF.
+      content: `You are a Financial Auditor. Extract every real transaction from this bank statement text.
 
 RULES:
-1. Read the PDF visually - understand the column structure (some banks use separate IN/OUT columns, others use signed amounts)
+1. Understand the column structure (some banks use separate IN/OUT columns, others use signed amounts)
 2. Every transaction must have: date, description, amount (always positive), type (debit or credit)
 3. Credits = money coming in (salary, transfers in, refunds)
 4. Debits = money going out (purchases, payments, bills)
 5. EXCLUDE internal pot/savings transfers (Monzo "Transfer from Pot", "Transfer to Pot")
 6. EXCLUDE balance rows, page headers, bank registration text
 7. Clean descriptions - remove payment type prefixes (CONTACTLESS, FASTER PAYMENT, DD, VIS, CR etc), keep merchant/person name
-8. For multi-page statements, extract ALL transactions from ALL pages
+8. Extract ALL transactions from the entire text
 
 Return a JSON object in this exact format:
 {
@@ -43,9 +79,10 @@ Return a JSON object in this exact format:
   "transactions": [{"date":"DD Mon YYYY","description":"clean name","amount":1.23,"type":"debit"}]
 }
 
-No markdown, no explanation. Only the JSON object.`,
-        },
-      ],
+No markdown, no explanation. Only the JSON object.
+
+STATEMENT TEXT:
+${cleanText}`,
     }],
   });
 
@@ -111,9 +148,19 @@ export async function POST(req) {
       );
     }
 
-    // ── 3. Parse PDF directly via Claude vision ─────────────────────────────
+    // ── 3. Extract text then parse via Sonnet ───────────────────────────────
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { bank: bankName, transactions: parsed } = await parseWithClaude(buffer);
+    const rawText = await extractTextFromPDF(buffer);
+
+    if (!rawText) {
+      return NextResponse.json(
+        { error: "scanned-pdf: Could not read this PDF. It may be a scanned document. Please try a PDF downloaded directly from your bank's app or website." },
+        { status: 400 }
+      );
+    }
+
+    console.log("Text extracted, length:", rawText.length);
+    const { bank: bankName, transactions: parsed } = await parseWithClaude(rawText);
     console.log("Bank detected:", bankName);
 
     // ── 4. PDF summary totals (not available without text extraction) ────────
