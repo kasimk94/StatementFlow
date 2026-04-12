@@ -10,7 +10,7 @@ async function parseWithClaude(buffer) {
   const base64 = buffer.toString('base64');
 
   const response = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
+    model: "claude-sonnet-4-6",
     max_tokens: 8000,
     messages: [{
       role: "user",
@@ -100,9 +100,26 @@ export async function POST(req) {
     const pdfSummary = { moneyIn: null, moneyOut: null, startBalance: null, endBalance: null, overdraftLimit: null };
     const overdraftLimit = 500;
 
-    // ── 5. Detect bank from filename ────────────────────────────────────────
-    const bankName = detectBank(file.name || "");
-    console.log("Bank detected from filename:", bankName);
+    // ── 5. Detect bank from filename + raw PDF bytes ────────────────────────
+    const filenameLower = (file.name || '').toLowerCase();
+    const base64Sample = buffer.slice(0, 3000).toString('utf8').toLowerCase();
+    const bankSignals = base64Sample + ' ' + filenameLower;
+
+    function detectBankFromSignals(signals) {
+      if (signals.includes('hsbc') || signals.includes('hbukgb')) return 'HSBC';
+      if (signals.includes('srlggb') || signals.includes('starling')) return 'Starling Bank';
+      if (signals.includes('monzgb') || signals.includes('monzo')) return 'Monzo';
+      if (signals.includes('barclays') || signals.includes('bukbgb')) return 'Barclays';
+      if (signals.includes('lloyds')) return 'Lloyds';
+      if (signals.includes('natwest')) return 'NatWest';
+      if (signals.includes('nationwide')) return 'Nationwide';
+      if (signals.includes('santander')) return 'Santander';
+      if (signals.includes('starling')) return 'Starling Bank';
+      return 'Your Bank';
+    }
+
+    const bankName = detectBankFromSignals(bankSignals);
+    console.log("Bank detected:", bankName);
 
     if (parsed.length === 0) {
       return NextResponse.json(
