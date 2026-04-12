@@ -4,116 +4,38 @@ import Anthropic from "@anthropic-ai/sdk";
 const anthropic = new Anthropic();
 
 // ---------------------------------------------------------------------------
-// Extract text from PDF via unpdf (free, local)
+// PDF vision parsing — sends raw PDF buffer to claude-sonnet-4-6 as base64
 // ---------------------------------------------------------------------------
-async function extractTextFromPDF(buffer) {
-  try {
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
-    const pdf = await loadingTask.promise;
-
-    let fullText = '';
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-
-      // Group text items by Y position (row) preserving column structure
-      const rows = {};
-      for (const item of textContent.items) {
-        if (!item.str.trim()) continue;
-        const y = Math.round(item.transform[5]); // Y coordinate
-        const x = Math.round(item.transform[4]); // X coordinate
-        if (!rows[y]) rows[y] = [];
-        rows[y].push({ x, text: item.str.trim() });
-      }
-
-      // Sort rows top to bottom (PDF y-axis is inverted)
-      const sortedYs = Object.keys(rows).map(Number).sort((a, b) => b - a);
-
-      for (const y of sortedYs) {
-        // Sort items left to right within each row
-        const rowItems = rows[y].sort((a, b) => a.x - b.x);
-
-        // Reconstruct line with spacing proportional to x gaps
-        let line = '';
-        let prevX = 0;
-        for (const item of rowItems) {
-          const gap = prevX === 0 ? 0 : Math.round((item.x - prevX) / 8);
-          line += ' '.repeat(Math.max(1, gap)) + item.text;
-          prevX = item.x + (item.text.length * 6);
-        }
-        fullText += line.trim() + '\n';
-      }
-
-      fullText += '\n';
-    }
-
-    return fullText.trim().length > 50 ? fullText : null;
-  } catch(e) {
-    console.error('pdfjs failed:', e.message);
-    return null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Clean extracted text — strip legal pages and pot pages to reduce tokens
-// ---------------------------------------------------------------------------
-function cleanStatementText(rawText) {
-  const cutMarkers = [
-    'Information about the Financial Services Compensation Scheme',
-    'FSCS Information Sheet',
-    'Credit Interest Rates',
-    'Arranged Overdraft Interest Rates',
-    'Commercial Banking Customers',
-    'Dispute Resolution',
-    'Lost and Stolen Cards',
-    'How we pay interest',
-    'Using your Barclays debit card',
-    'www.FSCS.org.uk',
-  ];
-
-  let text = rawText;
-  for (const marker of cutMarkers) {
-    const idx = text.indexOf(marker);
-    if (idx > 500) {
-      text = text.slice(0, idx);
-      break;
-    }
-  }
-
-  const potIdx = text.indexOf('Pot statement');
-  if (potIdx > 500) text = text.slice(0, potIdx);
-
-  return text.trim();
-}
-
-// ---------------------------------------------------------------------------
-// Parse clean text via Sonnet — structured text prompt, no PDF vision overhead
-// ---------------------------------------------------------------------------
-async function parseWithClaude(rawText) {
-  const cleanText = cleanStatementText(rawText).slice(0, 30000);
+async function parseWithClaude(buffer) {
+  const base64 = buffer.toString('base64');
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 8000,
     messages: [{
       role: "user",
-      content: `You are a Financial Auditor. Extract every real transaction from this bank statement text.
-
-COLUMN DETECTION: The text preserves column structure using spaces. Identify the column headers first (Date, Description, Money In, Money Out, Balance etc). Then for each transaction row, determine if the amount falls under the IN column or OUT column based on its horizontal position relative to the headers.
+      content: [
+        {
+          type: "document",
+          source: {
+            type: "base64",
+            media_type: "application/pdf",
+            data: base64,
+          },
+        },
+        {
+          type: "text",
+          text: `You are a Financial Auditor. Extract every real transaction from this bank statement PDF.
 
 RULES:
-1. Understand the column structure (some banks use separate IN/OUT columns, others use signed amounts)
+1. Read the PDF visually - understand the column structure (some banks use separate IN/OUT columns, others use signed amounts)
 2. Every transaction must have: date, description, amount (always positive), type (debit or credit)
 3. Credits = money coming in (salary, transfers in, refunds)
 4. Debits = money going out (purchases, payments, bills)
 5. EXCLUDE internal pot/savings transfers (Monzo "Transfer from Pot", "Transfer to Pot")
 6. EXCLUDE balance rows, page headers, bank registration text
 7. Clean descriptions - remove payment type prefixes (CONTACTLESS, FASTER PAYMENT, DD, VIS, CR etc), keep merchant/person name
-8. Extract ALL transactions from the entire text
+8. For multi-page statements, extract ALL transactions from ALL pages
 
 Return a JSON object in this exact format:
 {
@@ -121,10 +43,9 @@ Return a JSON object in this exact format:
   "transactions": [{"date":"DD Mon YYYY","description":"clean name","amount":1.23,"type":"debit"}]
 }
 
-No markdown, no explanation. Only the JSON object.
-
-STATEMENT TEXT:
-${cleanText}`,
+No markdown, no explanation. Only the JSON object.`,
+        },
+      ],
     }],
   });
 
@@ -190,19 +111,9 @@ export async function POST(req) {
       );
     }
 
-    // ── 3. Extract text then parse via Sonnet ───────────────────────────────
+    // ── 3. Send PDF buffer directly to Sonnet vision ───────────────────────
     const buffer = Buffer.from(await file.arrayBuffer());
-    const rawText = await extractTextFromPDF(buffer);
-
-    if (!rawText) {
-      return NextResponse.json(
-        { error: "scanned-pdf: Could not read this PDF. It may be a scanned document. Please try a PDF downloaded directly from your bank's app or website." },
-        { status: 400 }
-      );
-    }
-
-    console.log("Text extracted, length:", rawText.length);
-    const { bank: bankName, transactions: parsed } = await parseWithClaude(rawText);
+    const { bank: bankName, transactions: parsed } = await parseWithClaude(buffer);
     console.log("Bank detected:", bankName);
 
     // ── 4. PDF summary totals (not available without text extraction) ────────
