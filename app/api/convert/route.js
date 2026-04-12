@@ -4,59 +4,71 @@ import Anthropic from "@anthropic-ai/sdk";
 const anthropic = new Anthropic();
 
 // ---------------------------------------------------------------------------
-// Starling-specific parser — dedicated prompt for IN/OUT column format
+// Direct PDF vision parsing — sends raw PDF buffer to Claude as base64 document
 // ---------------------------------------------------------------------------
-async function parseStarlingStatement(rawText) {
-  // Starling uses separate IN/OUT columns - must use column positions via pdfplumber
-  // Since we only have raw text from unpdf, route to AI with Starling-specific prompt
-  const text = rawText.slice(0, 12000);
-
-  const prompt = `You are parsing a Starling Bank statement. The format has columns:
-DATE | TYPE | TRANSACTION | IN | OUT | END OF DAY BALANCE
-
-CRITICAL RULES for Starling:
-- Each row has an amount in EITHER the IN column (credit) OR the OUT column (debit), never both
-- The IN column appears BEFORE the OUT column in the text
-- Credits (money received): FASTER PAYMENT entries where Kasam receives money from Barclays account transfers in, salary, refunds received
-- Debits (money spent): CONTACTLESS, CHIP & PIN, ATM, ONLINE PAYMENT, and outgoing FASTER PAYMENTs
-
-From this statement the credits should total £2687.22 and debits £1762.77.
-
-Known credits in this statement (money coming IN):
-- Kasam Khalid Barclays (STARLING) payments of £1100, £400, £400, £150
-- Kasam khalid () payments of £487.22 and £150
-
-Everything else is a debit.
-
-Extract all transactions as JSON array:
-[{"date":"DD Mon YYYY","description":"clean name","amount":positive number,"type":"debit" or "credit"}]
-
-Remove type prefixes (CONTACTLESS, FASTER PAYMENT etc) from descriptions.
-Return ONLY the JSON array.
-
-TEXT:
-${text}`;
+async function parseWithClaude(buffer) {
+  const base64 = buffer.toString('base64');
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 8000,
-    messages: [{ role: "user", content: prompt }],
+    messages: [{
+      role: "user",
+      content: [
+        {
+          type: "document",
+          source: {
+            type: "base64",
+            media_type: "application/pdf",
+            data: base64,
+          },
+        },
+        {
+          type: "text",
+          text: `You are a Financial Auditor. Extract every real transaction from this bank statement PDF.
+
+RULES:
+1. Read the PDF visually - understand the column structure (some banks use separate IN/OUT columns, others use signed amounts)
+2. Every transaction must have: date, description, amount (always positive), type (debit or credit)
+3. Credits = money coming in (salary, transfers in, refunds)
+4. Debits = money going out (purchases, payments, bills)
+5. EXCLUDE internal pot/savings transfers (Monzo "Transfer from Pot", "Transfer to Pot")
+6. EXCLUDE balance rows, page headers, bank registration text
+7. Clean descriptions - remove payment type prefixes (CONTACTLESS, FASTER PAYMENT, DD, VIS, CR etc), keep merchant/person name
+8. For multi-page statements, extract ALL transactions from ALL pages
+
+Return ONLY a JSON array, no markdown, no explanation:
+[{"date":"DD Mon YYYY","description":"clean name","amount":1.23,"type":"debit"}]`,
+        },
+      ],
+    }],
   });
 
   const raw = response.content[0].text.trim()
-    .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
 
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch(e) {
-    console.error("Starling parse failed:", e.message);
+    // Salvage partial JSON
+    const lastBrace = raw.lastIndexOf('},');
+    if (lastBrace > 100) {
+      try {
+        const partial = JSON.parse(raw.slice(0, lastBrace + 1) + ']');
+        if (Array.isArray(partial) && partial.length > 0) return partial;
+      } catch(e2) {}
+    }
+    console.error("Parse failed:", e.message);
     return [];
   }
 }
 
 // ---------------------------------------------------------------------------
-// POST /api/convert  — unpdf extracts text, Claude structures, regex categorises
+// POST /api/convert  — Claude vision parses PDF directly, regex categorises
 // ---------------------------------------------------------------------------
 export async function POST(req) {
   try {
@@ -80,43 +92,17 @@ export async function POST(req) {
       );
     }
 
-    // ── 3. Extract text via pdf-parse (free, local, zero cost) ─────────────
+    // ── 3. Parse PDF directly via Claude vision ─────────────────────────────
     const buffer = Buffer.from(await file.arrayBuffer());
-    const extraction = await extractTextFromPDF(buffer);
+    const parsed = await parseWithClaude(buffer);
 
-    if (!extraction.text || extraction.text.trim().length < 20) {
-      return NextResponse.json(
-        {
-          error:
-            "scanned-pdf: Could not read this PDF. It may be a scanned document. " +
-            "Please try a PDF downloaded directly from your bank's app or website as a digital PDF.",
-        },
-        { status: 400 }
-      );
-    }
+    // ── 4. Extract PDF summary totals (fallback — no rawText available) ─────
+    const pdfSummary = { moneyIn: null, moneyOut: null, startBalance: null, endBalance: null, overdraftLimit: null };
+    const overdraftLimit = 500;
 
-    const rawText = extraction.text;
-    console.log("Text extracted, length:", rawText.length, "method:", extraction.method);
-
-    // ── 4. Extract PDF summary totals (e.g. Barclays Money in/out) ─────────
-    const pdfSummary = extractStatementTotals(rawText);
-    const overdraftLimit = pdfSummary.overdraftLimit ?? 500;
-    console.log("PDF summary:", pdfSummary);
-
-    // ── 5. Detect bank ──────────────────────────────────────────────────────
-    const bankName = detectBank(rawText);
-    console.log("Bank detected:", bankName);
-
-    // ── 6. Structure transactions via AI ────────────────────────────────────
-    const isStarling = /SRLGGB2L|starlingbank\.com/i.test(rawText);
-    let parsed;
-
-    if (isStarling) {
-      console.log("Starling detected - using Starling parser");
-      parsed = await parseStarlingStatement(rawText);
-    } else {
-      parsed = await structureTransactionsAI(rawText);
-    }
+    // ── 5. Detect bank from filename ────────────────────────────────────────
+    const bankName = detectBank(file.name || "");
+    console.log("Bank detected from filename:", bankName);
 
     if (parsed.length === 0) {
       return NextResponse.json(
@@ -247,7 +233,7 @@ export async function POST(req) {
     const { trueSpending, trueIncome, categories, liquidity } =
       calculateTrueSpending(transactions, netBalance, overdraftLimit);
 
-    const period = extractPeriod(rawText);
+    const period = null;
 
     // ── VAT summary ─────────────────────────────────────────────────────────
     const vatBreakdown = {};
@@ -298,160 +284,6 @@ export async function POST(req) {
       { error: "Unexpected error: " + err.message },
       { status: 500 }
     );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Re-liner — unpdf sometimes collapses all text to one line; inject newlines
-// before date tokens so the rest of the pipeline sees one transaction per line
-// ---------------------------------------------------------------------------
-function relineText(text) {
-  if ((text.match(/\n/g) || []).length > 20) return text; // already has real lines
-  return text
-    .replace(/(\d{2}\/\d{2}\/\d{4})/g, "\n$1")
-    .replace(/(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})/g, "\n$1")
-    .replace(/(\d{2}-[A-Z][a-z]{2}-\d{4})/g, "\n$1");
-}
-
-// ---------------------------------------------------------------------------
-// PDF text extraction — pdf-parse (free, local, zero API cost)
-// ---------------------------------------------------------------------------
-async function extractTextFromPDF(buffer) {
-  try {
-    const { extractText } = await import("unpdf");
-    const uint8Array = new Uint8Array(buffer);
-
-    console.log("PDF buffer size:", buffer.length);
-
-    const { text, totalPages } = await extractText(uint8Array, { mergePages: true });
-
-    console.log("unpdf extracted pages:", totalPages);
-    console.log("unpdf text length:", text?.length);
-    console.log("First 300 chars:", text?.substring(0, 300));
-
-    if (text && text.trim().length > 50) {
-      return { text: relineText(text), method: "unpdf", cost: 0 };
-    }
-
-    return {
-      text: null,
-      method: "failed",
-      cost: 0,
-      error: "No text extracted — PDF may be scanned",
-    };
-  } catch (err) {
-    console.error("unpdf error:", err.message);
-    return { text: null, method: "failed", cost: 0, error: err.message };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Claude structuring — converts garbled PDF text into clean transaction JSON
-// Text extraction already done by unpdf; Claude only does data structuring.
-// Cost: ~$0.001 per statement with Haiku (16k chars ≈ 4k tokens input)
-// ---------------------------------------------------------------------------
-async function structureTransactionsAI(rawText) {
-  // Strip everything from "Pot statement" onwards to reduce token usage
-  const potIdx = rawText.indexOf('Pot statement');
-  const cleanText = potIdx > 0 ? rawText.slice(0, potIdx) : rawText;
-  const text = cleanText.slice(0, 12000);
-
-  const prompt = `You are a Financial Auditor extracting transactions from a UK bank statement. You must handle any bank format including Barclays, Monzo, Starling, HSBC, Lloyds, NatWest, Revolut, and others.
-
-HSBC FORMAT:
-HSBC statements use short dates like "26 Oct 20" and transaction type codes:
-- DD = Direct Debit (debit)
-- VIS = Visa card payment (debit)
-- BP = Bill Payment (debit)
-- TFR = Transfer out (debit)
-- CR = Credit received (credit)
-- DR = Debit charge (debit)
-Amounts appear in separate "Paid out" and "Paid in" columns with no £ sign.
-The balance column shows "D" suffix for overdrawn balances.
-BALANCE BROUGHT FORWARD and BALANCE CARRIED FORWARD rows are not transactions — exclude them.
-
-CRITICAL FOR STARLING FORMAT:
-Starling statements have columns: DATE | TYPE | TRANSACTION | IN | OUT | END OF DAY BALANCE
-Each row has either an IN amount OR an OUT amount, never both.
-The IN column comes before the OUT column in the text.
-To determine debit vs credit: if the amount appears in the OUT column position it is a debit, if in the IN column it is a credit.
-In Starling text the IN and OUT amounts appear as £X.XX after the description.
-The last £X.XX on each line is always the running balance - ignore it.
-The second-to-last £X.XX is the transaction amount.
-If there are two £X.XX values before the balance, the first is IN (credit) and second is OUT (debit).
-
-STEP 1 - Pre-process the text:
-- Cut everything after "Pot statement" (Monzo pot pages)
-- Ignore page headers, bank registration details, FSCS text, interest rate tables
-- The statement period is between the opening and closing balance lines
-
-STEP 2 - Identify the format:
-FORMAT A - Single signed amount per row: DATE DESCRIPTION AMOUNT BALANCE
-  Example: "31/03/2026 TESCO STORES -6.45 4.94"
-  Negative = debit, positive = credit
-
-FORMAT B - Separate IN/OUT columns: DATE TYPE DESCRIPTION IN OUT BALANCE
-  Example: "01/03/2026 CONTACTLESS TESCO STORES £8.85 £4612.87"
-  Amount in IN column = credit, amount in OUT column = debit
-
-FORMAT C - Barclays style: DATE DESCRIPTION MONEY_OUT MONEY_IN BALANCE
-  Separate money out and money in columns, balance only shown periodically
-
-STEP 3 - Extract every real transaction with:
-{
-  "date": "DD Mon YYYY",
-  "description": "clean merchant or person name",
-  "amount": positive number always,
-  "type": "debit" or "credit"
-}
-
-STEP 4 - EXCLUDE these completely:
-- Monzo: "Transfer from Pot", "Transfer to Pot", "This relates to a previous transaction"
-- Any row that is just "Withdrawal" or "Deposit" with no merchant
-- Opening balance, closing balance, end balance rows
-- Interest rate rows, charge rows
-
-STEP 5 - Clean descriptions:
-- Remove trailing GBR, USA, country codes
-- Remove payment type prefixes like "CONTACTLESS", "FASTER PAYMENT", "CHIP & PIN", "ATM", "DIRECT DEBIT", "Card Payment to", "Received From"
-- Keep the actual merchant or person name only
-
-Return ONLY a valid JSON array. No markdown. No explanation. Start with [ end with ].
-
-STATEMENT TEXT:
-${text}`;
-
-  const response = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 16000,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const raw = response.content[0].text.trim()
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim();
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch(e) {
-    console.error("Parse failed:", e.message, raw.slice(0, 300));
-    // Try to salvage partial JSON by finding last complete object
-    const lastBrace = raw.lastIndexOf('},');
-    if (lastBrace > 100) {
-      try {
-        const salvaged = raw.slice(0, lastBrace + 1) + ']';
-        const partial = JSON.parse(salvaged);
-        if (Array.isArray(partial) && partial.length > 0) {
-          console.log("Salvaged", partial.length, "transactions from partial JSON");
-          return partial;
-        }
-      } catch(e2) {}
-    }
-    return [];
   }
 }
 
