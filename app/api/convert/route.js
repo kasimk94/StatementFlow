@@ -8,12 +8,52 @@ const anthropic = new Anthropic();
 // ---------------------------------------------------------------------------
 async function extractTextFromPDF(buffer) {
   try {
-    const { extractText } = await import("unpdf");
-    const uint8Array = new Uint8Array(buffer);
-    const { text } = await extractText(uint8Array, { mergePages: true });
-    return text && text.trim().length > 50 ? text : null;
-  } catch (err) {
-    console.error("unpdf error:", err.message);
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+    const pdf = await loadingTask.promise;
+
+    let fullText = '';
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+
+      // Group text items by Y position (row) preserving column structure
+      const rows = {};
+      for (const item of textContent.items) {
+        if (!item.str.trim()) continue;
+        const y = Math.round(item.transform[5]); // Y coordinate
+        const x = Math.round(item.transform[4]); // X coordinate
+        if (!rows[y]) rows[y] = [];
+        rows[y].push({ x, text: item.str.trim() });
+      }
+
+      // Sort rows top to bottom (PDF y-axis is inverted)
+      const sortedYs = Object.keys(rows).map(Number).sort((a, b) => b - a);
+
+      for (const y of sortedYs) {
+        // Sort items left to right within each row
+        const rowItems = rows[y].sort((a, b) => a.x - b.x);
+
+        // Reconstruct line with spacing proportional to x gaps
+        let line = '';
+        let prevX = 0;
+        for (const item of rowItems) {
+          const gap = prevX === 0 ? 0 : Math.round((item.x - prevX) / 8);
+          line += ' '.repeat(Math.max(1, gap)) + item.text;
+          prevX = item.x + (item.text.length * 6);
+        }
+        fullText += line.trim() + '\n';
+      }
+
+      fullText += '\n';
+    }
+
+    return fullText.trim().length > 50 ? fullText : null;
+  } catch(e) {
+    console.error('pdfjs failed:', e.message);
     return null;
   }
 }
@@ -62,6 +102,8 @@ async function parseWithClaude(rawText) {
     messages: [{
       role: "user",
       content: `You are a Financial Auditor. Extract every real transaction from this bank statement text.
+
+COLUMN DETECTION: The text preserves column structure using spaces. Identify the column headers first (Date, Description, Money In, Money Out, Balance etc). Then for each transaction row, determine if the amount falls under the IN column or OUT column based on its horizontal position relative to the headers.
 
 RULES:
 1. Understand the column structure (some banks use separate IN/OUT columns, others use signed amounts)
