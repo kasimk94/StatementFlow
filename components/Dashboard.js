@@ -1629,10 +1629,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           value={fmt(expenses)}
           sub={
             internalTransferTotal > 0
-              ? `Excl. ${fmt(internalTransferTotal)} internal transfers${reversalsCount > 0 ? ` · ${reversalsCount} refund${reversalsCount !== 1 ? "s" : ""} netted` : ""}`
-              : reversalsCount > 0
-                ? `${reversalsCount} refund${reversalsCount !== 1 ? "s" : ""} netted out automatically`
-                : `${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`
+              ? `Excl. ${fmt(internalTransferTotal)} internal transfers`
+              : `${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`
           }
           gradient="linear-gradient(135deg, #e17055 0%, #d63031 100%)"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
