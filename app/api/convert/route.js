@@ -358,6 +358,18 @@ async function structureTransactionsAI(rawText) {
 
   const prompt = `You are a Financial Auditor extracting transactions from a UK bank statement. You must handle any bank format including Barclays, Monzo, Starling, HSBC, Lloyds, NatWest, Revolut, and others.
 
+HSBC FORMAT:
+HSBC statements use short dates like "26 Oct 20" and transaction type codes:
+- DD = Direct Debit (debit)
+- VIS = Visa card payment (debit)
+- BP = Bill Payment (debit)
+- TFR = Transfer out (debit)
+- CR = Credit received (credit)
+- DR = Debit charge (debit)
+Amounts appear in separate "Paid out" and "Paid in" columns with no £ sign.
+The balance column shows "D" suffix for overdrawn balances.
+BALANCE BROUGHT FORWARD and BALANCE CARRIED FORWARD rows are not transactions — exclude them.
+
 CRITICAL FOR STARLING FORMAT:
 Starling statements have columns: DATE | TYPE | TRANSACTION | IN | OUT | END OF DAY BALANCE
 Each row has either an IN amount OR an OUT amount, never both.
@@ -448,10 +460,10 @@ ${text}`;
 // ---------------------------------------------------------------------------
 function detectBank(text) {
   const t = text.toLowerCase();
+  if (t.includes("hsbc") || t.includes("hbukgb4141b") || t.includes("hsbc.co.uk")) return "HSBC";
   if (t.includes("srlggb2l") || t.includes("starlingbank.com") || t.includes("starling bank")) return "Starling Bank";
   if (t.includes("barclays"))                                    return "Barclays";
   if (t.includes("monzo.com") || t.includes("monzgb2l") || t.includes("monzo bank limited") || t.includes("monzo")) return "Monzo";
-  if (t.includes("hsbc"))                                        return "HSBC";
   if (t.includes("lloyds"))                                      return "Lloyds";
   if (t.includes("natwest"))                                     return "NatWest";
   if (t.includes("nationwide"))                                  return "Nationwide";
