@@ -420,7 +420,7 @@ export default function Home() {
             }}>
               Your Bank Statement.
             </span>
-            <div className="hero-animated-line" style={{ minHeight: "180px", paddingBottom: "16px", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "100%", overflow: "visible", padding: "0 20px 16px", marginBottom: "32px" }}>
+            <div className="hero-animated-line" style={{ minHeight: "240px", paddingBottom: "16px", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "100%", overflow: "visible", padding: "0 20px 16px", marginBottom: "32px" }}>
               <span
                 key={animatedWord}
                 style={{

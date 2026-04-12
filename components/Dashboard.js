@@ -1089,11 +1089,12 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
   // ── Date range ──
   const dateRange = useMemo(() => {
-    const dates = transactions.map((t) => t.date).filter(Boolean).sort();
+    const dates = transactions.map((t) => t.date).filter(Boolean);
     if (!dates.length) return null;
-    return dates[0] === dates[dates.length - 1]
-      ? dates[0]
-      : `${dates[0]} – ${dates[dates.length - 1]}`;
+    const sorted = [...dates].sort((a, b) => parseDateStr(a) - parseDateStr(b));
+    return sorted[0] === sorted[sorted.length - 1]
+      ? sorted[0]
+      : `${sorted[0]} – ${sorted[sorted.length - 1]}`;
   }, [transactions]);
 
   // ── Week ranges for click-to-filter (Upgrade 2) ──
@@ -1131,7 +1132,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const { txIncome, txExpenses, incomeCount, expenseCount } = useMemo(() => {
     let txIncome = 0, txExpenses = 0, incomeCount = 0, expenseCount = 0;
     for (const t of transactions) {
-      if (t.exclude || t.excludeFromTotals) continue;
+      if (t.exclude) continue;
       if (t.amount > 0) { txIncome += t.amount; incomeCount++; }
       else { txExpenses += Math.abs(t.amount); expenseCount++; }
     }
