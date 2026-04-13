@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import UploadZone from "../components/UploadZone";
 import Dashboard from "../components/Dashboard";
 import Navbar from "../components/Navbar";
@@ -145,7 +146,31 @@ export default function Home() {
   const [apiDone,       setApiDone]       = useState(false);
   const [error,         setError]         = useState(null);
   const [showFeedback,  setShowFeedback]  = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(null);
   const pendingDataRef = useRef(null);
+
+  const { data: session } = useSession();
+
+  const handleCheckout = useCallback(async (plan) => {
+    if (!session) {
+      window.location.href = "/signup";
+      return;
+    }
+    setCheckoutLoading(plan);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } finally {
+      setCheckoutLoading(null);
+    }
+  }, [session]);
 
   const HERO_WORDS = ["Finally Making Sense.", "Giving You Control.", "Decoded For You.", "Clear. Simple. Easy."];
   const HERO_WORD_STYLES = [
@@ -907,8 +932,12 @@ export default function Home() {
                 <PricingFeature text="Accountant view" included={false} light />
                 <PricingFeature text="VAT estimation" included={false} light />
               </ul>
-              <button className="w-full py-3 rounded-xl text-sm font-bold text-indigo-700 bg-white hover:bg-slate-50 transition-colors shadow-md">
-                Start Pro
+              <button
+                className="w-full py-3 rounded-xl text-sm font-bold text-indigo-700 bg-white hover:bg-slate-50 transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={() => handleCheckout("PRO")}
+                disabled={checkoutLoading === "PRO"}
+              >
+                {checkoutLoading === "PRO" ? "Redirecting…" : "Start Pro"}
               </button>
             </div>
 
@@ -949,13 +978,15 @@ export default function Home() {
                 <PricingFeature text="Priority support" included />
               </ul>
               <button
-                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:-translate-y-0.5"
+                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
                   background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)",
                   boxShadow: "0 8px 20px rgba(30,58,95,0.35)",
                 }}
+                onClick={() => handleCheckout("BUSINESS")}
+                disabled={checkoutLoading === "BUSINESS"}
               >
-                Start Business
+                {checkoutLoading === "BUSINESS" ? "Redirecting…" : "Start Business"}
               </button>
             </div>
 

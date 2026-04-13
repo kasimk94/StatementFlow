@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import stripe, { PLANS } from "@/lib/stripe";
+import stripe from "@/lib/stripe";
 import prisma from "@/lib/prisma";
+
+const PRICE_IDS = {
+  PRO:      process.env.STRIPE_PRO_PRICE_ID,
+  BUSINESS: process.env.STRIPE_BUSINESS_PRICE_ID,
+};
 
 export async function POST(req) {
   try {
@@ -12,9 +17,9 @@ export async function POST(req) {
     }
 
     const { plan } = await req.json();
-    const planConfig = PLANS[plan];
+    const priceId = PRICE_IDS[plan];
 
-    if (!planConfig || !planConfig.priceId) {
+    if (!priceId) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
@@ -40,11 +45,12 @@ export async function POST(req) {
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
+      customer_email: customerId ? undefined : user.email,
       mode: "subscription",
       payment_method_types: ["card"],
-      line_items: [{ price: planConfig.priceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXTAUTH_URL}/account?success=true`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/account?canceled=true`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/#pricing`,
       metadata: { userId: user.id, plan },
     });
 
