@@ -407,7 +407,7 @@ export default function Home() {
           }}>
             Structured data — not another finance app
           </div>
-          <h1 className="mb-6 scroll-animate" style={{ transitionDelay: "0.05s" }}>
+          <h1 className="mb-6 scroll-animate" style={{ transitionDelay: "0.05s", overflow: "visible" }}>
             <span style={{
               fontFamily: "var(--font-playfair)",
               fontWeight: 400,
@@ -420,7 +420,7 @@ export default function Home() {
             }}>
               Your Bank Statement.
             </span>
-            <div className="hero-animated-line" style={{ minHeight: "220px", paddingBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "100%", overflow: "visible", padding: "0 20px 8px", marginBottom: "32px" }}>
+            <div className="hero-animated-line" style={{ minHeight: "220px", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "100%", overflow: "visible", padding: "0 20px 24px", marginBottom: "32px" }}>
               <span
                 key={animatedWord}
                 style={{

@@ -623,6 +623,8 @@ img, video { max-width: 100%; height: auto; }
   /* ── Hero animated line: taller on mobile to handle wrapping ── */
   .hero-animated-line {
     min-height: 220px !important;
+    overflow: visible !important;
+    padding-bottom: 24px !important;
   }
 
   /* ── Audience cards: stack on mobile, reduce padding ── */
