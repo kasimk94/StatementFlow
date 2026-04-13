@@ -448,10 +448,10 @@ export default function Home() {
               </span>
             </div>
           </h1>
-          <p className="text-slate-500 mx-auto mb-10 scroll-animate" style={{ fontSize: "1.15rem", lineHeight: 1.75, maxWidth: 600, transitionDelay: "0.1s" }}>
-            Stop guessing where your money goes.<br />
-            Upload your bank statement and get instant clarity —<br />
-            spending categories, insights, and clean data.<br />
+          <p className="hero-subheadline text-slate-500 mx-auto mb-10 scroll-animate" style={{ fontSize: "1.15rem", lineHeight: 1.75, maxWidth: 600, transitionDelay: "0.1s" }}>
+            Stop guessing where your money goes.<span className="hide-mobile"><br /></span>{" "}
+            Upload your bank statement and get instant clarity —<span className="hide-mobile"><br /></span>{" "}
+            spending categories, insights, and clean data.<span className="hide-mobile"><br /></span>{" "}
             No bank login. No account. No data stored. Ever.
           </p>
           <div className="hero-cta-group mb-10 scroll-animate" style={{ transitionDelay: "0.15s" }}>
@@ -742,7 +742,7 @@ export default function Home() {
                 backgroundColor: "#e8edf5",
                 borderRadius: 9999,
                 padding: 4,
-                width: 340,
+                width: "min(340px, 90vw)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.10)",
               }}
             >

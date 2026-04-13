@@ -657,6 +657,33 @@ img, video { max-width: 100%; height: auto; }
   .show-mobile {
     display: block !important;
   }
+
+  /* ── Hero subheadline: smaller font on mobile ── */
+  .hero-subheadline {
+    font-size: 1rem !important;
+    line-height: 1.65 !important;
+  }
+
+  /* ── Hero animated span: smaller font floor on mobile ── */
+  .hero-animated-line span {
+    font-size: clamp(1.7rem, 7vw, 3.5rem) !important;
+  }
+
+  /* ── Hero trust strip: tighter padding on mobile ── */
+  .hero-trust-strip {
+    padding: 16px !important;
+  }
+
+  /* ── Upload zone: reduce padding on mobile ── */
+  .upload-section {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* ── Prevent page-level horizontal scroll ── */
+  body {
+    overflow-x: hidden !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -667,5 +694,12 @@ img, video { max-width: 100%; height: auto; }
   .hero-trust-bar {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+  /* Hero animated font: smaller floor on very small screens */
+  .hero-animated-line span {
+    font-size: clamp(1.5rem, 8vw, 2.8rem) !important;
+  }
+  .hero-animated-line {
+    min-height: 180px !important;
   }
 }
