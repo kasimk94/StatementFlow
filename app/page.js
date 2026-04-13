@@ -407,7 +407,7 @@ export default function Home() {
           }}>
             Structured data — not another finance app
           </div>
-          <h1 className="leading-tight mb-6 scroll-animate" style={{ transitionDelay: "0.05s" }}>
+          <h1 className="mb-6 scroll-animate" style={{ transitionDelay: "0.05s" }}>
             <span style={{
               fontFamily: "var(--font-playfair)",
               fontWeight: 400,
