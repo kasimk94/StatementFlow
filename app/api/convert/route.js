@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 const anthropic = new Anthropic();
 
@@ -92,6 +95,21 @@ No markdown, no explanation. Only the JSON object.`,
 export async function POST(req) {
   try {
     console.log("=== PDF CONVERSION STARTED ===");
+
+    // ── 0. Upload limit check ───────────────────────────────────────────────
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id) {
+      const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+      if (user && user.plan === "FREE" && user.uploadCount >= 3) {
+        return NextResponse.json(
+          { error: "You have reached the 3 upload limit on the free plan. Upgrade to Pro for unlimited uploads." },
+          { status: 403 }
+        );
+      }
+    } else {
+      // Guest: check cookie-based counter (handled client-side — server trusts session)
+      // No strict server enforcement for guests; rely on client-side gate
+    }
 
     // ── 1. Read form data ───────────────────────────────────────────────────
     const formData = await req.formData();
@@ -270,6 +288,14 @@ export async function POST(req) {
     };
 
     console.log("=== CONVERSION SUCCESS ===", transactions.length, "transactions");
+
+    // ── Increment upload count for logged-in users ─────────────────────────
+    if (session?.user?.id) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { uploadCount: { increment: 1 } },
+      });
+    }
 
     return NextResponse.json({
       transactions,

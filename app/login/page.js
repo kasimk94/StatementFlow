@@ -1,0 +1,185 @@
+"use client";
+
+import { useState, Suspense } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+
+function LogoIcon({ size = 32 }) {
+  const r = Math.round(size * 0.25);
+  const s = Math.round(size * 0.56);
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: r, flexShrink: 0,
+      background: "linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: "0 2px 8px rgba(37,99,235,0.35)",
+    }}>
+      <svg width={s} height={s} viewBox="0 0 18 18" fill="none">
+        <rect x="1"  y="11" width="3" height="6"  rx="1" fill="white" fillOpacity="0.65"/>
+        <rect x="6"  y="7"  width="3" height="10" rx="1" fill="white" fillOpacity="0.85"/>
+        <rect x="11" y="3"  width="3" height="14" rx="1" fill="white"/>
+        <path d="M2.5 10.5 C5.5 6 9 6.5 12.5 2.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
+        <path d="M10.5 1.5 L13 2.5 L12 5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    </div>
+  );
+}
+
+function LoginPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [error,    setError]    = useState("");
+  const [loading,  setLoading]  = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (result?.error) {
+      setError("Invalid email or password.");
+    } else {
+      router.push(callbackUrl);
+    }
+  }
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #f8f7ff 0%, #ede9fe 100%)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "24px 16px",
+    }}>
+      {/* Logo */}
+      <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", marginBottom: 32 }}>
+        <LogoIcon size={36} />
+        <span style={{
+          fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em",
+          background: "linear-gradient(135deg, #1a1a2e 0%, #6c5ce7 100%)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+        }}>
+          StatementFlow
+        </span>
+      </Link>
+
+      {/* Card */}
+      <div style={{
+        background: "white",
+        borderRadius: 20,
+        padding: "40px 36px",
+        width: "100%",
+        maxWidth: 420,
+        boxShadow: "0 4px 40px rgba(108,92,231,0.12)",
+        border: "1px solid rgba(108,92,231,0.1)",
+      }}>
+        <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#1a1a2e", marginBottom: 6, textAlign: "center" }}>
+          Welcome back
+        </h1>
+        <p style={{ fontSize: "0.9rem", color: "#64748b", textAlign: "center", marginBottom: 28 }}>
+          Log in to your StatementFlow account
+        </p>
+
+        {error && (
+          <div style={{
+            background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10,
+            padding: "12px 14px", marginBottom: 20, color: "#dc2626", fontSize: "0.875rem",
+          }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="you@example.com"
+              style={{
+                width: "100%", padding: "11px 14px", borderRadius: 10, fontSize: "0.95rem",
+                border: "1.5px solid #e2e8f0", outline: "none", boxSizing: "border-box",
+                transition: "border-color 0.2s ease",
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "#6c5ce7")}
+              onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••"
+              style={{
+                width: "100%", padding: "11px 14px", borderRadius: 10, fontSize: "0.95rem",
+                border: "1.5px solid #e2e8f0", outline: "none", boxSizing: "border-box",
+                transition: "border-color 0.2s ease",
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "#6c5ce7")}
+              onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              marginTop: 4,
+              background: loading ? "#a5b4fc" : "linear-gradient(135deg, #6d28d9, #4f46e5)",
+              color: "white",
+              border: "none",
+              borderRadius: 12,
+              padding: "13px",
+              fontSize: "1rem",
+              fontWeight: 700,
+              cursor: loading ? "not-allowed" : "pointer",
+              transition: "filter 0.2s ease",
+            }}
+          >
+            {loading ? "Logging in…" : "Log in"}
+          </button>
+        </form>
+
+        <p style={{ textAlign: "center", marginTop: 24, fontSize: "0.875rem", color: "#64748b" }}>
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" style={{ color: "#6c5ce7", fontWeight: 600, textDecoration: "none" }}>
+            Sign up free
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}

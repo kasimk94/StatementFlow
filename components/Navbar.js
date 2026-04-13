@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 
 // ── Injected CSS ──────────────────────────────────────────────────────────────
 const NAVBAR_CSS = `
@@ -148,6 +149,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
     ? NAV_LINKS
     : NAV_LINKS.filter((l) => l.section !== "reviews");
 
+  const { data: session } = useSession();
   const [topPx,         setTopPx]         = useState(-110);
   const [easing,        setEasing]        = useState("top 0.65s cubic-bezier(0.34,1.56,0.64,1)");
   const [activeSection, setActiveSection] = useState("");
@@ -390,33 +392,66 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
 
         {/* Right side */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          {/* Dashboard: "Upload another" | Homepage: "Try Free" — desktop only */}
-          <div className="nav-tryfree-desktop">
-            {onUploadAnother ? (
-              <button
-                onClick={onUploadAnother}
-                style={{
-                  background:  "transparent",
-                  color:       "#6d28d9",
-                  border:      "2px solid #6d28d9",
-                  borderRadius: 999,
-                  padding:     "8px 18px",
-                  fontSize:    "0.85rem",
-                  fontWeight:  600,
-                  cursor:      "pointer",
-                  transition:  "background 0.2s ease, color 0.2s ease",
-                  whiteSpace:  "nowrap",
-                  maxWidth:    180,
-                  overflow:    "hidden",
-                  textOverflow:"ellipsis",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "#6d28d9"; e.currentTarget.style.color = "#fff"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6d28d9"; }}
-              >
-                Upload another
-              </button>
+          {/* Auth buttons — desktop only */}
+          <div className="nav-tryfree-desktop" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {session ? (
+              <>
+                <Link
+                  href="/account"
+                  style={{
+                    fontSize: "0.85rem", fontWeight: 600, color: "#4a4a6a",
+                    textDecoration: "none", padding: "6px 12px", borderRadius: 8,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {session.user?.name?.split(" ")[0] || "Account"}
+                </Link>
+                {onUploadAnother ? (
+                  <button
+                    onClick={onUploadAnother}
+                    style={{
+                      background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9",
+                      borderRadius: 999, padding: "8px 18px", fontSize: "0.85rem", fontWeight: 600,
+                      cursor: "pointer", whiteSpace: "nowrap",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#6d28d9"; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6d28d9"; }}
+                  >
+                    Upload another
+                  </button>
+                ) : (
+                  <button className="ntry" onClick={onScrollToUpload}>Try Free</button>
+                )}
+              </>
             ) : (
-              <button className="ntry" onClick={onScrollToUpload}>Try Free</button>
+              <>
+                <Link
+                  href="/login"
+                  style={{
+                    fontSize: "0.85rem", fontWeight: 600, color: "#4a4a6a",
+                    textDecoration: "none", padding: "6px 12px", borderRadius: 8,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Log in
+                </Link>
+                {onUploadAnother ? (
+                  <button
+                    onClick={onUploadAnother}
+                    style={{
+                      background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9",
+                      borderRadius: 999, padding: "8px 18px", fontSize: "0.85rem", fontWeight: 600,
+                      cursor: "pointer", whiteSpace: "nowrap",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#6d28d9"; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6d28d9"; }}
+                  >
+                    Upload another
+                  </button>
+                ) : (
+                  <button className="ntry" onClick={onScrollToUpload}>Try Free</button>
+                )}
+              </>
             )}
           </div>
           {/* Hamburger — mobile only */}
@@ -466,7 +501,41 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
               {label}
             </a>
           ))}
-          <div style={{ padding: "8px 6px 2px" }}>
+          <div style={{ padding: "8px 6px 2px", display: "flex", flexDirection: "column", gap: 8 }}>
+            {session ? (
+              <>
+                <Link
+                  href="/account"
+                  className="nav-mobile-link"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  My Account
+                </Link>
+                <button
+                  style={{ width: "100%", borderRadius: 999, fontSize: "0.9rem", fontWeight: 600, padding: "13px", background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9", cursor: "pointer" }}
+                  onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="nav-mobile-link"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  style={{ width: "100%", display: "block", textAlign: "center", borderRadius: 12, fontSize: 15, padding: "13px", background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "#fff", fontWeight: 600, textDecoration: "none" }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign up free
+                </Link>
+              </>
+            )}
             {onUploadAnother ? (
               <button
                 style={{ width: "100%", borderRadius: 999, fontSize: "0.9rem", fontWeight: 600, padding: "13px", background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9", cursor: "pointer" }}

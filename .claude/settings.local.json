@@ -28,7 +28,13 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(node -e \"require\\(''''@anthropic-ai/sdk''''\\)\")",
-      "Bash(find C:UsersLenovoDesktopbank-converter -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\) ! -path */node_modules/* ! -path */.next/* -ls)"
+      "Bash(find C:UsersLenovoDesktopbank-converter -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\) ! -path */node_modules/* ! -path */.next/* -ls)",
+      "Bash(ls:*)",
+      "Bash(npx prisma:*)",
+      "Bash(find C:/Users/Lenovo/Desktop/bank-converter/node_modules/@prisma -name *.md)",
+      "Bash(find C:/Users/Lenovo/Desktop/bank-converter/node_modules/prisma -name CHANGELOG* -o -name README*)",
+      "Bash(find C:/Users/Lenovo/Desktop/bank-converter/node_modules/prisma -name config*)",
+      "Bash(\"C:/Users/Lenovo/Desktop/bank-converter/.gitignore\")"
     ]
   }
 }

@@ -5,3 +5,7 @@ node_modules/
 *.env
 .DS_Store
 npm-debug.log*
+
+# SQLite database
+*.db
+dev.db
