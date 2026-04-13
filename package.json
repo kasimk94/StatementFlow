@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "prisma generate && prisma db push",
-    "dev": "next dev --turbopack",
+    "postinstall": "prisma generate",
     "build": "next build",
-    "start": "next start",
+    "start": "prisma db push && next start",
+    "dev": "next dev --turbopack",
     "lint": "eslint"
   },
   "dependencies": {
