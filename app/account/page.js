@@ -39,23 +39,43 @@ function AccountPageInner() {
   const [upgradingPlan, setUpgradingPlan] = useState(null);
   const [successMsg,    setSuccessMsg]    = useState("");
   const [cancelMsg,     setCancelMsg]     = useState("");
+  const [timedOut,      setTimedOut]      = useState(false);
 
+  // Debug log — remove once confirmed working
+  useEffect(() => {
+    console.log("[AccountPage] useSession →", { status, user: session?.user ?? null });
+  }, [status, session]);
+
+  // Redirect unauthenticated users
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login?callbackUrl=/account");
     }
   }, [status, router]);
 
+  // Safety timeout — if still loading after 5 s, something is wrong (bad secret / URL)
+  useEffect(() => {
+    if (status !== "loading") return;
+    const t = setTimeout(() => {
+      console.warn("[AccountPage] Session still loading after 5 s — redirecting to login");
+      setTimedOut(true);
+      router.push("/login?callbackUrl=/account");
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [status, router]);
+
+  // Handle Stripe redirect query params
   useEffect(() => {
     if (searchParams.get("success") === "true") {
       setSuccessMsg("Your plan has been upgraded!");
-      update(); // refresh session
+      update(); // triggers jwt callback with trigger="update" to re-fetch plan from DB
     }
     if (searchParams.get("canceled") === "true") {
       setCancelMsg("Checkout was cancelled.");
     }
   }, [searchParams, update]);
 
+  // Fetch fresh user data from DB once session is ready
   useEffect(() => {
     if (!session?.user?.id) return;
     fetch("/api/account/me")
@@ -78,10 +98,17 @@ function AccountPageInner() {
     }
   }
 
-  if (status === "loading" || status === "unauthenticated") {
+  if (status === "loading" || status === "unauthenticated" || timedOut) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#6c5ce7", fontSize: "1rem" }}>Loading…</div>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+        <div style={{ color: "#6c5ce7", fontSize: "1rem" }}>
+          {timedOut ? "Redirecting to login…" : "Loading your account…"}
+        </div>
+        {status === "loading" && !timedOut && (
+          <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+            If this takes too long, check that NEXTAUTH_SECRET and NEXTAUTH_URL are set correctly.
+          </div>
+        )}
       </div>
     );
   }
