@@ -92,7 +92,7 @@ function AdminLink() {
 }
 
 // ── Pricing feature row ───────────────────────────────────────────────────────
-function PricingFeature({ text, included, light }) {
+function PricingFeature({ text, included, light, comingSoon }) {
   return (
     <li className="flex items-start gap-2.5 text-sm">
       {included ? (
@@ -106,6 +106,11 @@ function PricingFeature({ text, included, light }) {
       )}
       <span className={included ? (light ? "text-white/90" : "text-slate-700") : (light ? "text-white/35" : "text-slate-400")}>
         {text}
+        {comingSoon && (
+          <span style={{ marginLeft: 6, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", background: "#f1f5f9", color: "#94a3b8", border: "1px solid #e2e8f0", borderRadius: 4, padding: "1px 5px", verticalAlign: "middle", whiteSpace: "nowrap" }}>
+            SOON
+          </span>
+        )}
       </span>
     </li>
   );
@@ -867,12 +872,13 @@ export default function Home() {
                 <p className="text-sm text-slate-400 mt-2">Perfect for getting started</p>
               </div>
               <ul className="space-y-3 flex-1 mb-8">
-                <PricingFeature text="1 upload per month" included />
+                <PricingFeature text="1 PDF upload per month" included />
                 <PricingFeature text="Up to 100 transactions" included />
                 <PricingFeature text="Spending dashboard" included />
                 <PricingFeature text="AI categorisation" included />
                 <PricingFeature text="3 basic AI insights" included />
-                <PricingFeature text="Excel & CSV export" included={false} />
+                <PricingFeature text="Excel export" included={false} />
+                <PricingFeature text="CSV export" included={false} />
                 <PricingFeature text="Monthly spending report" included={false} />
               </ul>
               <button
@@ -970,9 +976,9 @@ export default function Home() {
               <ul className="space-y-3 flex-1 mb-8">
                 <PricingFeature text="Everything in Pro" included />
                 <PricingFeature text="12 months statement history" included />
-                <PricingFeature text="Multiple bank accounts" included />
-                <PricingFeature text="AI chat assistant" included />
-                <PricingFeature text="Business expense tagging" included />
+                <PricingFeature text="Multiple bank accounts" included comingSoon />
+                <PricingFeature text="AI chat assistant" included comingSoon />
+                <PricingFeature text="Business expense tagging" included comingSoon />
                 <PricingFeature text="Priority support" included />
               </ul>
               <button
