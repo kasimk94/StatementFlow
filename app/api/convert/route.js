@@ -100,9 +100,9 @@ export async function POST(req) {
     const session = await getServerSession(authOptions);
     if (session?.user?.id) {
       const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-      if (user && user.plan === "FREE" && user.uploadCount >= 3) {
+      if (user && user.plan === "FREE" && user.uploadCount >= 1) {
         return NextResponse.json(
-          { error: "You have reached the 3 upload limit on the free plan. Upgrade to Pro for unlimited uploads." },
+          { error: "You have reached the 1 upload limit on the free plan. Upgrade to Pro for unlimited uploads." },
           { status: 403 }
         );
       }

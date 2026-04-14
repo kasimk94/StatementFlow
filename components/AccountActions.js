@@ -46,7 +46,7 @@ export function UpgradeButtons() {
         <div style={{ background: "white", borderRadius: 16, padding: 24, border: "2px solid #6c5ce7", boxShadow: "0 4px 20px rgba(108,92,231,0.12)" }}>
           <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#6c5ce7", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Pro</div>
           <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#1a1a2e", marginBottom: 4 }}>
-            £7.99<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#64748b" }}>/mo</span>
+            £4.99<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#64748b" }}>/mo</span>
           </div>
           <ul style={{ listStyle: "none", padding: 0, margin: "16px 0", display: "flex", flexDirection: "column", gap: 8 }}>
             {["Unlimited uploads", "Excel export", "Spending dashboard", "Email support"].map((f) => (
@@ -73,7 +73,7 @@ export function UpgradeButtons() {
         <div style={{ background: "white", borderRadius: 16, padding: 24, border: "1.5px solid #e2e8f0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
           <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0ea5e9", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Business</div>
           <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#1a1a2e", marginBottom: 4 }}>
-            £25.99<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#64748b" }}>/mo</span>
+            £19.99<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#64748b" }}>/mo</span>
           </div>
           <ul style={{ listStyle: "none", padding: 0, margin: "16px 0", display: "flex", flexDirection: "column", gap: 8 }}>
             {["Everything in Pro", "Multi-statement upload", "VAT analysis", "Priority support"].map((f) => (

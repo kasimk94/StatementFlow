@@ -188,8 +188,8 @@ export default function Home() {
 
   const PRO_MONTHLY = 4.99;
   const BIZ_MONTHLY = 19.99;
-  const PRO_ANNUAL  = 3.29;
-  const BIZ_ANNUAL  = 13.99;
+  const PRO_ANNUAL  = (49.99 / 12);   // £49.99/year billed annually
+  const BIZ_ANNUAL  = (199.99 / 12);  // £199.99/year billed annually
 
   function handleBilling(val) {
     if (val === billing) return;
@@ -867,13 +867,13 @@ export default function Home() {
                 <p className="text-sm text-slate-400 mt-2">Perfect for getting started</p>
               </div>
               <ul className="space-y-3 flex-1 mb-8">
-                <PricingFeature text="3 PDF uploads per month" included />
+                <PricingFeature text="1 upload per month" included />
+                <PricingFeature text="Up to 100 transactions" included />
                 <PricingFeature text="Spending dashboard" included />
-                <PricingFeature text="Basic categories" included />
-                <PricingFeature text="CSV export" included />
-                <PricingFeature text="Excel export" included={false} />
-                <PricingFeature text="Accountant view" included={false} />
-                <PricingFeature text="VAT estimation" included={false} />
+                <PricingFeature text="AI categorisation" included />
+                <PricingFeature text="3 basic AI insights" included />
+                <PricingFeature text="Excel & CSV export" included={false} />
+                <PricingFeature text="Monthly spending report" included={false} />
               </ul>
               <button
                 onClick={scrollToUpload}
@@ -917,20 +917,20 @@ export default function Home() {
                   style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
                 >
                   {billing === "annually"
-                    ? <><span className="text-emerald-300 font-bold">Save 34%</span> · billed £39.48 annually</>
+                    ? <><span className="text-emerald-300 font-bold">Save £10</span> · billed £49.99 annually</>
                     : <>&nbsp;</>}
                 </p>
                 <p className="text-sm text-white/60 mt-2">For individuals who want full control</p>
               </div>
               <ul className="space-y-3 flex-1 mb-8">
-                <PricingFeature text="Unlimited PDF uploads" included light />
+                <PricingFeature text="Unlimited uploads" included light />
+                <PricingFeature text="Unlimited transactions" included light />
                 <PricingFeature text="Full spending dashboard" included light />
-                <PricingFeature text="Advanced categories & insights" included light />
+                <PricingFeature text="Unlimited AI categorisation" included light />
+                <PricingFeature text="Full AI insights" included light />
                 <PricingFeature text="Excel & CSV export" included light />
-                <PricingFeature text="Spending personality & AI insights" included light />
-                <PricingFeature text="Priority processing" included light />
-                <PricingFeature text="Accountant view" included={false} light />
-                <PricingFeature text="VAT estimation" included={false} light />
+                <PricingFeature text="Monthly spending report" included light />
+                <PricingFeature text="3 months statement history" included light />
               </ul>
               <button
                 className="w-full py-3 rounded-xl text-sm font-bold text-indigo-700 bg-white hover:bg-slate-50 transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
@@ -962,19 +962,17 @@ export default function Home() {
                   style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
                 >
                   {billing === "annually"
-                    ? <><span className="text-emerald-600 font-bold">Save 30%</span> · billed £167.88 annually</>
+                    ? <><span className="text-emerald-600 font-bold">Save £40</span> · billed £199.99 annually</>
                     : <>&nbsp;</>}
                 </p>
                 <p className="text-sm text-slate-400 mt-2">For accountants &amp; small businesses</p>
               </div>
               <ul className="space-y-3 flex-1 mb-8">
                 <PricingFeature text="Everything in Pro" included />
-                <PricingFeature text="Accountant P&L view" included />
-                <PricingFeature text="VAT estimation built in" included />
-                <PricingFeature text="Audit-ready reconciliation" included />
-                <PricingFeature text="Professional PDF reports" included />
-                <PricingFeature text="Debit & credit split export" included />
-                <PricingFeature text="Tax category mapping" included />
+                <PricingFeature text="12 months statement history" included />
+                <PricingFeature text="Multiple bank accounts" included />
+                <PricingFeature text="AI chat assistant" included />
+                <PricingFeature text="Business expense tagging" included />
                 <PricingFeature text="Priority support" included />
               </ul>
               <button

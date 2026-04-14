@@ -6,9 +6,9 @@ import prisma from "@/lib/prisma";
 import { SignOutButton, UpgradeButtons } from "@/components/AccountActions";
 
 const PLAN_DETAILS = {
-  FREE:     { label: "Free",     color: "#64748b", uploads: "3 / month", price: "£0" },
-  PRO:      { label: "Pro",      color: "#6c5ce7", uploads: "Unlimited", price: "£7.99/mo" },
-  BUSINESS: { label: "Business", color: "#0ea5e9", uploads: "Unlimited", price: "£25.99/mo" },
+  FREE:     { label: "Free",     color: "#64748b", uploads: "1 / month", price: "£0" },
+  PRO:      { label: "Pro",      color: "#6c5ce7", uploads: "Unlimited", price: "£4.99/mo" },
+  BUSINESS: { label: "Business", color: "#0ea5e9", uploads: "Unlimited", price: "£19.99/mo" },
 };
 
 function PlanBadge({ plan }) {

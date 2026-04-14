@@ -108,14 +108,14 @@ const webAppSchema = {
     {
       "@type": "Offer",
       name: "Pro Plan",
-      price: "7.99",
+      price: "4.99",
       priceCurrency: "GBP",
       billingIncrement: "P1M",
     },
     {
       "@type": "Offer",
       name: "Business Plan",
-      price: "25.99",
+      price: "19.99",
       priceCurrency: "GBP",
       billingIncrement: "P1M",
     },
