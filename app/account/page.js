@@ -41,26 +41,28 @@ function AccountPageInner() {
   const [cancelMsg,     setCancelMsg]     = useState("");
   const [timedOut,      setTimedOut]      = useState(false);
 
-  // Debug log — remove once confirmed working
+  // Debug log
   useEffect(() => {
-    console.log("[AccountPage] useSession →", { status, user: session?.user ?? null });
+    console.log("[AccountPage] useSession status:", status);
+    console.log("[AccountPage] session data:", JSON.stringify(session?.user ?? null));
   }, [status, session]);
 
-  // Redirect unauthenticated users
+  // Redirect unauthenticated users immediately
   useEffect(() => {
     if (status === "unauthenticated") {
+      console.log("[AccountPage] unauthenticated — redirecting to login");
       router.push("/login?callbackUrl=/account");
     }
   }, [status, router]);
 
-  // Safety timeout — if still loading after 5 s, something is wrong (bad secret / URL)
+  // Safety timeout — if still loading after 3 s, NEXTAUTH_SECRET/URL is likely wrong
   useEffect(() => {
     if (status !== "loading") return;
     const t = setTimeout(() => {
-      console.warn("[AccountPage] Session still loading after 5 s — redirecting to login");
+      console.warn("[AccountPage] Session loading >3 s — check NEXTAUTH_SECRET and NEXTAUTH_URL env vars");
       setTimedOut(true);
       router.push("/login?callbackUrl=/account");
-    }, 5000);
+    }, 3000);
     return () => clearTimeout(t);
   }, [status, router]);
 
