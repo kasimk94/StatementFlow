@@ -36,8 +36,9 @@ EXTRACTION RULES:
 3. Credits = money coming IN (salary, transfers in, refunds, cashback).
 4. Debits = money going OUT (purchases, bill payments, ATM withdrawals).
 5. SKIP: internal pot/savings transfers (Monzo "Transfer from Pot", "Transfer to Pot"), balance rows, page headers, bank registration text, running-balance numbers.
-6. Clean descriptions: strip payment-type prefixes (CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, etc.) — keep only the merchant or person name.
+6. Clean descriptions: strip payment-type prefixes (CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, etc.) — keep only the merchant or person name. If a description spans multiple lines in the PDF, concatenate all lines into a single clean description — remove all line breaks within descriptions.
 7. Multi-page statements: extract ALL transactions from ALL pages — do NOT stop at page 1.
+7a. If a transaction is marked as "returned", "reversed", "unpaid", "recalled", or "refunded", treat it as a CREDIT (money coming back to the account) regardless of which column it appears in.
 8. Opening balance: the balance figure shown at the very start of the statement period.
 9. Closing balance: the balance figure shown at the very end of the statement period.
 10. Do NOT invent or hallucinate transactions. Only extract what is clearly printed.
@@ -182,6 +183,81 @@ function validateParse(parseResult, transactions) {
 }
 
 // ---------------------------------------------------------------------------
+// Merchant name normalisation (FIX 5)
+// ---------------------------------------------------------------------------
+const MERCHANT_MAP = {
+  'AMZN':            'Amazon',
+  'AMAZON':          'Amazon',
+  'NETFLIX':         'Netflix',
+  'SPOTIFYAB':       'Spotify',
+  'SPOTIFY':         'Spotify',
+  'PAYPAL':          'PayPal',
+  'APPLE.COM':       'Apple',
+  'APPLE':           'Apple',
+  'GOOGLE':          'Google',
+  'TESCO':           'Tesco',
+  'SAINSBURYS':      "Sainsbury's",
+  'SAINSBURY':       "Sainsbury's",
+  'ASDA':            'Asda',
+  'MCDONALD':        "McDonald's",
+  'MCDONALDS':       "McDonald's",
+  'STARBUCKS':       'Starbucks',
+  'COSTA':           'Costa Coffee',
+  'DELIVEROO':       'Deliveroo',
+  'UBER EATS':       'Uber Eats',
+  'UBEREATS':        'Uber Eats',
+  'JUST EAT':        'Just Eat',
+  'JUSTEAT':         'Just Eat',
+  'PAYPOINT':        'PayPoint',
+  'LIDL':            'Lidl',
+  'ALDI':            'Aldi',
+  'MARKS AND SPENCER': 'M&S',
+  'MARKS & SPENCER': 'M&S',
+};
+
+function normaliseMerchant(raw) {
+  if (!raw) return raw;
+  let name = raw
+    .replace(/\*[A-Z0-9]+/g, '')         // Remove ref codes after * e.g. AMAZON*AB12CD
+    .replace(/\s+(GBR|UK|GB)$/i, '')     // Strip country suffixes
+    .replace(/\s+(LTD|LIMITED|PLC)$/i, '')
+    .replace(/\s+\d{6,}/g, '')           // Remove long terminal/ref numbers
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const upper = name.toUpperCase();
+  for (const [key, value] of Object.entries(MERCHANT_MAP)) {
+    if (upper.startsWith(key) || upper === key) return value;
+  }
+
+  // Title-case
+  return name.split(' ')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
+// ---------------------------------------------------------------------------
+// Exact-duplicate removal — same date + description + amount (FIX 1)
+// ---------------------------------------------------------------------------
+function deduplicateParsed(transactions) {
+  const seen = new Map();
+  const result = [];
+  let removed = 0;
+  for (const t of transactions) {
+    const key = `${(t.date || '').trim()}||${(t.description || '').toLowerCase().trim()}||${parseFloat(t.amount || 0).toFixed(2)}`;
+    if (seen.has(key)) {
+      removed++;
+      console.log(`Dedup removed: ${t.date} "${t.description}" £${t.amount}`);
+    } else {
+      seen.set(key, true);
+      result.push(t);
+    }
+  }
+  if (removed > 0) console.log(`Deduplication: removed ${removed} exact duplicate(s), ${result.length} remain`);
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // POST /api/convert  — Claude vision parses PDF directly, regex categorises
 // ---------------------------------------------------------------------------
 export async function POST(req) {
@@ -233,13 +309,13 @@ export async function POST(req) {
 
     if (parsed.length === 0) {
       return NextResponse.json(
-        {
-          error:
-            "No transactions found in this statement. Please check the file is a valid bank statement.",
-        },
+        { error: "No transactions found in this statement. Please check the file is a valid bank statement." },
         { status: 400 }
       );
     }
+
+    // ── FIX 1: Remove exact duplicates before any processing ──────────────
+    const deduplicated = deduplicateParsed(parsed);
 
     // ── 6b. Load merchant memory for logged-in users ───────────────────────
     let merchantMemory = new Map(); // merchantKey → category
@@ -256,16 +332,22 @@ export async function POST(req) {
       }
     }
 
-    // ── 7. Categorise + normalise via local regex engine (zero cost) ─────────
-    const filteredParsed = parsed.filter(t => {
+    // ── 7. Filter internal/noise transactions ────────────────────────────────
+    const INTERNAL_PATTERNS = [
+      /transfer (from|to) pot/i,
+      /^withdrawal$/i,
+      /^deposit$/i,
+      /kasam khalid/i,
+      /k\.?\s*khalid/i,
+      /payment to self/i,
+      /own account/i,
+    ];
+    const filteredParsed = deduplicated.filter(t => {
       const d = (t.description || '').toLowerCase();
-      return !d.includes('transfer from pot') &&
-             !d.includes('transfer to pot') &&
-             d !== 'withdrawal' &&
-             d !== 'deposit';
+      return !INTERNAL_PATTERNS.some(p => p.test(d));
     });
 
-    console.log(`Filtered ${parsed.length - filteredParsed.length} pot transfers. Remaining: ${filteredParsed.length}`);
+    console.log(`Filtered ${deduplicated.length - filteredParsed.length} internal/noise. Remaining: ${filteredParsed.length}`);
 
     const rawTransactions = filteredParsed
       .map((t) => {
@@ -273,15 +355,15 @@ export async function POST(req) {
           typeof t.amount === "number"
             ? t.amount
             : parseFloat(String(t.amount).replace(/[^0-9.\-]/g, "")) || 0;
-        // Force unpaid DDs and returned transactions to credit — bank returned the money
-        const isUnpaidReturn = /unpaid direct debit|unpaid dd|returned payment/i.test(t.description || "");
+        // Force returned/reversed/recalled transactions to credit — money back in account
+        const isUnpaidReturn = /unpaid direct debit|unpaid dd|returned payment|returned funds|payment returned|transaction reversed|reversal|recalled payment|refunded/i.test(t.description || "");
         const type = isUnpaidReturn
           ? "credit"
           : (t.type || (amount >= 0 ? "credit" : "debit"));
         const signedAmount = type === "debit" ? -Math.abs(amount) : Math.abs(amount);
         const { category: autoCategory, exclude, isInternal = false, note = null } =
           categoriseTransaction(t.description, signedAmount, type);
-        const cleaned = cleanDescription(t.description || "Transaction");
+        const cleaned = normaliseMerchant(cleanDescription(t.description || "Transaction")) || "Transaction";
         // Merchant memory override
         const merchantKey = (t.description || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
         const category = merchantMemory.get(merchantKey) || autoCategory;
