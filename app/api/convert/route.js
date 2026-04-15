@@ -28,25 +28,42 @@ async function parseWithClaude(buffer) {
         },
         {
           type: "text",
-          text: `You are a Financial Auditor. Extract every real transaction from this bank statement PDF.
+          text: `You are a senior Financial Auditor. Extract every real transaction from this bank statement PDF with maximum accuracy.
 
-RULES:
-1. Read the PDF visually - understand the column structure (some banks use separate IN/OUT columns, others use signed amounts)
-2. Every transaction must have: date, description, amount (always positive), type (debit or credit)
-3. Credits = money coming in (salary, transfers in, refunds)
-4. Debits = money going out (purchases, payments, bills)
-5. EXCLUDE internal pot/savings transfers (Monzo "Transfer from Pot", "Transfer to Pot")
-6. EXCLUDE balance rows, page headers, bank registration text
-7. Clean descriptions - remove payment type prefixes (CONTACTLESS, FASTER PAYMENT, DD, VIS, CR etc), keep merchant/person name
-8. For multi-page statements, extract ALL transactions from ALL pages
+EXTRACTION RULES:
+1. Read the PDF visually — identify the exact column layout (some banks use separate IN/OUT columns, others use a single signed amount column).
+2. Every transaction MUST have: date, description, amount (always a positive number), type ("debit" or "credit").
+3. Credits = money coming IN (salary, transfers in, refunds, cashback).
+4. Debits = money going OUT (purchases, bill payments, ATM withdrawals).
+5. SKIP: internal pot/savings transfers (Monzo "Transfer from Pot", "Transfer to Pot"), balance rows, page headers, bank registration text, running-balance numbers.
+6. Clean descriptions: strip payment-type prefixes (CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, etc.) — keep only the merchant or person name.
+7. Multi-page statements: extract ALL transactions from ALL pages — do NOT stop at page 1.
+8. Opening balance: the balance figure shown at the very start of the statement period.
+9. Closing balance: the balance figure shown at the very end of the statement period.
+10. Do NOT invent or hallucinate transactions. Only extract what is clearly printed.
+11. If the same merchant appears on the same date with the same amount more than once, include each occurrence separately (genuine repeat transactions happen).
+12. Assign your confidence (0–100) in the accuracy of your extraction. Deduct points for: scanned/image PDFs, illegible text, ambiguous column layout, missing dates, mixed currencies.
 
-Return a JSON object in this exact format:
+Return ONLY a JSON object — no markdown, no explanation:
 {
-  "bank": "bank name (e.g. HSBC, Barclays, Monzo, Starling Bank, Lloyds, NatWest, etc)",
-  "transactions": [{"date":"DD Mon YYYY","description":"clean name","amount":1.23,"type":"debit"}]
+  "confidence": 87,
+  "bankDetected": "Barclays",
+  "openingBalance": 1234.56,
+  "closingBalance": 987.65,
+  "totalTransactionsFound": 47,
+  "warnings": ["Page 3 text quality low — some amounts may be misread"],
+  "transactions": [
+    {"date": "DD Mon YYYY", "description": "clean merchant name", "amount": 1.23, "type": "debit"}
+  ]
 }
 
-No markdown, no explanation. Only the JSON object.`,
+Rules for the top-level fields:
+- confidence: integer 0–100. Be honest — a scanned or blurry PDF should score 40–60.
+- bankDetected: bank name string (e.g. "HSBC", "Barclays", "Monzo") or "Unknown".
+- openingBalance: number or null if not found.
+- closingBalance: number or null if not found.
+- totalTransactionsFound: count of transactions you detected BEFORE any filtering.
+- warnings: array of strings describing any issues encountered (empty array if none).`,
         },
       ],
     }],
@@ -58,16 +75,27 @@ No markdown, no explanation. Only the JSON object.`,
     .replace(/```\s*$/i, '')
     .trim();
 
+  const EMPTY = { bank: 'Unknown', transactions: [], confidence: 40, openingBalance: null, closingBalance: null, totalTransactionsFound: 0, warnings: ['Parser returned no usable data'], bankDetected: 'Unknown' };
+
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object' && Array.isArray(parsed.transactions)) {
-      return { bank: parsed.bank || 'Unknown', transactions: parsed.transactions };
+      return {
+        bank:                  parsed.bankDetected || parsed.bank || 'Unknown',
+        transactions:          parsed.transactions,
+        confidence:            typeof parsed.confidence === 'number' ? parsed.confidence : 70,
+        openingBalance:        parsed.openingBalance ?? null,
+        closingBalance:        parsed.closingBalance ?? null,
+        totalTransactionsFound: parsed.totalTransactionsFound ?? parsed.transactions.length,
+        warnings:              Array.isArray(parsed.warnings) ? parsed.warnings : [],
+        bankDetected:          parsed.bankDetected || parsed.bank || 'Unknown',
+      };
     }
     // Fallback: if Claude returned a bare array
     if (Array.isArray(parsed)) {
-      return { bank: 'Unknown', transactions: parsed };
+      return { ...EMPTY, bank: 'Unknown', transactions: parsed, confidence: 50, warnings: ['Incomplete response — bank metadata missing'], totalTransactionsFound: parsed.length };
     }
-    return { bank: 'Unknown', transactions: [] };
+    return EMPTY;
   } catch(e) {
     // Salvage partial transactions array from within the object
     const txStart = raw.indexOf('"transactions"');
@@ -79,14 +107,78 @@ No markdown, no explanation. Only the JSON object.`,
           const partial = JSON.parse(raw.slice(arrStart, lastBrace + 1) + ']');
           if (Array.isArray(partial) && partial.length > 0) {
             console.log("Salvaged", partial.length, "transactions");
-            return { bank: 'Unknown', transactions: partial };
+            return { ...EMPTY, transactions: partial, confidence: 45, warnings: ['Response was truncated — results may be incomplete'], totalTransactionsFound: partial.length };
           }
         } catch(e2) {}
       }
     }
     console.error("Parse failed:", e.message);
-    return { bank: 'Unknown', transactions: [] };
+    return EMPTY;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Validation — checks Claude's parse result for common failure modes
+// ---------------------------------------------------------------------------
+function validateParse(parseResult, transactions) {
+  const errors = [];
+  const warnings = [];
+  const confidence = typeof parseResult.confidence === 'number' ? parseResult.confidence : 50;
+
+  // 1. Low confidence
+  if (confidence < 70) {
+    errors.push(`Low parser confidence (${confidence}%). The statement may be a scanned image or low-quality PDF. Results may be incomplete or inaccurate — please review carefully before exporting.`);
+  }
+
+  // 2. Balance reconciliation
+  if (parseResult.openingBalance != null && parseResult.closingBalance != null) {
+    const txCredits  = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + Math.abs(t.amount), 0);
+    const txDebits   = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + Math.abs(t.amount), 0);
+    const calcClose  = parseFloat((parseResult.openingBalance + txCredits - txDebits).toFixed(2));
+    const discrepancy = Math.abs(calcClose - parseResult.closingBalance);
+    if (discrepancy > 50) {
+      errors.push(`Balance discrepancy of £${discrepancy.toFixed(2)} detected. Expected closing balance £${parseResult.closingBalance.toFixed(2)} but transactions sum to £${calcClose.toFixed(2)}. Some transactions may be missing.`);
+    } else if (discrepancy > 10) {
+      warnings.push(`Minor balance discrepancy of £${discrepancy.toFixed(2)} detected. Please review all transactions before exporting.`);
+    }
+  }
+
+  // 3. Zero-amount transactions
+  const zeroCount = transactions.filter(t => Math.abs(t.amount) < 0.001).length;
+  if (zeroCount > 0) {
+    warnings.push(`${zeroCount} transaction${zeroCount !== 1 ? 's' : ''} with a £0.00 amount were detected. These may be parsing errors and have been included for review.`);
+  }
+
+  // 4. Duplicate detection (same date + description + amount)
+  const seen = new Map();
+  let dupCount = 0;
+  for (const t of transactions) {
+    const key = `${t.date}||${(t.description || '').toLowerCase()}||${Math.abs(t.amount).toFixed(2)}`;
+    seen.set(key, (seen.get(key) ?? 0) + 1);
+    if (seen.get(key) === 2) dupCount++;
+  }
+  if (dupCount > 0) {
+    warnings.push(`${dupCount} potential duplicate transaction${dupCount !== 1 ? 's' : ''} detected (same date, description, and amount). Please verify these are genuine repeats.`);
+  }
+
+  // 5. Too few transactions
+  if (transactions.length < 3) {
+    errors.push(`Only ${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} extracted. This is likely a parsing failure — please check the uploaded file is a valid bank statement.`);
+  }
+
+  // Surface any warnings Claude itself raised
+  if (Array.isArray(parseResult.warnings)) {
+    for (const w of parseResult.warnings) {
+      if (w && !warnings.includes(w)) warnings.push(w);
+    }
+  }
+
+  return {
+    isValid:    errors.length === 0,
+    confidence,
+    warnings,
+    errors,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -131,8 +223,9 @@ export async function POST(req) {
 
     // ── 3. Send PDF buffer directly to Sonnet vision ───────────────────────
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { bank: bankName, transactions: parsed } = await parseWithClaude(buffer);
-    console.log("Bank detected:", bankName);
+    const parseResult = await parseWithClaude(buffer);
+    const { bank: bankName, transactions: parsed, confidence: parseConfidence, openingBalance: parseOpeningBalance, closingBalance: parseClosingBalance, totalTransactionsFound, bankDetected } = parseResult;
+    console.log("Bank detected:", bankName, "| Confidence:", parseConfidence);
 
     // ── 4. PDF summary totals (not available without text extraction) ────────
     const pdfSummary = { moneyIn: null, moneyOut: null, startBalance: null, endBalance: null, overdraftLimit: null };
@@ -146,6 +239,21 @@ export async function POST(req) {
         },
         { status: 400 }
       );
+    }
+
+    // ── 6b. Load merchant memory for logged-in users ───────────────────────
+    let merchantMemory = new Map(); // merchantKey → category
+    if (session?.user?.id) {
+      try {
+        const memories = await prisma.merchantCategory.findMany({
+          where: { userId: session.user.id },
+          select: { merchantKey: true, category: true },
+        });
+        for (const m of memories) merchantMemory.set(m.merchantKey, m.category);
+        console.log(`Loaded ${merchantMemory.size} merchant memories`);
+      } catch (e) {
+        console.warn("Merchant memory load failed:", e.message);
+      }
     }
 
     // ── 7. Categorise + normalise via local regex engine (zero cost) ─────────
@@ -171,9 +279,12 @@ export async function POST(req) {
           ? "credit"
           : (t.type || (amount >= 0 ? "credit" : "debit"));
         const signedAmount = type === "debit" ? -Math.abs(amount) : Math.abs(amount);
-        const { category, exclude, isInternal = false, note = null } =
+        const { category: autoCategory, exclude, isInternal = false, note = null } =
           categoriseTransaction(t.description, signedAmount, type);
         const cleaned = cleanDescription(t.description || "Transaction");
+        // Merchant memory override
+        const merchantKey = (t.description || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
+        const category = merchantMemory.get(merchantKey) || autoCategory;
         const vat = type === "debit"
           ? detectVAT(cleaned, category, Math.abs(signedAmount))
           : { vatReclaimable: false, vatAmount: 0, vatConfidence: "excluded", vatNote: "Not applicable" };
@@ -186,6 +297,7 @@ export async function POST(req) {
           amount:            signedAmount,
           type,
           category,
+          merchantKey,
           exclude,
           isInternal,
           excludeFromTotals: false,
@@ -287,6 +399,10 @@ export async function POST(req) {
       transactionCount:  transactions.filter(t => t.vatReclaimable).length,
     };
 
+    // ── Validation ─────────────────────────────────────────────────────────
+    const validation = validateParse(parseResult, rawTransactions);
+    console.log("Validation:", JSON.stringify({ isValid: validation.isValid, confidence: validation.confidence, errors: validation.errors.length, warnings: validation.warnings.length }));
+
     console.log("=== CONVERSION SUCCESS ===", transactions.length, "transactions");
 
     // ── Increment upload count for logged-in users ─────────────────────────
@@ -302,11 +418,11 @@ export async function POST(req) {
       totalIncome,
       totalExpenses,
       netBalance,
-      startBalance:         pdfSummary.startBalance,
-      endBalance:           pdfSummary.endBalance,
+      startBalance:         parseOpeningBalance ?? pdfSummary.startBalance,
+      endBalance:           parseClosingBalance ?? pdfSummary.endBalance,
       transactionCount:     transactions.length,
-      confidence:           "high",
-      bank:                 bankName,
+      confidence:           parseConfidence,
+      bank:                 bankDetected || bankName,
       insights:             null,
       trueSpending,
       trueIncome,
@@ -319,6 +435,7 @@ export async function POST(req) {
       vatSummary,
       realIncome,
       realSpending,
+      validation,
     });
   } catch (err) {
     console.error("=== CONVERSION FAILED ===", err.message, err.stack);

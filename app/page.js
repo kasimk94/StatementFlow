@@ -418,6 +418,7 @@ export default function Home() {
             period={parseResult?.period ?? null}
             realIncome={parseResult?.realIncome ?? null}
             realSpending={parseResult?.realSpending ?? null}
+            validation={parseResult?.validation ?? null}
           />
         </main>
         {showFeedback && <FeedbackPopup onClose={closeFeedback} />}

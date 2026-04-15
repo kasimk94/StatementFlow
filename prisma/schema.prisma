@@ -59,3 +59,15 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model MerchantCategory {
+  id          String   @id @default(cuid())
+  userId      String
+  merchantKey String
+  category    String
+  count       Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, merchantKey])
+}
