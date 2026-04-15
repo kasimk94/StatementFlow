@@ -70,13 +70,17 @@ Rules for the top-level fields:
     }],
   });
 
+  const inputTokens  = response.usage?.input_tokens  ?? 0;
+  const outputTokens = response.usage?.output_tokens ?? 0;
+
   const raw = response.content[0].text.trim()
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
     .replace(/```\s*$/i, '')
     .trim();
 
-  const EMPTY = { bank: 'Unknown', transactions: [], confidence: 40, openingBalance: null, closingBalance: null, totalTransactionsFound: 0, warnings: ['Parser returned no usable data'], bankDetected: 'Unknown' };
+  const USAGE = { inputTokens, outputTokens };
+  const EMPTY = { bank: 'Unknown', transactions: [], confidence: 40, openingBalance: null, closingBalance: null, totalTransactionsFound: 0, warnings: ['Parser returned no usable data'], bankDetected: 'Unknown', usage: USAGE };
 
   try {
     const parsed = JSON.parse(raw);
@@ -90,15 +94,14 @@ Rules for the top-level fields:
         totalTransactionsFound: parsed.totalTransactionsFound ?? parsed.transactions.length,
         warnings:              Array.isArray(parsed.warnings) ? parsed.warnings : [],
         bankDetected:          parsed.bankDetected || parsed.bank || 'Unknown',
+        usage:                 USAGE,
       };
     }
-    // Fallback: if Claude returned a bare array
     if (Array.isArray(parsed)) {
       return { ...EMPTY, bank: 'Unknown', transactions: parsed, confidence: 50, warnings: ['Incomplete response — bank metadata missing'], totalTransactionsFound: parsed.length };
     }
     return EMPTY;
   } catch(e) {
-    // Salvage partial transactions array from within the object
     const txStart = raw.indexOf('"transactions"');
     const arrStart = txStart > -1 ? raw.indexOf('[', txStart) : raw.indexOf('[');
     if (arrStart > -1) {
@@ -116,6 +119,24 @@ Rules for the top-level fields:
     console.error("Parse failed:", e.message);
     return EMPTY;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Cost logging — model: claude-sonnet-4-6
+// Pricing: $3.00 / 1M input tokens, $15.00 / 1M output tokens
+// ---------------------------------------------------------------------------
+const COST_PER_M_IN  = 3.00;
+const COST_PER_M_OUT = 15.00;
+
+function calcCost(inputTokens, outputTokens) {
+  return (inputTokens / 1_000_000) * COST_PER_M_IN
+       + (outputTokens / 1_000_000) * COST_PER_M_OUT;
+}
+
+function logCallCost(label, inputTokens, outputTokens) {
+  const cost = calcCost(inputTokens, outputTokens);
+  console.log(`[cost] ${label}: ${inputTokens.toLocaleString()} in / ${outputTokens.toLocaleString()} out = $${cost.toFixed(4)}`);
+  return cost;
 }
 
 // ---------------------------------------------------------------------------
@@ -485,6 +506,14 @@ export async function POST(req) {
     const validation = validateParse(parseResult, rawTransactions);
     console.log("Validation:", JSON.stringify({ isValid: validation.isValid, confidence: validation.confidence, errors: validation.errors.length, warnings: validation.warnings.length }));
 
+    // ── Cost breakdown ─────────────────────────────────────────────────────
+    const parseIn  = parseResult.usage?.inputTokens  ?? 0;
+    const parseOut = parseResult.usage?.outputTokens ?? 0;
+    const parseCost = logCallCost("Parse (claude-sonnet-4-6)", parseIn, parseOut);
+    const totalCost = parseCost; // extend here if more Claude calls are added
+    console.log("=== COST BREAKDOWN ===");
+    console.log(`Parse call: ${parseIn.toLocaleString()} in / ${parseOut.toLocaleString()} out = $${parseCost.toFixed(4)}`);
+    console.log(`Total estimated cost: $${totalCost.toFixed(4)}`);
     console.log("=== CONVERSION SUCCESS ===", transactions.length, "transactions");
 
     // ── Increment upload count for logged-in users ─────────────────────────
