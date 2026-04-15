@@ -362,6 +362,7 @@ export default function Home() {
       period: data.period ?? null,
       realIncome: data.realIncome ?? null,
       realSpending: data.realSpending ?? null,
+      validation: data.validation ?? null,
     });
     setLoading(false);
     setApiDone(false);

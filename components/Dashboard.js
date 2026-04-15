@@ -1566,51 +1566,35 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── VALIDATION BANNERS ── */}
-      {!demoMode && validation && (() => {
-        const { isValid, confidence: valConf, errors, warnings } = validation;
-        const isSuccess = isValid && valConf >= 90 && warnings.length === 0;
-        const hasErrors   = errors.length > 0;
-        const hasWarnings = warnings.length > 0 && !warningsDismissed;
-        return (
-          <>
-            {/* Red error banner */}
-            {hasErrors && (
-              <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 14, padding: "14px 20px", display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <span style={{ fontSize: "1.3rem", lineHeight: 1.3, flexShrink: 0 }}>⚠️</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: 700, color: "#991b1b", fontSize: "0.95rem" }}>Parsing issues detected</p>
-                  {errors.map((e, i) => (
-                    <p key={i} style={{ margin: "4px 0 0", color: "#b91c1c", fontSize: "0.84rem" }}>{e}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Yellow warning banner (dismissable) */}
-            {hasWarnings && (
-              <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 14, padding: "14px 20px", display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <span style={{ fontSize: "1.3rem", lineHeight: 1.3, flexShrink: 0 }}>🔍</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: 700, color: "#92400e", fontSize: "0.95rem" }}>Please review your results</p>
-                  {warnings.map((w, i) => (
-                    <p key={i} style={{ margin: "4px 0 0", color: "#a16207", fontSize: "0.84rem" }}>{w}</p>
-                  ))}
-                </div>
-                <button onClick={() => setWarningsDismissed(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#a16207", fontSize: "1.2rem", lineHeight: 1, padding: 0, flexShrink: 0 }} aria-label="Dismiss">✕</button>
-              </div>
-            )}
-            {/* Green success banner (auto-dismisses after 4s) */}
-            {isSuccess && successVisible && (
-              <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 14, padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, transition: "opacity 0.5s" }}>
-                <span style={{ fontSize: "1.3rem", lineHeight: 1.3 }}>✅</span>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 700, color: "#166534", fontSize: "0.95rem" }}>Statement parsed successfully</p>
-                  <p style={{ margin: "2px 0 0", color: "#15803d", fontSize: "0.84rem" }}>High confidence ({valConf}%) · {transactions.length} transactions extracted · No issues detected.</p>
-                </div>
-              </div>
-            )}
-          </>
-        );
-      })()}
+      {!demoMode && validation && validation.isValid === false && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 0 }}>
+          <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>⚠️</span>
+          <div>
+            <p style={{ margin: 0, fontWeight: 700, color: "#991b1b", fontSize: "0.92rem" }}>We detected issues with this statement parse. Some figures may be inaccurate. Please verify your totals.</p>
+            {validation.errors.map((e, i) => (
+              <p key={i} style={{ margin: "4px 0 0", color: "#b91c1c", fontSize: "0.82rem" }}>{e}</p>
+            ))}
+          </div>
+        </div>
+      )}
+      {!demoMode && validation && validation.isValid === true && validation.warnings.length > 0 && !warningsDismissed && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>ℹ️</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: 0, fontWeight: 700, color: "#92400e", fontSize: "0.92rem" }}>Statement parsed with minor uncertainties. Please check your figures.</p>
+            {validation.warnings.map((w, i) => (
+              <p key={i} style={{ margin: "4px 0 0", color: "#a16207", fontSize: "0.82rem" }}>{w}</p>
+            ))}
+          </div>
+          <button onClick={() => setWarningsDismissed(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#a16207", fontSize: "1.1rem", lineHeight: 1, padding: "0 0 0 8px", flexShrink: 0 }} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+      {!demoMode && validation && validation.isValid === true && validation.confidence > 85 && validation.warnings.length === 0 && successVisible && (
+        <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>✓</span>
+          <p style={{ margin: 0, fontWeight: 700, color: "#166534", fontSize: "0.92rem" }}>Statement successfully parsed — {transactions.length} transactions found</p>
+        </div>
+      )}
 
       {/* ── DEMO TOAST ── */}
       {demoToast && (
@@ -1634,12 +1618,13 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em" }}>
           {demoMode ? "Example Statement" : "Your Statement"}
         </h2>
-        {(dateRange || bankName || (bank && bank !== "ai-parsed")) && (
-          <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
-            {dateRange ?? ""}
-            {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
-          </p>
-        )}
+        <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
+          {dateRange ?? ""}
+          {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
+          {!demoMode && validation && typeof validation.confidence === "number" && (
+            <span style={{ marginLeft: 6, color: "#cbd5e1" }}>· Parsed with {validation.confidence}% confidence</span>
+          )}
+        </p>
       </div>
 
       {/* ── EXPORT TOOLBAR ── */}
