@@ -92,25 +92,38 @@ function AdminLink() {
 }
 
 // ── Pricing feature row ───────────────────────────────────────────────────────
-function PricingFeature({ text, included, light, comingSoon }) {
+function PricingFeature({ text, included, light, dark, comingSoon }) {
+  let checkStyle, crossStyle, textStyle, soonStyle;
+  if (light) {
+    checkStyle = { color: "white" };
+    crossStyle = { color: "rgba(255,255,255,0.3)" };
+    textStyle  = included ? { color: "rgba(255,255,255,0.9)" } : { color: "rgba(255,255,255,0.35)" };
+    soonStyle  = { marginLeft: 6, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "1px 5px", verticalAlign: "middle", whiteSpace: "nowrap" };
+  } else if (dark) {
+    checkStyle = { color: "#a29bfe" };
+    crossStyle = { color: "#2d3a4a" };
+    textStyle  = included ? { color: "#cbd5e1" } : { color: "#3d4f63" };
+    soonStyle  = { marginLeft: 6, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", background: "rgba(108,99,255,0.12)", color: "#a29bfe", border: "1px solid rgba(108,99,255,0.2)", borderRadius: 4, padding: "1px 5px", verticalAlign: "middle", whiteSpace: "nowrap" };
+  } else {
+    checkStyle = { color: "#2563eb" };
+    crossStyle = { color: "#cbd5e1" };
+    textStyle  = included ? { color: "#334155" } : { color: "#94a3b8" };
+    soonStyle  = { marginLeft: 6, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", background: "#f1f5f9", color: "#94a3b8", border: "1px solid #e2e8f0", borderRadius: 4, padding: "1px 5px", verticalAlign: "middle", whiteSpace: "nowrap" };
+  }
   return (
-    <li className="flex items-start gap-2.5 text-sm">
+    <li style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: "0.875rem" }}>
       {included ? (
-        <svg className={`w-4 h-4 mt-0.5 shrink-0 ${light ? "text-white" : "text-blue-600"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <svg style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0, ...checkStyle }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       ) : (
-        <svg className={`w-4 h-4 mt-0.5 shrink-0 ${light ? "text-white/30" : "text-slate-300"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0, ...crossStyle }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       )}
-      <span className={included ? (light ? "text-white/90" : "text-slate-700") : (light ? "text-white/35" : "text-slate-400")}>
+      <span style={textStyle}>
         {text}
-        {comingSoon && (
-          <span style={{ marginLeft: 6, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", background: "#f1f5f9", color: "#94a3b8", border: "1px solid #e2e8f0", borderRadius: 4, padding: "1px 5px", verticalAlign: "middle", whiteSpace: "nowrap" }}>
-            SOON
-          </span>
-        )}
+        {comingSoon && <span style={soonStyle}>SOON</span>}
       </span>
     </li>
   );
@@ -414,7 +427,7 @@ export default function Home() {
 
   // ── Landing page ───────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ background: "#080C14", color: "#F0F4FF" }}>
 
       <Navbar onScrollToUpload={scrollToUpload} showReviewsLink={hasReviews} />
 
@@ -422,97 +435,51 @@ export default function Home() {
       <p className="visually-hidden">StatementFlow is a free UK bank statement converter that transforms PDF bank statements into Excel reports and spending dashboards. Supporting all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo and Starling.</p>
 
       {/* ══ SECTION 1: HERO ══ */}
-      <section id="hero" className="pt-28 pb-20 px-6 text-center" style={{ background: "linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%)" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div style={{
-            display: "inline-block",
-            background: "#f3f0ff",
-            color: "#6d28d9",
-            fontSize: "0.8rem",
-            fontWeight: 600,
-            padding: "6px 16px",
-            borderRadius: "999px",
-            marginBottom: "16px",
-            letterSpacing: "0.02em",
-          }}>
-            Structured data — not another finance app
+      <section id="hero" style={{ minHeight: "100vh", display: "flex", alignItems: "center", background: "#080C14", position: "relative", overflow: "hidden", paddingTop: 80 }}>
+        {/* Radial glow */}
+        <div style={{ position: "absolute", top: "40%", left: "50%", transform: "translate(-50%, -50%)", width: 900, height: 600, background: "radial-gradient(ellipse at center, rgba(108,99,255,0.18) 0%, rgba(79,158,255,0.06) 40%, transparent 70%)", pointerEvents: "none", zIndex: 0 }} />
+        <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center", padding: "80px 24px", position: "relative", zIndex: 1 }}>
+          {/* Badge */}
+          <div className="animate-fade-up" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(108,99,255,0.1)", border: "1px solid rgba(108,99,255,0.25)", color: "#a29bfe", fontSize: "0.78rem", fontWeight: 700, padding: "7px 18px", borderRadius: 999, marginBottom: 36, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <span style={{ width: 6, height: 6, background: "#6C63FF", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #6C63FF" }} />
+            No bank logins. No stored data. Ever.
           </div>
-          <h1 className="mb-6 scroll-animate" style={{ transitionDelay: "0.05s", overflow: "visible" }}>
-            <span style={{
-              fontFamily: "var(--font-playfair)",
-              fontWeight: 400,
-              fontSize: "clamp(1.4rem, 3vw, 2rem)",
-              color: "#6b7280",
-              display: "block",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              marginBottom: "4px",
-            }}>
-              Your Bank Statement.
-            </span>
-            <div className="hero-animated-line" style={{ minHeight: "220px", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "100%", overflow: "visible", padding: "0 20px 24px", marginBottom: "32px" }}>
-              <span
-                key={animatedWord}
-                style={{
-                  fontFamily: "var(--font-playfair)",
-                  background: "linear-gradient(135deg, #6d28d9, #2563eb)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  display: "block",
-                  textAlign: "center",
-                  width: "100%",
-                  overflow: "visible",
-                  paddingLeft: 8,
-                  paddingRight: 8,
-                  fontSize: "clamp(2.2rem, 5vw, 4.8rem)",
-                  lineHeight: 1.15,
-                  animation: "fadeSlideIn 0.5s ease forwards",
-                  fontWeight: HERO_WORD_STYLES[animatedWord].fontWeight,
-                  fontStyle: HERO_WORD_STYLES[animatedWord].fontStyle,
-                  letterSpacing: HERO_WORD_STYLES[animatedWord].letterSpacing,
-                  transition: "all 0.3s ease",
-                }}
-              >
-                {HERO_WORDS[animatedWord]}
-              </span>
-            </div>
+
+          <h1 className="animate-fade-up-delay hero-headline" style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 4.5vw, 3.5rem)", fontWeight: 700, lineHeight: 1.2, color: "#F0F4FF", marginBottom: 28 }}>
+            Every finance app wants<br />your bank login.<br />
+            <span style={{ color: "#6C63FF" }}>StatementFlow just needs a PDF.</span>
           </h1>
-          <p className="hero-subheadline text-slate-500 mx-auto mb-10 scroll-animate" style={{ fontSize: "1.15rem", lineHeight: 1.75, maxWidth: 600, transitionDelay: "0.1s" }}>
-            Stop guessing where your money goes.<span className="hide-mobile"><br /></span>{" "}
-            Upload your bank statement and get instant clarity —<span className="hide-mobile"><br /></span>{" "}
-            spending categories, insights, and clean data.<span className="hide-mobile"><br /></span>{" "}
-            No bank login. No account. No data stored. Ever.
+
+          <p className="animate-fade-up-delay-2 hero-subheadline" style={{ color: "#8A9BB5", fontSize: "1.1rem", lineHeight: 1.75, maxWidth: 560, margin: "0 auto 40px" }}>
+            Upload your PDF bank statement and get instant clarity —{" "}
+            spending categories, AI insights, and clean data ready for your accountant.{" "}
+            No account. No data stored. Ever.
           </p>
-          <div className="hero-cta-group mb-10 scroll-animate" style={{ transitionDelay: "0.15s" }}>
-            <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, fontSize: "1rem", padding: "14px 32px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(109,40,217,0.35)", minHeight: 52 }}>
+
+          <div className="hero-cta-group animate-fade-up-delay-3" style={{ marginBottom: 48 }}>
+            <button
+              onClick={scrollToUpload}
+              style={{ background: "#6C63FF", color: "white", fontWeight: 700, fontSize: "1rem", padding: "15px 36px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 0 32px rgba(108,99,255,0.4), 0 8px 24px rgba(108,99,255,0.25)", minHeight: 52, transition: "box-shadow 0.25s ease, transform 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 0 48px rgba(108,99,255,0.6), 0 12px 32px rgba(108,99,255,0.4)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 0 32px rgba(108,99,255,0.4), 0 8px 24px rgba(108,99,255,0.25)"; e.currentTarget.style.transform = "translateY(0)"; }}
+            >
               Convert My Statement →
             </button>
-            <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ fontWeight: 600, fontSize: "1rem", padding: "14px 32px", borderRadius: 999, border: "2px solid #e2e8f0", background: "white", color: "#475569", cursor: "pointer", minHeight: 52 }}>
+            <button
+              onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
+              style={{ color: "#8A9BB5", fontWeight: 600, fontSize: "1rem", padding: "15px 32px", borderRadius: 999, border: "1px solid #1E2A3A", background: "rgba(255,255,255,0.03)", cursor: "pointer", minHeight: 52, transition: "border-color 0.2s ease, color 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#6C63FF"; e.currentTarget.style.color = "#F0F4FF"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#1E2A3A"; e.currentTarget.style.color = "#8A9BB5"; }}
+            >
               See How It Works
             </button>
           </div>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "8px 24px",
-            marginTop: 32,
-            padding: "20px 28px",
-            background: "white",
-            borderRadius: 16,
-            border: "1px solid #e5e7eb",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-            maxWidth: 520,
-            margin: "32px auto 0 auto",
-          }}>
-            {[
-              "No bank connections — ever",
-              "Files deleted immediately",
-              "Your data is never sold",
-              "Built for privacy by design",
-            ].map((text) => (
-              <div key={text} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.82rem", color: "#374151", fontWeight: 500 }}>
-                <span style={{ color: "#16a34a", fontSize: 16, flexShrink: 0 }}>✓</span>
+
+          {/* Trust row */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 28px", justifyContent: "center", alignItems: "center" }}>
+            {["No bank connections — ever", "Files deleted immediately", "Your data is never sold", "Built for privacy by design"].map(text => (
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.82rem", color: "#8A9BB5", fontWeight: 500 }}>
+                <span style={{ color: "#00D4A0", fontSize: 14 }}>✓</span>
                 {text}
               </div>
             ))}
@@ -521,37 +488,37 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 2: PROBLEM ══ */}
-      <section className="hp-section" style={{ background: "#f9fafb" }}>
+      <section className="hp-section" style={{ background: "#0A0E18" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
-          <p className="scroll-animate" style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 16 }}>Sound Familiar?</p>
-          <h2 className="scroll-animate text-slate-900 font-extrabold" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", lineHeight: 1.25, marginBottom: 56, transitionDelay: "0.05s" }}>
+          <p className="scroll-animate" style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6C63FF", textTransform: "uppercase", marginBottom: 16 }}>Sound Familiar?</p>
+          <h2 className="scroll-animate" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", fontWeight: 800, lineHeight: 1.25, color: "#F0F4FF", marginBottom: 56, transitionDelay: "0.05s" }}>
             Your money is a mystery.<br />It doesn&apos;t have to be.
           </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 32, textAlign: "left" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, textAlign: "left" }}>
             {[
-              { icon: "😤", heading: '"Where did my money go this month?"', body: "You check your balance and it's lower than expected. You scroll through transactions and still have no idea." },
-              { icon: "📊", heading: '"Copy-pasting statements takes hours."', body: "If you're an accountant or business owner, you know the pain of manually cleaning bank data for every client." },
-              { icon: "🔗", heading: '"Open Banking feels risky."', body: "You shouldn't need to hand over your login details just to understand your own finances." },
-            ].map(({ icon, heading, body }, i) => (
-              <div key={i} className="scroll-animate" style={{ display: "flex", gap: 20, alignItems: "flex-start", transitionDelay: `${i * 0.1}s` }}>
+              { icon: "😤", heading: '"Where did my money go this month?"', body: "You check your balance and it's lower than expected. You scroll through transactions and still have no idea.", accent: "#ef4444" },
+              { icon: "📊", heading: '"Copy-pasting statements takes hours."', body: "If you're an accountant or business owner, you know the pain of manually cleaning bank data for every client.", accent: "#f97316" },
+              { icon: "🔗", heading: '"Open Banking feels risky."', body: "You shouldn't need to hand over your login details just to understand your own finances.", accent: "#eab308" },
+            ].map(({ icon, heading, body, accent }, i) => (
+              <div key={i} className="scroll-animate" style={{ display: "flex", gap: 20, alignItems: "flex-start", transitionDelay: `${i * 0.1}s`, background: "#0F1521", borderRadius: 16, padding: "24px 28px", borderLeft: `4px solid ${accent}`, border: `1px solid #1E2A3A`, borderLeft: `4px solid ${accent}` }}>
                 <span style={{ fontSize: "2rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
                 <div>
-                  <p style={{ fontWeight: 800, fontSize: "1.05rem", color: "#1e293b", margin: "0 0 6px" }}>{heading}</p>
-                  <p style={{ color: "#64748b", fontSize: "0.92rem", lineHeight: 1.65, margin: 0 }}>{body}</p>
+                  <p style={{ fontWeight: 800, fontSize: "1.05rem", color: "#F0F4FF", margin: "0 0 6px" }}>{heading}</p>
+                  <p style={{ color: "#8A9BB5", fontSize: "0.92rem", lineHeight: 1.65, margin: 0 }}>{body}</p>
                 </div>
               </div>
             ))}
           </div>
-          <p className="scroll-animate" style={{ marginTop: 48, fontWeight: 800, fontSize: "1.2rem", color: "#6d28d9" }}>There&apos;s a better way.</p>
+          <p className="scroll-animate" style={{ marginTop: 48, fontWeight: 800, fontSize: "1.2rem", color: "#6C63FF" }}>There&apos;s a better way.</p>
         </div>
       </section>
 
       {/* ══ SECTION 3: HOW IT WORKS ══ */}
-      <section id="how-it-works" className="hp-section" style={{ background: "white" }}>
+      <section id="how-it-works" className="hp-section" style={{ background: "#F8FAFC" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
-            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>How It Works</p>
-            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>Upload Once. Understand Everything.</h2>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6C63FF", textTransform: "uppercase", marginBottom: 12 }}>How It Works</p>
+            <h2 style={{ fontWeight: 800, color: "#0f172a", fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>Upload Once. Understand Everything.</h2>
             <p style={{ color: "#64748b", fontSize: "1rem", maxWidth: 560, margin: "0 auto" }}>StatementFlow reads your PDF bank statement and instantly structures it into something you can actually use.</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, position: "relative" }}>
@@ -560,12 +527,11 @@ export default function Home() {
               { num: "02", icon: "⚡", title: "We structure it instantly", desc: "Our engine reads every transaction, categorises your spending, detects patterns, and builds your complete financial picture — in seconds." },
               { num: "03", icon: "✓",  title: "You get clarity", desc: "A live spending dashboard, downloadable Excel report, and CSV — ready for budgeting, tracking, or sending straight to your accountant." },
             ].map(({ num, icon, title, desc }, i) => (
-              <div key={num} className="scroll-animate" style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 20, padding: "32px 28px", boxShadow: "0 2px 16px rgba(0,0,0,0.05)", textAlign: "center", transitionDelay: `${i * 0.1}s`, position: "relative" }}>
-                <div style={{ fontSize: "3rem", fontWeight: 900, color: "#f1f0ff", lineHeight: 1, marginBottom: 8, userSelect: "none" }}>{num}</div>
-                <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #f3f0ff, #ede9fe)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.6rem", margin: "0 auto 16px" }}>{icon}</div>
-                <h3 style={{ fontWeight: 800, fontSize: "1.05rem", color: "#1e293b", margin: "0 0 10px" }}>{title}</h3>
+              <div key={num} className="scroll-animate" style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 20, padding: "36px 28px", boxShadow: "0 2px 16px rgba(0,0,0,0.05)", textAlign: "center", transitionDelay: `${i * 0.1}s`, position: "relative" }}>
+                <div style={{ fontSize: "4rem", fontWeight: 900, color: "#f1f5f9", lineHeight: 1, marginBottom: 8, userSelect: "none", fontFamily: "var(--font-playfair)" }}>{num}</div>
+                <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #f0eeff, #ede9fe)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.6rem", margin: "0 auto 16px" }}>{icon}</div>
+                <h3 style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0f172a", margin: "0 0 10px" }}>{title}</h3>
                 <p style={{ color: "#64748b", fontSize: "0.88rem", lineHeight: 1.65, margin: 0 }}>{desc}</p>
-                {i < 2 && <div style={{ position: "absolute", right: -20, top: "50%", transform: "translateY(-50%)", fontSize: "1.4rem", color: "#c4b5fd", zIndex: 2, display: "none" }} className="md:block">→</div>}
               </div>
             ))}
           </div>
@@ -573,70 +539,65 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 4: TWO AUDIENCES ══ */}
-      <section className="hp-section" style={{ background: "#f9fafb" }}>
+      <section className="hp-section" style={{ background: "#080C14" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
-            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Who It&apos;s For</p>
-            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 24 }}>Which one are you?</h2>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6C63FF", textTransform: "uppercase", marginBottom: 12 }}>Who It&apos;s For</p>
+            <h2 style={{ fontWeight: 800, color: "#F0F4FF", fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 24 }}>Which one are you?</h2>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 32, flexWrap: "wrap" }}>
-              <div style={{ padding: "8px 20px", borderRadius: 999, background: "#f3f0ff", color: "#6d28d9", fontWeight: 600, fontSize: "0.875rem", border: "2px solid #6d28d9" }}>
+              <div style={{ padding: "8px 20px", borderRadius: 999, background: "rgba(108,99,255,0.12)", color: "#a29bfe", fontWeight: 600, fontSize: "0.875rem", border: "1px solid rgba(108,99,255,0.3)" }}>
                 👤 I manage my own money
               </div>
-              <div style={{ padding: "8px 20px", borderRadius: 999, background: "#eff6ff", color: "#1d4ed8", fontWeight: 600, fontSize: "0.875rem", border: "2px solid #2563eb" }}>
+              <div style={{ padding: "8px 20px", borderRadius: 999, background: "rgba(79,158,255,0.1)", color: "#4F9EFF", fontWeight: 600, fontSize: "0.875rem", border: "1px solid rgba(79,158,255,0.25)" }}>
                 📊 I work with client statements
               </div>
             </div>
           </div>
           <div className="audience-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "stretch", maxWidth: 1100, margin: "0 auto" }}>
             {/* Individuals card */}
-            <div className="scroll-animate" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "1px solid #ddd6fe", borderRadius: 24, padding: "40px 36px", display: "flex", flexDirection: "column", height: "100%" }}>
-              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #6d28d9, #4f46e5)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, flexShrink: 0 }}>
+            <div className="scroll-animate" style={{ background: "#0F1521", border: "1px solid #1E2A3A", borderRadius: 24, padding: "40px 36px", display: "flex", flexDirection: "column", height: "100%", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #6C63FF, #4F9EFF)" }} />
+              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #6C63FF, #4F9EFF)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, flexShrink: 0 }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                 </svg>
               </div>
-              <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "#1e293b", margin: "0 0 6px" }}>Take control of your money</h3>
-              <p style={{ color: "#6d28d9", fontWeight: 600, fontSize: "0.82rem", margin: "0" }}>For individuals &amp; families</p>
-              <p style={{ color: "#475569", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>
-                Upload your bank statement and finally see exactly where your money goes. Build your own budget tracker using data you trust — not estimates, not guesses. No bank login ever required.
-              </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0", display: "flex", flexDirection: "column", gap: 10 }}>
+              <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "#F0F4FF", margin: "0 0 6px" }}>Take control of your money</h3>
+              <p style={{ color: "#6C63FF", fontWeight: 600, fontSize: "0.82rem", margin: 0 }}>For individuals &amp; families</p>
+              <p style={{ color: "#8A9BB5", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>Upload your bank statement and finally see exactly where your money goes. Build your own budget tracker using data you trust — not estimates, not guesses. No bank login ever required.</p>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                 {["Spending breakdown by category", "Monthly dashboard with insights", "Budget tracker ready to use", "Your data never stored or shared"].map(t => (
-                  <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "#1e293b", fontSize: "0.88rem", fontWeight: 500 }}>
-                    <span style={{ color: "#16a34a", fontWeight: 700 }}>✓</span> {t}
+                  <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "#CBD5E1", fontSize: "0.88rem", fontWeight: 500 }}>
+                    <span style={{ color: "#00D4A0", fontWeight: 700 }}>✓</span> {t}
                   </li>
                 ))}
               </ul>
               <div style={{ flex: 1 }} />
               <div style={{ paddingTop: 32 }}>
-                <button onClick={scrollToUpload} style={{ width: "100%", textAlign: "center", background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 600, padding: "14px 24px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.95rem" }}>Try Free →</button>
+                <button onClick={scrollToUpload} style={{ width: "100%", textAlign: "center", background: "#6C63FF", color: "white", fontWeight: 600, padding: "14px 24px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.95rem", boxShadow: "0 0 20px rgba(108,99,255,0.3)" }}>Try Free →</button>
               </div>
             </div>
             {/* Accountants card */}
-            <div className="scroll-animate" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", borderRadius: 24, padding: "40px 36px", transitionDelay: "0.1s", display: "flex", flexDirection: "column", height: "100%" }}>
-              <div style={{ width: 56, height: 56, background: "rgba(255,255,255,0.15)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, flexShrink: 0 }}>
+            <div className="scroll-animate" style={{ background: "#0F1521", border: "1px solid #1E2A3A", borderRadius: 24, padding: "40px 36px", transitionDelay: "0.1s", display: "flex", flexDirection: "column", height: "100%", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #4F9EFF, #00D4A0)" }} />
+              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #1e3a5f, #2563eb)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, flexShrink: 0 }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="20" x2="18" y2="10"/>
-                  <line x1="12" y1="20" x2="12" y2="4"/>
-                  <line x1="6" y1="20" x2="6" y2="14"/>
+                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
                 </svg>
               </div>
-              <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "white", margin: "0 0 6px" }}>Turn statements into structured data</h3>
-              <p style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: "0.82rem", margin: "0" }}>For accountants, bookkeepers &amp; businesses</p>
-              <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>
-                Convert any client bank statement into clean, structured data instantly. Ready for reconciliation, VAT prep, and reporting — without a single minute of copy-pasting.
-              </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0", display: "flex", flexDirection: "column", gap: 10 }}>
+              <h3 style={{ fontWeight: 800, fontSize: "1.25rem", color: "#F0F4FF", margin: "0 0 6px" }}>Turn statements into structured data</h3>
+              <p style={{ color: "#4F9EFF", fontWeight: 600, fontSize: "0.82rem", margin: 0 }}>For accountants, bookkeepers &amp; businesses</p>
+              <p style={{ color: "#8A9BB5", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>Convert any client bank statement into clean, structured data instantly. Ready for reconciliation, VAT prep, and reporting — without a single minute of copy-pasting.</p>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                 {["Debit & credit split columns", "Tax category mapping", "VAT estimation built in", "Audit-ready reconciliation view"].map(t => (
-                  <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.9)", fontSize: "0.88rem", fontWeight: 500 }}>
-                    <span style={{ color: "#4ade80", fontWeight: 700 }}>✓</span> {t}
+                  <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "#CBD5E1", fontSize: "0.88rem", fontWeight: 500 }}>
+                    <span style={{ color: "#00D4A0", fontWeight: 700 }}>✓</span> {t}
                   </li>
                 ))}
               </ul>
               <div style={{ flex: 1 }} />
               <div style={{ paddingTop: 32 }}>
-                <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ width: "100%", textAlign: "center", background: "white", color: "#1e3a5f", fontWeight: 600, padding: "14px 24px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: "0.95rem" }}>See Business Features →</button>
+                <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} style={{ width: "100%", textAlign: "center", background: "transparent", color: "#4F9EFF", fontWeight: 600, padding: "14px 24px", borderRadius: 999, border: "1px solid rgba(79,158,255,0.3)", cursor: "pointer", fontSize: "0.95rem" }}>See Business Features →</button>
               </div>
             </div>
           </div>
@@ -644,11 +605,12 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 5: BEFORE / AFTER ══ */}
-      <section className="hp-section" style={{ background: "white" }}>
+      {/* ══ SECTION 5: BEFORE / AFTER ══ */}
+      <section className="hp-section" style={{ background: "#F8FAFC" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
-            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>The Transformation</p>
-            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>From messy PDF to complete clarity</h2>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6C63FF", textTransform: "uppercase", marginBottom: 12 }}>The Transformation</p>
+            <h2 style={{ fontWeight: 800, color: "#0f172a", fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>From messy PDF to complete clarity</h2>
             <p style={{ color: "#64748b", fontSize: "1rem" }}>This is what happens the moment you upload.</p>
           </div>
           <div className="before-after-grid">
@@ -678,12 +640,12 @@ export default function Home() {
 
             {/* Arrow */}
             <div className="before-after-arrow-h" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "2.5rem", color: "#6d28d9", fontWeight: 900, lineHeight: 1 }}>→</div>
-              <div style={{ fontSize: "0.65rem", color: "#6d28d9", fontWeight: 600, letterSpacing: "0.05em", marginTop: 4 }}>StatementFlow</div>
+              <div style={{ fontSize: "2.5rem", color: "#6C63FF", fontWeight: 900, lineHeight: 1 }}>→</div>
+              <div style={{ fontSize: "0.65rem", color: "#6C63FF", fontWeight: 600, letterSpacing: "0.05em", marginTop: 4 }}>StatementFlow</div>
             </div>
             <div className="before-after-arrow-v" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "2.5rem", color: "#6d28d9", fontWeight: 900, lineHeight: 1 }}>↓</div>
-              <div style={{ fontSize: "0.65rem", color: "#6d28d9", fontWeight: 600, letterSpacing: "0.05em", marginTop: 4 }}>StatementFlow</div>
+              <div style={{ fontSize: "2.5rem", color: "#6C63FF", fontWeight: 900, lineHeight: 1 }}>↓</div>
+              <div style={{ fontSize: "0.65rem", color: "#6C63FF", fontWeight: 600, letterSpacing: "0.05em", marginTop: 4 }}>StatementFlow</div>
             </div>
 
             {/* After panel */}
@@ -694,7 +656,7 @@ export default function Home() {
                   <div style={{ background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 700, padding: "4px 12px", borderRadius: 999, display: "inline-block", marginBottom: 6, letterSpacing: "0.05em" }}>✓ ANALYSED</div>
                   <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>March 2024 · Barclays</div>
                 </div>
-                <div style={{ background: "#6d28d9", color: "white", fontSize: "0.7rem", fontWeight: 600, padding: "6px 12px", borderRadius: 999 }}>82 transactions</div>
+                <div style={{ background: "#6C63FF", color: "white", fontSize: "0.7rem", fontWeight: 600, padding: "6px 12px", borderRadius: 999 }}>82 transactions</div>
               </div>
               {/* KPI row */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
@@ -732,11 +694,11 @@ export default function Home() {
                 </div>
               ))}
               {/* AI insight box */}
-              <div style={{ marginTop: 16, background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", border: "1px solid #c4b5fd", borderRadius: 12, padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <div style={{ marginTop: 16, background: "linear-gradient(135deg, #0F1521, #1a1040)", border: "1px solid rgba(108,99,255,0.3)", borderRadius: 12, padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <span style={{ fontSize: 18 }}>✨</span>
                 <div>
-                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6d28d9", marginBottom: 2 }}>StatementFlow AI</div>
-                  <div style={{ fontSize: "0.72rem", color: "#374151", lineHeight: 1.5 }}>£810 withdrawn as cash — harder to track. Your top category is Cash &amp; ATM at 22%.</div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#a29bfe", marginBottom: 2 }}>StatementFlow AI</div>
+                  <div style={{ fontSize: "0.72rem", color: "#8A9BB5", lineHeight: 1.5 }}>£810 withdrawn as cash — harder to track. Your top category is Cash &amp; ATM at 22%.</div>
                 </div>
               </div>
               {/* Caption */}
@@ -745,7 +707,7 @@ export default function Home() {
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
             <p style={{ color: "#64748b", fontSize: "1rem", marginBottom: 20 }}>Join people across the UK who&apos;ve stopped guessing and started knowing.</p>
-            <button onClick={scrollToUpload} style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "white", fontWeight: 700, fontSize: "1rem", padding: "14px 36px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(109,40,217,0.3)" }}>
+            <button onClick={scrollToUpload} style={{ background: "#6C63FF", color: "white", fontWeight: 700, fontSize: "1rem", padding: "14px 36px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 0 24px rgba(108,99,255,0.4)" }}>
               Convert My Statement Free →
             </button>
           </div>
@@ -753,105 +715,82 @@ export default function Home() {
       </section>
 
       {/* ── PRICING ── */}
-      <section id="pricing" className="py-24 px-6" style={{ backgroundColor: "#f8faff" }}>
+      <section id="pricing" className="py-24 px-6" style={{ backgroundColor: "#080C14" }}>
         <div className="max-w-6xl mx-auto">
 
           {/* Header */}
           <div className="text-center mb-12 scroll-animate">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Pricing</p>
-            <h2 className="text-4xl font-extrabold text-slate-900 mb-3">Simple, Transparent Pricing</h2>
-            <p className="text-xl text-slate-500">Start free, upgrade when you need more</p>
+            <p style={{ color: "#6C63FF", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Pricing</p>
+            <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#F0F4FF", marginBottom: 12 }}>Simple, Transparent Pricing</h2>
+            <p style={{ fontSize: "1.1rem", color: "#8A9BB5" }}>Start free, upgrade when you need more</p>
           </div>
 
-          {/* Billing toggle — iOS-style sliding pill */}
+          {/* Billing toggle */}
           <div className="flex items-center justify-center mb-14 scroll-animate" style={{ transitionDelay: "0.1s" }}>
             <div
               style={{
                 position: "relative",
                 display: "flex",
-                backgroundColor: "#e8edf5",
+                backgroundColor: "#0F1521",
+                border: "1px solid #1E2A3A",
                 borderRadius: 9999,
                 padding: 4,
                 width: "min(340px, 90vw)",
-                boxShadow: "inset 0 1px 3px rgba(0,0,0,0.10)",
               }}
             >
-              {/* Sliding white pill — moves under the active label */}
+              {/* Sliding pill */}
               <div
                 aria-hidden="true"
                 style={{
                   position: "absolute",
-                  top: 4,
-                  left: 4,
+                  top: 4, left: 4,
                   width: "calc(50% - 4px)",
                   height: "calc(100% - 8px)",
-                  backgroundColor: "white",
+                  backgroundColor: "#1E2A3A",
                   borderRadius: 9999,
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.13)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
                   transform: billing === "annually" ? "translateX(100%)" : "translateX(0)",
                   transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   pointerEvents: "none",
                 }}
               />
-              {/* Monthly */}
               <button
                 onClick={() => handleBilling("monthly")}
                 onMouseEnter={() => setHoveredOption("monthly")}
                 onMouseLeave={() => setHoveredOption(null)}
                 style={{
-                  flex: 1,
-                  position: "relative",
-                  zIndex: 1,
-                  padding: "9px 0",
-                  border: "none",
-                  borderRadius: 9999,
-                  cursor: "pointer",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: billing === "monthly" ? "#0f172a" : hoveredOption === "monthly" ? "#475569" : "#94a3b8",
-                  background: billing !== "monthly" && hoveredOption === "monthly" ? "rgba(100,116,139,0.10)" : "transparent",
-                  transition: "color 0.2s ease, background 0.2s ease",
+                  flex: 1, position: "relative", zIndex: 1,
+                  padding: "9px 0", border: "none", borderRadius: 9999,
+                  cursor: "pointer", fontSize: 14, fontWeight: 600,
+                  color: billing === "monthly" ? "#F0F4FF" : "#8A9BB5",
+                  background: "transparent",
+                  transition: "color 0.2s ease",
                 }}
               >
                 Monthly
               </button>
-              {/* Annually */}
               <button
                 onClick={() => handleBilling("annually")}
                 onMouseEnter={() => setHoveredOption("annually")}
                 onMouseLeave={() => setHoveredOption(null)}
                 style={{
-                  flex: 1,
-                  position: "relative",
-                  zIndex: 1,
-                  padding: "9px 0",
-                  border: "none",
-                  borderRadius: 9999,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: billing === "annually" ? "#0f172a" : hoveredOption === "annually" ? "#475569" : "#94a3b8",
-                  background: billing !== "annually" && hoveredOption === "annually" ? "rgba(100,116,139,0.10)" : "transparent",
-                  transition: "color 0.2s ease, background 0.2s ease",
+                  flex: 1, position: "relative", zIndex: 1,
+                  padding: "9px 0", border: "none", borderRadius: 9999,
+                  cursor: "pointer", display: "flex", alignItems: "center",
+                  justifyContent: "center", gap: 6, fontSize: 14, fontWeight: 600,
+                  color: billing === "annually" ? "#F0F4FF" : "#8A9BB5",
+                  background: "transparent",
+                  transition: "color 0.2s ease",
                 }}
               >
                 Annually
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: "2px 7px",
-                    borderRadius: 9999,
-                    backgroundColor: billing === "annually" ? "#10b981" : "#d1fae5",
-                    color: billing === "annually" ? "white" : "#065f46",
-                    transition: "background-color 0.25s ease, color 0.25s ease",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 9999,
+                  backgroundColor: billing === "annually" ? "#10b981" : "#064e3b",
+                  color: billing === "annually" ? "white" : "#6ee7b7",
+                  transition: "background-color 0.25s ease, color 0.25s ease",
+                  whiteSpace: "nowrap",
+                }}>
                   Save up to 34%
                 </span>
               </button>
@@ -862,28 +801,35 @@ export default function Home() {
           <div className="pricing-grid-mobile grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mb-20">
 
             {/* ── FREE ── */}
-            <div className="scroll-animate bg-white rounded-[20px] border border-slate-200 shadow-sm p-8 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div className="mb-6">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Free</h3>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="text-5xl font-extrabold text-slate-900">£0</span>
-                  <span className="text-slate-400 pb-2 text-sm">/month</span>
+            <div
+              className="scroll-animate flex flex-col"
+              style={{ background: "#0F1521", border: "1px solid #1E2A3A", borderRadius: 20, padding: 32, transition: "transform 0.3s ease, box-shadow 0.3s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.4)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+            >
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Free</h3>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontSize: "3rem", fontWeight: 800, color: "#F0F4FF", lineHeight: 1 }}>£0</span>
+                  <span style={{ color: "#8A9BB5", paddingBottom: 8, fontSize: "0.875rem" }}>/month</span>
                 </div>
-                <p className="text-sm text-slate-400 mt-2">Perfect for getting started</p>
+                <p style={{ fontSize: "0.875rem", color: "#8A9BB5", marginTop: 8 }}>Perfect for getting started</p>
               </div>
-              <ul className="space-y-3 flex-1 mb-8">
-                <PricingFeature text="1 PDF upload per month" included />
-                <PricingFeature text="Up to 100 transactions" included />
-                <PricingFeature text="Spending dashboard" included />
-                <PricingFeature text="AI categorisation" included />
-                <PricingFeature text="3 basic AI insights" included />
-                <PricingFeature text="Excel export" included={false} />
-                <PricingFeature text="CSV export" included={false} />
-                <PricingFeature text="Monthly spending report" included={false} />
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px", display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+                <PricingFeature text="1 PDF upload per month" included dark />
+                <PricingFeature text="Up to 100 transactions" included dark />
+                <PricingFeature text="Spending dashboard" included dark />
+                <PricingFeature text="AI categorisation" included dark />
+                <PricingFeature text="3 basic AI insights" included dark />
+                <PricingFeature text="Excel export" included={false} dark />
+                <PricingFeature text="CSV export" included={false} dark />
+                <PricingFeature text="Monthly spending report" included={false} dark />
               </ul>
               <button
                 onClick={scrollToUpload}
-                className="w-full py-3 rounded-xl text-sm font-bold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors"
+                style={{ width: "100%", padding: "12px 0", borderRadius: 12, fontSize: "0.875rem", fontWeight: 700, color: "#6C63FF", border: "1px solid rgba(108,99,255,0.35)", background: "transparent", cursor: "pointer", transition: "background 0.2s ease" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(108,99,255,0.1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               >
                 Get Started Free
               </button>
@@ -891,44 +837,39 @@ export default function Home() {
 
             {/* ── PRO (most popular) ── */}
             <div
-              className="pricing-card-pro-mobile scroll-animate relative md:-mt-5 md:-mb-5 flex flex-col rounded-[20px] p-8 transition-all duration-300 hover:-translate-y-1 z-10"
+              className="pricing-card-pro-mobile scroll-animate relative md:-mt-5 md:-mb-5 flex flex-col z-10"
               style={{
-                background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)",
-                boxShadow: "0 20px 60px rgba(108,92,231,0.35)",
-                transitionDelay: "0.1s",
+                background: "#0F1521",
+                border: "1px solid rgba(108,99,255,0.5)",
+                boxShadow: "0 0 0 1px rgba(108,99,255,0.15), 0 20px 60px rgba(108,99,255,0.18), inset 0 0 40px rgba(108,99,255,0.04)",
+                borderRadius: 20, padding: 32, transitionDelay: "0.1s",
+                display: "flex", flexDirection: "column",
+                transition: "box-shadow 0.3s ease, transform 0.3s ease",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 30px 72px rgba(108,92,231,0.52)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 20px 60px rgba(108,92,231,0.35)"; }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 0 0 1px rgba(108,99,255,0.4), 0 28px 72px rgba(108,99,255,0.32), inset 0 0 60px rgba(108,99,255,0.06)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 0 0 1px rgba(108,99,255,0.15), 0 20px 60px rgba(108,99,255,0.18), inset 0 0 40px rgba(108,99,255,0.04)"; e.currentTarget.style.transform = "translateY(0)"; }}
             >
+              {/* Top gradient line */}
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #6C63FF, #a29bfe)", borderRadius: "20px 20px 0 0" }} />
               {/* Most Popular badge */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="bg-amber-400 text-amber-900 text-xs font-extrabold px-4 py-1.5 rounded-full shadow-md">
-                  ✦ Most Popular
-                </span>
+              <div style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}>
+                <span style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "white", fontSize: "0.72rem", fontWeight: 800, padding: "5px 16px", borderRadius: 999, boxShadow: "0 4px 12px rgba(245,158,11,0.35)" }}>✦ Most Popular</span>
               </div>
 
-              <div className="mb-6 mt-4">
-                <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-4">Pro</h3>
-                <div className="flex items-end gap-1 mb-1">
-                  <span
-                    className="text-5xl font-extrabold text-white"
-                    style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
-                  >
+              <div style={{ marginBottom: 24, marginTop: 16 }}>
+                <h3 style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(162,155,254,0.5)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Pro</h3>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontSize: "3rem", fontWeight: 800, color: "#F0F4FF", lineHeight: 1, opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}>
                     £{billing === "monthly" ? PRO_MONTHLY.toFixed(2) : PRO_ANNUAL.toFixed(2)}
                   </span>
-                  <span className="text-white/50 pb-2 text-sm" style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}>/month</span>
+                  <span style={{ color: "rgba(162,155,254,0.5)", paddingBottom: 8, fontSize: "0.875rem", opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}>/month</span>
                 </div>
-                <p
-                  className="text-xs text-white/50 mt-0.5"
-                  style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
-                >
-                  {billing === "annually"
-                    ? <><span className="text-emerald-300 font-bold">Save £10</span> · billed £49.99 annually</>
-                    : <>&nbsp;</>}
+                <p style={{ fontSize: "0.75rem", color: "rgba(162,155,254,0.45)", marginTop: 2, opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}>
+                  {billing === "annually" ? <><span style={{ color: "#00D4A0", fontWeight: 700 }}>Save £10</span> · billed £49.99 annually</> : <>&nbsp;</>}
                 </p>
-                <p className="text-sm text-white/60 mt-2">For individuals who want full control</p>
+                <p style={{ fontSize: "0.875rem", color: "#8A9BB5", marginTop: 8 }}>For individuals who want full control</p>
               </div>
-              <ul className="space-y-3 flex-1 mb-8">
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px", display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
                 <PricingFeature text="Unlimited uploads" included light />
                 <PricingFeature text="Unlimited transactions" included light />
                 <PricingFeature text="Full spending dashboard" included light />
@@ -939,9 +880,11 @@ export default function Home() {
                 <PricingFeature text="3 months statement history" included light />
               </ul>
               <button
-                className="w-full py-3 rounded-xl text-sm font-bold text-indigo-700 bg-white hover:bg-slate-50 transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ width: "100%", padding: "12px 0", borderRadius: 12, fontSize: "0.875rem", fontWeight: 700, color: "white", background: "#6C63FF", border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(108,99,255,0.4)", transition: "box-shadow 0.2s ease", opacity: checkoutLoading === "PRO" ? 0.6 : 1 }}
                 onClick={() => handleCheckout("PRO")}
                 disabled={checkoutLoading === "PRO"}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 32px rgba(108,99,255,0.65)"; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(108,99,255,0.4)"; }}
               >
                 {checkoutLoading === "PRO" ? "Redirecting…" : "Start Pro"}
               </button>
@@ -949,44 +892,34 @@ export default function Home() {
 
             {/* ── BUSINESS ── */}
             <div
-              className="scroll-animate bg-white rounded-[20px] border border-slate-200 shadow-sm p-8 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              style={{ transitionDelay: "0.2s" }}
+              className="scroll-animate flex flex-col"
+              style={{ background: "#0F1521", border: "1px solid #1E2A3A", borderRadius: 20, padding: 32, transitionDelay: "0.2s", transition: "transform 0.3s ease, box-shadow 0.3s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.4)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
             >
-              <div className="mb-6">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Business</h3>
-                <div className="flex items-end gap-1 mb-1">
-                  <span
-                    className="text-5xl font-extrabold text-slate-900"
-                    style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
-                  >
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Business</h3>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontSize: "3rem", fontWeight: 800, color: "#F0F4FF", lineHeight: 1, opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}>
                     £{billing === "monthly" ? BIZ_MONTHLY.toFixed(2) : BIZ_ANNUAL.toFixed(2)}
                   </span>
-                  <span className="text-slate-400 pb-2 text-sm" style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}>/month</span>
+                  <span style={{ color: "#8A9BB5", paddingBottom: 8, fontSize: "0.875rem", opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}>/month</span>
                 </div>
-                <p
-                  className="text-xs text-slate-400 mt-0.5"
-                  style={{ opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}
-                >
-                  {billing === "annually"
-                    ? <><span className="text-emerald-600 font-bold">Save £40</span> · billed £199.99 annually</>
-                    : <>&nbsp;</>}
+                <p style={{ fontSize: "0.75rem", color: "#8A9BB5", marginTop: 2, opacity: billingFade ? 1 : 0, transition: "opacity 0.2s ease" }}>
+                  {billing === "annually" ? <><span style={{ color: "#00D4A0", fontWeight: 700 }}>Save £40</span> · billed £199.99 annually</> : <>&nbsp;</>}
                 </p>
-                <p className="text-sm text-slate-400 mt-2">For accountants &amp; small businesses</p>
+                <p style={{ fontSize: "0.875rem", color: "#8A9BB5", marginTop: 8 }}>For accountants &amp; small businesses</p>
               </div>
-              <ul className="space-y-3 flex-1 mb-8">
-                <PricingFeature text="Everything in Pro" included />
-                <PricingFeature text="12 months statement history" included />
-                <PricingFeature text="Multiple bank accounts" included comingSoon />
-                <PricingFeature text="AI chat assistant" included comingSoon />
-                <PricingFeature text="Business expense tagging" included comingSoon />
-                <PricingFeature text="Priority support" included />
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px", display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+                <PricingFeature text="Everything in Pro" included dark />
+                <PricingFeature text="12 months statement history" included dark />
+                <PricingFeature text="Multiple bank accounts" included dark comingSoon />
+                <PricingFeature text="AI chat assistant" included dark comingSoon />
+                <PricingFeature text="Business expense tagging" included dark comingSoon />
+                <PricingFeature text="Priority support" included dark />
               </ul>
               <button
-                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{
-                  background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)",
-                  boxShadow: "0 8px 20px rgba(30,58,95,0.35)",
-                }}
+                style={{ width: "100%", padding: "12px 0", borderRadius: 12, fontSize: "0.875rem", fontWeight: 700, color: "white", background: "linear-gradient(135deg, #1e3a5f, #2563eb)", border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(37,99,235,0.3)", opacity: checkoutLoading === "BUSINESS" ? 0.6 : 1 }}
                 onClick={() => handleCheckout("BUSINESS")}
                 disabled={checkoutLoading === "BUSINESS"}
               >
@@ -1001,10 +934,9 @@ export default function Home() {
             <a
               href="#faq"
               onClick={(e) => { e.preventDefault(); document.getElementById("faq").scrollIntoView({ behavior: "smooth" }); }}
-              className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
-              style={{ textDecoration: "none", borderBottom: "1px solid transparent", transition: "color 0.2s ease, border-color 0.2s ease" }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderBottomColor = "currentColor"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderBottomColor = "transparent"; }}
+              style={{ fontSize: "0.875rem", color: "#8A9BB5", textDecoration: "none", transition: "color 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "#F0F4FF"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "#8A9BB5"; }}
             >
               Have questions? See our FAQ below ↓
             </a>
@@ -1014,36 +946,42 @@ export default function Home() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className="py-24 px-6" style={{ backgroundColor: "#f8faff" }}>
+      <section id="features" className="py-24 px-6" style={{ backgroundColor: "#0A0E18" }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16 scroll-animate">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Features</p>
-            <h2 className="text-4xl font-extrabold text-slate-900">
+            <p style={{ color: "#6C63FF", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Features</p>
+            <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#F0F4FF" }}>
               Everything you need to understand<br className="hidden sm:block" /> your finances
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { emoji: "📊", title: "Spending Dashboard",  desc: "Visual charts, donut graphs, and category breakdown with one-click filtering.",                      accent: "#6c5ce7", iconBg: "#f0eeff" },
-              { emoji: "📥", title: "Excel Export",        desc: "Beautifully formatted 3-sheet workbook with charts, totals, and a monthly summary.",                  accent: "#00b894", iconBg: "#e6fff9" },
-              { emoji: "🏷️", title: "Auto Categories",    desc: "12+ spending categories automatically applied — groceries, transport, bills, and more.",               accent: "#e17055", iconBg: "#fff2ee" },
-              { emoji: "🔒", title: "Zero Storage",        desc: "Your data never touches our servers. Everything is processed in-memory and discarded immediately.",    accent: "#00cec9", iconBg: "#e6fffe" },
-              { emoji: "🏦", title: "Any UK Bank",         desc: "Works with Barclays, HSBC, Lloyds, NatWest, Monzo, Starling, and more.",                             accent: "#a29bfe", iconBg: "#f3f1ff" },
-              { emoji: "⚡", title: "Instant Results",     desc: "Processing takes under 10 seconds. No waiting, no queues, no sign-up required.",                      accent: "#fdcb6e", iconBg: "#fffaed" },
-            ].map(({ emoji, title, desc, accent, iconBg }, idx) => (
+              { emoji: "📊", title: "Spending Dashboard",  desc: "Visual charts, donut graphs, and category breakdown with one-click filtering.",                      accent: "#6C63FF" },
+              { emoji: "📥", title: "Excel Export",        desc: "Beautifully formatted 3-sheet workbook with charts, totals, and a monthly summary.",                  accent: "#00D4A0" },
+              { emoji: "🏷️", title: "Auto Categories",    desc: "12+ spending categories automatically applied — groceries, transport, bills, and more.",               accent: "#4F9EFF" },
+              { emoji: "🔒", title: "Zero Storage",        desc: "Your data never touches our servers. Everything is processed in-memory and discarded immediately.",    accent: "#00D4A0" },
+              { emoji: "🏦", title: "Any UK Bank",         desc: "Works with Barclays, HSBC, Lloyds, NatWest, Monzo, Starling, and more.",                             accent: "#a29bfe" },
+              { emoji: "⚡", title: "Instant Results",     desc: "Processing takes under 10 seconds. No waiting, no queues, no sign-up required.",                      accent: "#f59e0b" },
+            ].map(({ emoji, title, desc, accent }, idx) => (
               <div
                 key={title}
+                className="anim-scale"
                 style={{
                   transitionDelay: `${idx * 0.15}s`,
-                  borderLeft: `4px solid ${accent}`,
+                  background: "#0F1521",
+                  border: "1px solid #1E2A3A",
+                  borderLeft: `3px solid ${accent}`,
+                  borderRadius: 16, padding: 24,
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
                 }}
-                className="feature-card anim-scale rounded-2xl p-6 bg-white border border-slate-200 shadow-sm hover:shadow-lg transition-shadow"
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 12px 40px rgba(0,0,0,0.3), 0 0 0 1px ${accent}25`; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4" style={{ backgroundColor: iconBg }}>
+                <div style={{ width: 48, height: 48, background: `${accent}1a`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5rem", marginBottom: 16 }}>
                   {emoji}
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+                <h3 style={{ fontWeight: 700, fontSize: "1rem", color: "#F0F4FF", marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: "0.875rem", lineHeight: 1.65, color: "#8A9BB5" }}>{desc}</p>
               </div>
             ))}
           </div>
@@ -1054,57 +992,57 @@ export default function Home() {
       <ReviewsSection onScrollToUpload={scrollToUpload} />
 
       {/* ══ SECTION 6: SOCIAL PROOF BAR ══ */}
-      <section style={{ background: "#f5f3ff", borderTop: "1px solid #ede9fe", borderBottom: "1px solid #ede9fe", padding: "22px 24px" }}>
+      <section style={{ background: "#0F1521", borderTop: "1px solid #1E2A3A", borderBottom: "1px solid #1E2A3A", padding: "22px 24px" }}>
         <div className="social-proof-bar" style={{ maxWidth: 960, margin: "0 auto" }}>
-          <p style={{ margin: 0, fontWeight: 700, color: "#4c1d95", fontSize: "0.95rem" }}>Trusted by individuals and accountants across the UK</p>
+          <p style={{ margin: 0, fontWeight: 700, color: "#F0F4FF", fontSize: "0.95rem" }}>Trusted by individuals and accountants across the UK</p>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
             {["All major UK banks supported", "Free forever · No signup", "PDF to Excel in seconds"].map((t, i) => (
-              <span key={i} style={{ fontSize: "0.8rem", color: "#7c3aed", fontWeight: 600 }}>· {t}</span>
+              <span key={i} style={{ fontSize: "0.8rem", color: "#6C63FF", fontWeight: 600 }}>· {t}</span>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── SECURITY ── */}
-      <section id="security" className="py-20 px-6 bg-white border-t border-slate-100">
+      <section id="security" className="py-20 px-6" style={{ background: "#F8FAFC" }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 scroll-animate">
-            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Security &amp; Privacy</p>
-            <h2 className="text-4xl font-extrabold text-slate-900">Built on Zero-Knowledge Architecture</h2>
-            <p className="text-lg text-slate-500 mt-4 max-w-xl mx-auto">
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6C63FF", textTransform: "uppercase", marginBottom: 12 }}>Security &amp; Privacy</p>
+            <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#0f172a" }}>Built on Zero-Knowledge Architecture</h2>
+            <p style={{ fontSize: "1.1rem", color: "#64748b", marginTop: 16, maxWidth: 480, margin: "16px auto 0" }}>
               Your financial data never leaves your device. We process everything in-memory and delete it instantly.
             </p>
           </div>
 
           {/* Trust Seal */}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 48 }}>
-            <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", border: "2px solid #6d28d9", borderRadius: 16, padding: "24px 32px", background: "linear-gradient(135deg, #fafafa, #f3f0ff)", boxShadow: "0 4px 24px rgba(109,40,217,0.08)", maxWidth: 280 }}>
-              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #6d28d9, #4f46e5)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, fontSize: 24 }}>🔒</div>
-              <p style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1e1e2e", margin: "0 0 4px 0", textAlign: "center" }}>Zero-Knowledge Architecture</p>
-              <p style={{ fontSize: "0.75rem", color: "#6b7280", margin: "0 0 12px 0", textAlign: "center" }}>Verified Privacy Standard</p>
-              <div style={{ width: "100%", height: 1, background: "#e5e7eb", margin: "0 0 12px 0" }} />
-              <p style={{ fontSize: "0.7rem", color: "#9ca3af", margin: 0, textAlign: "center", letterSpacing: "0.05em" }}>STATEMENTFLOW · UK</p>
+            <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", border: "2px solid #6C63FF", borderRadius: 16, padding: "24px 32px", background: "white", boxShadow: "0 4px 24px rgba(108,99,255,0.1)", maxWidth: 280 }}>
+              <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #6C63FF, #4f46e5)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, fontSize: 24 }}>🔒</div>
+              <p style={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a", margin: "0 0 4px 0", textAlign: "center" }}>Zero-Knowledge Architecture</p>
+              <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0 0 12px 0", textAlign: "center" }}>Verified Privacy Standard</p>
+              <div style={{ width: "100%", height: 1, background: "#e2e8f0", margin: "0 0 12px 0" }} />
+              <p style={{ fontSize: "0.7rem", color: "#94a3b8", margin: 0, textAlign: "center", letterSpacing: "0.05em" }}>STATEMENTFLOW · UK</p>
             </div>
           </div>
 
           {/* Feature cards — 2×2 grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 security-grid-2col">
             {[
-              { emoji: "🧠", title: "Local-First Processing",      desc: "Your PDF is processed entirely in your browser session. No data is sent to external servers for storage — ever.",                                                    accent: "#6d28d9", iconBg: "#f3f0ff" },
-              { emoji: "🔑", title: "Zero-Knowledge Architecture", desc: "We never see your transactions. Our system processes data in isolated memory that is wiped the moment your session ends.",                                            accent: "#4f46e5", iconBg: "#eef2ff" },
-              { emoji: "🇬🇧", title: "UK Privacy Compliant",       desc: "Built to exceed UK GDPR standards. No cookies tracking your financial behaviour, no third-party data sharing.",                                                       accent: "#0f766e", iconBg: "#f0fdfa" },
-              { emoji: "✓",  title: "No Account Required",        desc: "We don't collect your name, email, or any personal information. Upload, analyse, download, done.",                                                                    accent: "#16a34a", iconBg: "#f0fdf4" },
-            ].map(({ emoji, title, desc, accent, iconBg }, idx) => (
+              { emoji: "🧠", title: "Local-First Processing",      desc: "Your PDF is processed entirely in your browser session. No data is sent to external servers for storage — ever.",      accent: "#6C63FF" },
+              { emoji: "🔑", title: "Zero-Knowledge Architecture", desc: "We never see your transactions. Our system processes data in isolated memory that is wiped the moment your session ends.", accent: "#4F9EFF" },
+              { emoji: "🇬🇧", title: "UK Privacy Compliant",       desc: "Built to exceed UK GDPR standards. No cookies tracking your financial behaviour, no third-party data sharing.",          accent: "#00D4A0" },
+              { emoji: "✓",  title: "No Account Required",        desc: "We don't collect your name, email, or any personal information. Upload, analyse, download, done.",                        accent: "#16a34a" },
+            ].map(({ emoji, title, desc, accent }, idx) => (
               <div
                 key={title}
-                style={{ transitionDelay: `${idx * 0.1}s`, borderLeft: `4px solid ${accent}` }}
-                className="anim-scale rounded-2xl p-6 bg-white border border-slate-200 shadow-sm"
+                style={{ transitionDelay: `${idx * 0.1}s`, background: "white", borderRadius: 16, padding: 24, border: "1px solid #e2e8f0", borderLeft: `4px solid ${accent}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                className="anim-scale"
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4" style={{ backgroundColor: iconBg }}>
+                <div style={{ width: 48, height: 48, background: `${accent}18`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5rem", marginBottom: 16 }}>
                   {emoji}
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+                <h3 style={{ fontWeight: 700, fontSize: "1rem", color: "#0f172a", marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: "0.875rem", lineHeight: 1.65, color: "#64748b" }}>{desc}</p>
               </div>
             ))}
           </div>
@@ -1113,20 +1051,20 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 7: COMPARISON TABLE ══ */}
-      <section className="hp-section" style={{ background: "#f9fafb" }}>
+      <section className="hp-section" style={{ background: "#F8FAFC" }}>
         <div style={{ maxWidth: 920, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
-            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6d28d9", textTransform: "uppercase", marginBottom: 12 }}>Why StatementFlow</p>
-            <h2 className="font-extrabold text-slate-900" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>The smarter way to handle your statement</h2>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#6C63FF", textTransform: "uppercase", marginBottom: 12 }}>Why StatementFlow</p>
+            <h2 style={{ fontWeight: 800, color: "#0f172a", fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>The smarter way to handle your statement</h2>
             <p style={{ color: "#64748b", fontSize: "1rem" }}>See how we compare to the alternatives.</p>
           </div>
           <p className="comparison-table-hint">← Scroll to see more →</p>
-          <div className="scroll-animate comparison-table-wrap" style={{ transitionDelay: "0.05s" }}>
-            <table className="comparison-table" style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, borderRadius: 16, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 2px 16px rgba(0,0,0,0.05)" }}>
+          <div className="scroll-animate comparison-table-wrap" style={{ transitionDelay: "0.05s", borderRadius: 16, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 2px 16px rgba(0,0,0,0.05)" }}>
+            <table className="comparison-table" style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
               <thead>
                 <tr>
                   <th style={{ background: "#f8fafc", padding: "14px 20px", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Feature</th>
-                  <th style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "white", borderBottom: "1px solid #4f46e5" }}>StatementFlow</th>
+                  <th style={{ background: "linear-gradient(135deg, #6C63FF, #4f46e5)", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "white", borderBottom: "1px solid #4f46e5" }}>StatementFlow</th>
                   <th style={{ background: "#f8fafc", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Manual Copy-Paste</th>
                   <th style={{ background: "#f8fafc", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Open Banking Apps</th>
                 </tr>
@@ -1144,7 +1082,7 @@ export default function Home() {
                   ["Free to use",               "✅", "✅", "❌"],
                 ].map(([feature, sf, mc, ob], i, arr) => (
                   <tr key={i} style={{ background: i % 2 === 0 ? "white" : "#f8fafc" }}>
-                    <td style={{ padding: "13px 20px", fontSize: "0.88rem", fontWeight: 500, color: "#1e293b", borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>{feature}</td>
+                    <td style={{ padding: "13px 20px", fontSize: "0.88rem", fontWeight: 500, color: "#0f172a", borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>{feature}</td>
                     <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "1.1rem", background: i % 2 === 0 ? "#faf8ff" : "#f5f0ff", borderBottom: i < arr.length - 1 ? "1px solid #ede9fe" : "none" }}>{sf}</td>
                     <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "1.1rem", borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>{mc}</td>
                     <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "1.1rem", borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none" }}>{ob}</td>
@@ -1152,7 +1090,7 @@ export default function Home() {
                 ))}
               </tbody>
             </table>
-            <p style={{ textAlign: "center", marginTop: 14, fontSize: "0.75rem", color: "#94a3b8" }}>⚠️ = partial support or varies by provider</p>
+            <p style={{ textAlign: "center", padding: "12px 0", fontSize: "0.75rem", color: "#94a3b8", background: "#f8fafc" }}>⚠️ = partial support or varies by provider</p>
           </div>
         </div>
       </section>
@@ -1161,11 +1099,12 @@ export default function Home() {
       <section
         ref={uploadRef}
         id="get-started"
-        className="px-6 bg-white"
+        className="px-6"
         style={{
           overflow:   "hidden",
           maxHeight:  uploadVisible ? "900px" : "0",
           transition: uploadVisible ? "max-height 0.6s ease" : "none",
+          background: "#0A0E18",
         }}
       >
         <div
@@ -1177,15 +1116,12 @@ export default function Home() {
             transition: "opacity 0.5s ease 0.15s, transform 0.5s ease 0.15s",
           }}
         >
-
-          {/* Title + subtitle */}
-          <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Get Started</p>
-          <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Ready to get started?</h2>
-          <p className="text-slate-500 mb-10">
+          <p style={{ color: "#6C63FF", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Get Started</p>
+          <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#F0F4FF", marginBottom: 16 }}>Ready to get started?</h2>
+          <p style={{ color: "#8A9BB5", marginBottom: 40 }}>
             Drop your PDF below. No sign-up, no credit card, no data stored — ever.
           </p>
 
-          {/* Upload zone */}
           <div className="flex justify-center">
             <UploadZone onFile={handleFile} loading={loading} apiDone={apiDone} onAnimationDone={handleAnimationDone} error={error} />
           </div>
@@ -1203,7 +1139,7 @@ export default function Home() {
           )}
 
           {/* Mini trust badges */}
-          <div ref={uploadBadgesRef} className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
+          <div ref={uploadBadgesRef} className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs" style={{ color: "#8A9BB5" }}>
             {[
               { d: "M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z", label: "Your file is never uploaded to any server" },
               { d: "M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z", label: "Processed in-memory, deleted immediately" },
@@ -1218,7 +1154,7 @@ export default function Home() {
                   transition: `opacity 0.4s ease-out ${i * 0.12}s, transform 0.4s ease-out ${i * 0.12}s`,
                 }}
               >
-                <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4" style={{ color: "#00D4A0" }} fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d={d} clipRule="evenodd" />
                 </svg>
                 {label}
@@ -1230,21 +1166,20 @@ export default function Home() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" aria-label="Frequently Asked Questions" className="pt-24 pb-16 px-6 bg-slate-50">
+      <section id="faq" aria-label="Frequently Asked Questions" className="pt-24 pb-16 px-6" style={{ background: "#F8FAFC" }}>
         <div className="max-w-2xl mx-auto">
 
-          {/* Title — slide up */}
           <div className="text-center mb-12 scroll-animate">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">FAQ</p>
-            <h2 className="text-4xl font-extrabold text-slate-900">Frequently Asked Questions</h2>
+            <p style={{ color: "#6C63FF", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>FAQ</p>
+            <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#0f172a" }}>Frequently Asked Questions</h2>
           </div>
 
-          {/* Accordion — items slide in from left one by one */}
-          <div ref={faqRef} className="rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-200 bg-white shadow-sm">
+          <div ref={faqRef} style={{ borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
             {FAQS.map(({ q, a }, i) => (
               <div
                 key={i}
                 style={{
+                  borderBottom: i < FAQS.length - 1 ? "1px solid #f1f5f9" : "none",
                   opacity:    faqVisible ? 1 : 0,
                   transform:  faqVisible ? "translateX(0)" : "translateX(-30px)",
                   transition: `opacity 0.5s ease-out ${i * 0.1}s, transform 0.5s ease-out ${i * 0.1}s`,
@@ -1252,20 +1187,15 @@ export default function Home() {
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left hover:bg-slate-50 transition-colors"
+                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "20px 24px", textAlign: "left", background: "none", border: "none", cursor: "pointer", transition: "background 0.15s ease" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
                 >
-                  <span className="text-sm font-semibold text-slate-800">{q}</span>
-                  <span
-                    className="shrink-0 w-6 h-6 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 text-base font-light transition-transform duration-200 select-none"
-                    style={{ transform: openFaq === i ? "rotate(45deg)" : "rotate(0deg)" }}
-                  >
-                    +
-                  </span>
+                  <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "#0f172a" }}>{q}</span>
+                  <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: "50%", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: "1.1rem", fontWeight: 300, transition: "transform 0.2s ease", transform: openFaq === i ? "rotate(45deg)" : "rotate(0deg)" }}>+</span>
                 </button>
                 {openFaq === i && (
-                  <div className="px-6 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-3">
-                    {a}
-                  </div>
+                  <div style={{ padding: "0 24px 20px", paddingTop: 16, fontSize: "0.875rem", color: "#64748b", lineHeight: 1.7, borderTop: "1px solid #f1f5f9" }}>{a}</div>
                 )}
               </div>
             ))}
@@ -1275,33 +1205,39 @@ export default function Home() {
       </section>
 
       {/* ══ SECTION 8: FINAL CTA ══ */}
-      <section className="hp-section" style={{ background: "linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #4f46e5 100%)" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
-          <h2 className="font-extrabold scroll-animate final-cta-headline" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "white", lineHeight: 1.2, marginBottom: 20 }}>
+      <section className="hp-section" style={{ background: "#080C14", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 600, height: 400, background: "radial-gradient(ellipse, rgba(108,99,255,0.2) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
+          <h2 className="scroll-animate final-cta-headline" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", fontWeight: 800, color: "#F0F4FF", lineHeight: 1.2, marginBottom: 20 }}>
             Your bank statement is trying<br />to tell you something.
           </h2>
-          <p className="scroll-animate" style={{ color: "rgba(255,255,255,0.72)", fontSize: "1.1rem", lineHeight: 1.75, marginBottom: 40, transitionDelay: "0.05s" }}>
+          <p className="scroll-animate" style={{ color: "#8A9BB5", fontSize: "1.1rem", lineHeight: 1.75, marginBottom: 40, transitionDelay: "0.05s" }}>
             Every month you pay for things you&apos;ve forgotten. Every month you wonder where it all went. StatementFlow gives you the answer in seconds — completely free.
           </p>
           <div className="hero-cta-group scroll-animate" style={{ transitionDelay: "0.1s" }}>
-            <button onClick={scrollToUpload} style={{ background: "white", color: "#6d28d9", fontWeight: 800, fontSize: "1rem", padding: "16px 36px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 8px 32px rgba(0,0,0,0.25)", minHeight: 52 }}>
+            <button
+              onClick={scrollToUpload}
+              style={{ background: "#6C63FF", color: "white", fontWeight: 800, fontSize: "1rem", padding: "16px 36px", borderRadius: 999, border: "none", cursor: "pointer", boxShadow: "0 0 32px rgba(108,99,255,0.5), 0 8px 24px rgba(108,99,255,0.3)", minHeight: 52, transition: "box-shadow 0.25s ease, transform 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 0 48px rgba(108,99,255,0.7), 0 12px 32px rgba(108,99,255,0.5)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 0 32px rgba(108,99,255,0.5), 0 8px 24px rgba(108,99,255,0.3)"; e.currentTarget.style.transform = "translateY(0)"; }}
+            >
               Convert My Statement Free →
             </button>
             <button
               onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
-              style={{ fontWeight: 600, fontSize: "1rem", padding: "16px 32px", borderRadius: 999, border: "2px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.08)", color: "white", cursor: "pointer", minHeight: 52 }}
+              style={{ fontWeight: 600, fontSize: "1rem", padding: "16px 32px", borderRadius: 999, border: "1px solid #1E2A3A", background: "rgba(255,255,255,0.04)", color: "#8A9BB5", cursor: "pointer", minHeight: 52 }}
             >
               See How It Works
             </button>
           </div>
-          <p className="scroll-animate" style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.8rem", marginTop: 28, transitionDelay: "0.15s" }}>
+          <p className="scroll-animate" style={{ color: "#8A9BB5", opacity: 0.6, fontSize: "0.8rem", marginTop: 28, transitionDelay: "0.15s" }}>
             Free forever · No account · No bank login · No data stored
           </p>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ backgroundColor: "#0f172a", borderTop: "1px solid #1e293b" }} className="px-6 py-12">
+      <footer style={{ backgroundColor: "#060A12", borderTop: "1px solid #1E2A3A" }} className="px-6 py-12">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
 
@@ -1309,9 +1245,9 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <LogoIcon size={36} />
-                <span className="text-white font-bold text-lg">StatementFlow</span>
+                <span style={{ color: "#F0F4FF", fontWeight: 700, fontSize: "1.125rem" }}>StatementFlow</span>
               </div>
-              <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+              <p style={{ color: "#8A9BB5", fontSize: "0.875rem", lineHeight: 1.65, maxWidth: 240 }}>
                 Finally understand your money.
               </p>
             </div>
@@ -1319,8 +1255,8 @@ export default function Home() {
             {/* Middle – quick links */}
             <div className="md:flex md:justify-center">
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Quick Links</p>
-                <ul className="space-y-2.5">
+                <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Quick Links</p>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {[
                     { label: "How it works", href: "#how-it-works" },
                     { label: "Pricing",      href: "#pricing" },
@@ -1330,8 +1266,9 @@ export default function Home() {
                     <li key={label}>
                       <a
                         href={href}
-                        className="text-sm text-slate-400 hover:text-white transition-colors duration-200"
-                        style={{ textDecoration: "none" }}
+                        style={{ fontSize: "0.875rem", color: "#8A9BB5", textDecoration: "none", transition: "color 0.2s ease" }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "#F0F4FF"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "#8A9BB5"; }}
                       >
                         {label}
                       </a>
@@ -1341,23 +1278,23 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right – made with love + copyright */}
+            {/* Right */}
             <div className="md:text-right footer-col-right">
-              <p className="text-sm text-slate-300 font-medium mb-2">Made with ❤️ in the UK</p>
-              <p className="text-xs text-slate-500">© 2026 StatementFlow. All rights reserved.</p>
+              <p style={{ fontSize: "0.875rem", color: "#F0F4FF", fontWeight: 500, marginBottom: 8 }}>Made with ❤️ in the UK</p>
+              <p style={{ fontSize: "0.75rem", color: "#8A9BB5" }}>© 2026 StatementFlow. All rights reserved.</p>
             </div>
 
           </div>
 
           {/* Divider */}
-          <div style={{ borderTop: "1px solid #1e293b" }} className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
+          <div style={{ borderTop: "1px solid #1E2A3A" }} className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#00D4A0" }}>
               <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               Zero data retention — your privacy is protected
             </div>
-            <p className="text-xs text-slate-600">Built for UK bank statements · Free to use · No account required</p>
+            <p style={{ fontSize: "0.75rem", color: "#8A9BB5" }}>Built for UK bank statements · Free to use · No account required</p>
           </div>
           {/* Hidden admin link — only visible at ?admin=true */}
           <AdminLink />

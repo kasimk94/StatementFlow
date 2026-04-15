@@ -6,12 +6,6 @@ import { useSession, signOut } from "next-auth/react";
 
 // ── Injected CSS ──────────────────────────────────────────────────────────────
 const NAVBAR_CSS = `
-  @keyframes navBorderGlow {
-    0%   { background-position: 0%   50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0%   50%; }
-  }
-
   .npill {
     position: relative;
     z-index: 1;
@@ -21,14 +15,14 @@ const NAVBAR_CSS = `
     padding: 6px 14px;
     border-radius: 8px;
     white-space: nowrap;
-    color: #4a4a6a;
+    color: #8A9BB5;
     transition: color 0.2s ease;
     display: inline-block;
     cursor: pointer;
   }
 
   .ntry {
-    background: linear-gradient(135deg, #6d28d9, #4f46e5);
+    background: #6C63FF;
     color: #fff;
     font-size: 0.875rem;
     font-weight: 600;
@@ -36,13 +30,14 @@ const NAVBAR_CSS = `
     border-radius: 999px;
     border: none;
     cursor: pointer;
-    transition: filter 0.2s ease;
-    box-shadow: none;
+    transition: box-shadow 0.2s ease, filter 0.2s ease;
+    box-shadow: 0 0 16px rgba(108,99,255,0.35);
     min-height: 36px;
     white-space: nowrap;
   }
   .ntry:hover {
     filter: brightness(1.1);
+    box-shadow: 0 0 24px rgba(108,99,255,0.5);
   }
 
   /* Desktop nav — hidden on mobile */
@@ -65,7 +60,7 @@ const NAVBAR_CSS = `
     cursor: pointer;
     padding: 8px;
     border-radius: 8px;
-    color: #1e293b;
+    color: #8A9BB5;
     line-height: 1;
     min-width: 44px;
     min-height: 44px;
@@ -74,7 +69,7 @@ const NAVBAR_CSS = `
     transition: background 0.15s ease;
     flex-shrink: 0;
   }
-  .nav-hamburger:hover { background: rgba(108,92,231,0.08); }
+  .nav-hamburger:hover { background: rgba(108,99,255,0.12); color: #F0F4FF; }
 
   /* Mobile dropdown — hidden on desktop */
   .nav-mobile-menu {
@@ -98,18 +93,18 @@ const NAVBAR_CSS = `
     text-decoration: none;
     padding: 13px 16px;
     border-radius: 10px;
-    color: #334155;
+    color: #8A9BB5;
     min-height: 48px;
     transition: background 0.15s ease, color 0.15s ease;
   }
   .nav-mobile-link:hover,
   .nav-mobile-link:active {
-    background: rgba(108,92,231,0.08);
-    color: #6c5ce7;
+    background: rgba(108,99,255,0.1);
+    color: #a29bfe;
   }
   .nav-mobile-link.active {
-    background: rgba(108,92,231,0.1);
-    color: #6c5ce7;
+    background: rgba(108,99,255,0.12);
+    color: #a29bfe;
     font-weight: 600;
   }
 `;
@@ -317,11 +312,11 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
         zIndex:              1000,
         transition:          easing,
         borderRadius:        menuOpen ? "50px 50px 20px 20px" : 50,
-        background:          "rgba(255,255,255,0.85)",
+        background:          "rgba(8,12,20,0.85)",
         backdropFilter:      "blur(20px)",
         WebkitBackdropFilter:"blur(20px)",
-        boxShadow:           "0 4px 24px rgba(0,0,0,0.10)",
-        border:              "1px solid rgba(255,255,255,0.6)",
+        boxShadow:           "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(108,99,255,0.1)",
+        border:              "1px solid rgba(30,42,58,0.8)",
         padding:             menuOpen ? 0 : 0,
       }}
     >
@@ -347,7 +342,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
           <div>
             <span style={{
               fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
-              background: "linear-gradient(135deg, #1a1a2e 0%, #6c5ce7 100%)",
+              background: "linear-gradient(135deg, #F0F4FF 0%, #a29bfe 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               display: "block",
             }}>
@@ -367,7 +362,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
             style={{
               position: "absolute", top: "50%", transform: "translateY(-50%)",
               height: 34, left: pill.left, width: pill.width,
-              background: "rgba(108,92,231,0.12)", borderRadius: 10, opacity: pill.opacity,
+              background: "rgba(108,99,255,0.15)", borderRadius: 10, opacity: pill.opacity,
               transition: "left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease",
               pointerEvents: "none",
             }}
@@ -381,7 +376,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
                 href={href}
                 ref={(el) => { linkRefs.current[i] = el; }}
                 className="npill"
-                style={{ color: highlight ? "#6c5ce7" : "#4a4a6a", fontWeight: isActive ? 600 : 500 }}
+                style={{ color: highlight ? "#a29bfe" : "#8A9BB5", fontWeight: isActive ? 600 : 500 }}
                 onMouseEnter={() => setHoveredIdx(i)}
               >
                 {label}
@@ -399,7 +394,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
                 <Link
                   href="/account"
                   style={{
-                    fontSize: "0.85rem", fontWeight: 600, color: "#4a4a6a",
+                    fontSize: "0.85rem", fontWeight: 600, color: "#8A9BB5",
                     textDecoration: "none", padding: "6px 12px", borderRadius: 8,
                     whiteSpace: "nowrap",
                   }}
@@ -410,12 +405,12 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
                   <button
                     onClick={onUploadAnother}
                     style={{
-                      background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9",
+                      background: "transparent", color: "#a29bfe", border: "1px solid rgba(108,99,255,0.35)",
                       borderRadius: 999, padding: "8px 18px", fontSize: "0.85rem", fontWeight: 600,
                       cursor: "pointer", whiteSpace: "nowrap",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#6d28d9"; e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6d28d9"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(108,99,255,0.12)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                   >
                     Upload another
                   </button>
@@ -428,7 +423,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
                 <Link
                   href="/login"
                   style={{
-                    fontSize: "0.85rem", fontWeight: 600, color: "#4a4a6a",
+                    fontSize: "0.85rem", fontWeight: 600, color: "#8A9BB5",
                     textDecoration: "none", padding: "6px 12px", borderRadius: 8,
                     whiteSpace: "nowrap",
                   }}
@@ -439,12 +434,12 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
                   <button
                     onClick={onUploadAnother}
                     style={{
-                      background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9",
+                      background: "transparent", color: "#a29bfe", border: "1px solid rgba(108,99,255,0.35)",
                       borderRadius: 999, padding: "8px 18px", fontSize: "0.85rem", fontWeight: 600,
                       cursor: "pointer", whiteSpace: "nowrap",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#6d28d9"; e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6d28d9"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(108,99,255,0.12)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                   >
                     Upload another
                   </button>
@@ -483,11 +478,11 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
           overflow:            "hidden",
           maxHeight:           menuOpen ? 520 : 0,
           transition:          "max-height 0.3s ease",
-          background:          "rgba(255,255,255,0.98)",
+          background:          "rgba(10,14,24,0.97)",
           backdropFilter:      "blur(16px)",
           WebkitBackdropFilter:"blur(16px)",
           borderRadius:        "0 0 24px 24px",
-          borderTop:           "1px solid rgba(108,92,231,0.08)",
+          borderTop:           "1px solid rgba(30,42,58,0.8)",
         }}
       >
         <nav style={{ padding: "6px 10px 14px" }}>
@@ -512,7 +507,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
                   My Account
                 </Link>
                 <button
-                  style={{ width: "100%", borderRadius: 999, fontSize: "0.9rem", fontWeight: 600, padding: "13px", background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9", cursor: "pointer" }}
+                  style={{ width: "100%", borderRadius: 999, fontSize: "0.9rem", fontWeight: 600, padding: "13px", background: "transparent", color: "#a29bfe", border: "1px solid rgba(108,99,255,0.35)", cursor: "pointer" }}
                   onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}
                 >
                   Sign out
@@ -529,7 +524,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
                 </Link>
                 <Link
                   href="/signup"
-                  style={{ width: "100%", display: "block", textAlign: "center", borderRadius: 12, fontSize: 15, padding: "13px", background: "linear-gradient(135deg, #6d28d9, #4f46e5)", color: "#fff", fontWeight: 600, textDecoration: "none" }}
+                  style={{ width: "100%", display: "block", textAlign: "center", borderRadius: 12, fontSize: 15, padding: "13px", background: "#6C63FF", color: "#fff", fontWeight: 600, textDecoration: "none", boxShadow: "0 0 16px rgba(108,99,255,0.3)" }}
                   onClick={() => setMenuOpen(false)}
                 >
                   Sign up free
@@ -538,7 +533,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
             )}
             {onUploadAnother ? (
               <button
-                style={{ width: "100%", borderRadius: 999, fontSize: "0.9rem", fontWeight: 600, padding: "13px", background: "transparent", color: "#6d28d9", border: "2px solid #6d28d9", cursor: "pointer" }}
+                style={{ width: "100%", borderRadius: 999, fontSize: "0.9rem", fontWeight: 600, padding: "13px", background: "transparent", color: "#a29bfe", border: "1px solid rgba(108,99,255,0.35)", cursor: "pointer" }}
                 onClick={() => { setMenuOpen(false); onUploadAnother(); }}
               >
                 Upload another

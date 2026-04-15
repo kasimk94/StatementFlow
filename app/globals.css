@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #080C14;
+  --foreground: #F0F4FF;
 }
 
 @theme inline {
@@ -12,7 +12,7 @@
 }
 
 body {
-  background: var(--background);
+  background: #080C14;
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   overflow-x: hidden; /* prevent horizontal scroll from any overflowing animated elements */
@@ -412,8 +412,8 @@ img, video { max-width: 100%; height: auto; }
 .comparison-table thead th:first-child {
   background: #f8fafc;
 }
-.comparison-table tr:nth-child(odd) td:first-child  { background: white; }
-.comparison-table tr:nth-child(even) td:first-child { background: #f8fafc; }
+.comparison-table tr:nth-child(odd) td:first-child  { background: inherit; }
+.comparison-table tr:nth-child(even) td:first-child { background: inherit; }
 
 /* ── Dashboard: view toggle full-width ──────────────────────────── */
 .view-toggle-full {
@@ -498,7 +498,7 @@ img, video { max-width: 100%; height: auto; }
     display: block;
     text-align: center;
     font-size: 2rem;
-    color: #6d28d9;
+    color: #6C63FF;
     font-weight: 900;
     padding: 12px 0;
   }
