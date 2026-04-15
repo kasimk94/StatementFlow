@@ -7,13 +7,13 @@ import prisma from "@/lib/prisma";
 const anthropic = new Anthropic();
 
 // ---------------------------------------------------------------------------
-// PDF vision parsing — sends raw PDF buffer to claude-sonnet-4-6 as base64
+// PDF vision parsing — sends raw PDF buffer to claude-haiku-4-5-20251001 as base64
 // ---------------------------------------------------------------------------
 async function parseWithClaude(buffer) {
   const base64 = buffer.toString('base64');
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 8000,
     messages: [{
       role: "user",
@@ -122,11 +122,12 @@ Rules for the top-level fields:
 }
 
 // ---------------------------------------------------------------------------
-// Cost logging — model: claude-sonnet-4-6
-// Pricing: $3.00 / 1M input tokens, $15.00 / 1M output tokens
+// Cost logging — model: claude-haiku-4-5-20251001
+// Pricing: $0.80 / 1M input tokens, $4.00 / 1M output tokens
 // ---------------------------------------------------------------------------
-const COST_PER_M_IN  = 3.00;
-const COST_PER_M_OUT = 15.00;
+const MODEL_NAME     = "claude-haiku-4-5-20251001";
+const COST_PER_M_IN  = 0.80;
+const COST_PER_M_OUT = 4.00;
 
 function calcCost(inputTokens, outputTokens) {
   return (inputTokens / 1_000_000) * COST_PER_M_IN
@@ -284,6 +285,7 @@ function deduplicateParsed(transactions) {
 export async function POST(req) {
   try {
     console.log("=== PDF CONVERSION STARTED ===");
+    console.log(`Using model: ${MODEL_NAME}`);
 
     // ── 0. Upload limit check ───────────────────────────────────────────────
     const session = await getServerSession(authOptions);
@@ -353,22 +355,25 @@ export async function POST(req) {
       }
     }
 
-    // ── 7. Filter internal/noise transactions ────────────────────────────────
-    const INTERNAL_PATTERNS = [
-      /transfer (from|to) pot/i,
-      /^withdrawal$/i,
-      /^deposit$/i,
-      /kasam khalid/i,
-      /k\.?\s*khalid/i,
-      /payment to self/i,
-      /own account/i,
-    ];
-    const filteredParsed = deduplicated.filter(t => {
-      const d = (t.description || '').toLowerCase();
-      return !INTERNAL_PATTERNS.some(p => p.test(d));
-    });
+    // ── 7. Filter genuine pot/internal transfers only — be conservative ───────
+    // Rule: only remove if BOTH a pot/internal keyword AND a transfer direction are present.
+    // Never remove credits over £500 or anything salary-like.
+    function isGenuinePotTransfer(t) {
+      const d  = (t.description || '').toLowerCase();
+      const amt = Math.abs(typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0);
+      // Never remove large credits — could be salary or real income
+      if (t.type === 'credit' && amt >= 500) return false;
+      // Salary/wage signals — always keep
+      if (/salary|wages|payroll|bacs credit/i.test(d)) return false;
+      // Monzo pot transfers (must mention both "pot" and "transfer")
+      if (/\bpot\b/.test(d) && /transfer/i.test(d)) return true;
+      // Placeholder-only descriptions with no real merchant info
+      if (/^withdrawal$|^deposit$/.test(d.trim())) return true;
+      return false;
+    }
 
-    console.log(`Filtered ${deduplicated.length - filteredParsed.length} internal/noise. Remaining: ${filteredParsed.length}`);
+    const filteredParsed = deduplicated.filter(t => !isGenuinePotTransfer(t));
+    console.log(`Filtered ${deduplicated.length - filteredParsed.length} pot/internal transfers. Remaining: ${filteredParsed.length}`);
 
     const rawTransactions = filteredParsed
       .map((t) => {
@@ -509,7 +514,7 @@ export async function POST(req) {
     // ── Cost breakdown ─────────────────────────────────────────────────────
     const parseIn  = parseResult.usage?.inputTokens  ?? 0;
     const parseOut = parseResult.usage?.outputTokens ?? 0;
-    const parseCost = logCallCost("Parse (claude-sonnet-4-6)", parseIn, parseOut);
+    const parseCost = logCallCost(`Parse (${MODEL_NAME})`, parseIn, parseOut);
     const totalCost = parseCost; // extend here if more Claude calls are added
     console.log("=== COST BREAKDOWN ===");
     console.log(`Parse call: ${parseIn.toLocaleString()} in / ${parseOut.toLocaleString()} out = $${parseCost.toFixed(4)}`);
