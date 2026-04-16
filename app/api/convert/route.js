@@ -10,46 +10,125 @@ const anthropic = new Anthropic();
 // PDF vision parsing — sends raw PDF buffer to claude-haiku-4-5-20251001 as base64
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// PDF noise stripper — for use when extracting text before sending to Claude.
-// NOTE: current architecture sends the raw PDF binary (base64 document type),
-// so this is applied to any text fields we control (not the PDF bytes).
-// Ready for use if architecture switches to text-extraction pre-processing.
+// PDF text helpers — extract, filter, balance-detect before sending to Claude
 // ---------------------------------------------------------------------------
+
+// Strip repeated headers/footers and visual noise from extracted text
 function stripPDFNoise(text) {
   return text
-    .replace(/[ \t]{2,}/g, ' ')                        // Multiple spaces → single
-    .replace(/\n{3,}/g, '\n\n')                        // Multiple newlines → double
-    .replace(/^[-_=.]{3,}$/gm, '')                     // Separator lines
-    .replace(/^\s*Page \d+ of \d+\s*$/gm, '')          // Page numbers
-    .replace(/^\s*continued overleaf\s*$/gim, '')       // Continuation notices
-    .replace(/^\s*Statement of Account\s*$/gim, '')     // Repeated headers
-    .replace(/^\s*$/gm, '')                             // Whitespace-only lines
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^[-_=.]{3,}$/gm, '')
+    .replace(/^\s*Page \d+ of \d+\s*$/gm, '')
+    .replace(/^\s*continued overleaf\s*$/gim, '')
+    .replace(/^\s*Statement of Account\s*$/gim, '')
+    .replace(/^\s*$/gm, '')
     .trim();
 }
 
+// Keep only lines that look like transaction rows (date or money amount present)
+function extractTransactionLinesOnly(fullText) {
+  const lines = fullText.split('\n');
+  const out   = [];
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) continue;
+    const hasDate   = /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(t) ||
+                      /\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(t);
+    const hasAmount = /£?\d+\.\d{2}/.test(t);
+    if (hasDate || hasAmount) out.push(t);
+  }
+  return out.join('\n');
+}
+
+// Regex-extract opening/closing balances so Haiku doesn't have to hunt for them
+function extractBalances(text) {
+  const openMatch = text.match(/opening\s+balance[:\s]+£?([\d,]+\.\d{2})/i) ||
+                    text.match(/balance\s+brought\s+forward[:\s]+£?([\d,]+\.\d{2})/i) ||
+                    text.match(/balance\s+b\/f[:\s]+£?([\d,]+\.\d{2})/i);
+  const closeMatch = text.match(/closing\s+balance[:\s]+£?([\d,]+\.\d{2})/i) ||
+                     text.match(/balance\s+carried\s+forward[:\s]+£?([\d,]+\.\d{2})/i) ||
+                     text.match(/balance\s+c\/f[:\s]+£?([\d,]+\.\d{2})/i);
+  return {
+    opening: openMatch  ? parseFloat(openMatch[1].replace(/,/g, ''))  : null,
+    closing: closeMatch ? parseFloat(closeMatch[1].replace(/,/g, '')) : null,
+  };
+}
+
 async function parseWithClaude(buffer) {
-  const base64 = buffer.toString('base64');
+  // ── Step 1: Extract text from PDF (unpdf, no binary sent to Claude) ──────
+  let fullText = '';
+  try {
+    const { extractText } = await import('unpdf');
+    const result = await extractText(new Uint8Array(buffer), { mergePages: true });
+    // unpdf returns { text: string[] } per page or merged string — handle both
+    if (typeof result.text === 'string') {
+      fullText = result.text;
+    } else if (Array.isArray(result.text)) {
+      fullText = result.text.join('\n');
+    }
+  } catch (e) {
+    console.warn('unpdf extraction failed, falling back to binary:', e.message);
+    // Fallback: send binary if text extraction fails
+    return parseWithClaudeBinary(buffer);
+  }
 
-  // Prompt kept tight — PDF document itself is ~1,500 tokens/page (the real cost driver).
-  // Every word here costs tokens; keep under 300 words.
-  const prompt = `Extract all transactions from this bank statement PDF. Output ONLY valid JSON, no markdown.
+  // ── Step 2: Pre-extract balances before filtering ─────────────────────────
+  const preBalances = extractBalances(fullText);
+  console.log(`Pre-extracted balances — opening: ${preBalances.opening}, closing: ${preBalances.closing}`);
 
+  // ── Step 3: Strip noise, then filter to transaction lines only ───────────
+  const noised   = stripPDFNoise(fullText);
+  const filtered = extractTransactionLinesOnly(noised);
+  console.log(`Text reduced: ${fullText.length} chars → ${filtered.length} chars (${Math.round((1 - filtered.length / fullText.length) * 100)}% reduction)`);
+
+  if (!filtered.trim()) {
+    console.warn('No transaction lines found after filtering — falling back to binary');
+    return parseWithClaudeBinary(buffer);
+  }
+
+  // ── Step 4: Build prompt with pre-known balances ─────────────────────────
+  const balanceHint = preBalances.opening !== null
+    ? `Opening balance: £${preBalances.opening.toFixed(2)}. Closing balance: ${preBalances.closing !== null ? '£' + preBalances.closing.toFixed(2) : 'unknown'}.`
+    : '';
+
+  const prompt = `You will receive pre-filtered transaction lines extracted from a UK bank statement. Parse every line into a structured transaction. ${balanceHint}
+
+Output ONLY valid JSON, no markdown:
 {"confidence":87,"bankDetected":"Barclays","openingBalance":1234.56,"closingBalance":987.65,"totalTransactionsFound":47,"warnings":[],"transactions":[{"date":"DD Mon YYYY","description":"merchant name","amount":1.23,"type":"debit"}]}
 
 Rules:
-- amount: always a positive number
-- type: "debit" (money out) or "credit" (money in)
-- Extract ALL pages — do not stop early
-- Skip: pot transfers, balance rows, page headers, running-balance figures
-- Strip description prefixes: CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, BP
-- Multi-line descriptions: concatenate into one line, remove line breaks
+- amount: always positive number; type: "debit" (out) or "credit" (in)
+- Strip prefixes: CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, BP
 - Returned/reversed/recalled/refunded/unpaid → type "credit"
-- confidence: 0–100 (deduct for scanned/blurry/image PDFs)
-- openingBalance/closingBalance: number or null
-- warnings: [] or array of issue strings
-- Do not invent transactions`;
+- confidence: 0–100; deduct for missing dates or ambiguous columns
+- Do not invent transactions
+
+TRANSACTION LINES:
+${filtered}`;
 
   console.log(`Prompt length: ${prompt.length} chars, ~${Math.round(prompt.length / 4)} estimated tokens`);
+
+  const response = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 8000,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const inputTokens  = response.usage?.input_tokens  ?? 0;
+  const outputTokens = response.usage?.output_tokens ?? 0;
+  const USAGE = { inputTokens, outputTokens };
+
+  return parseClaudeResponse(response.content[0].text, USAGE, preBalances);
+}
+
+// Binary fallback — used if text extraction fails
+async function parseWithClaudeBinary(buffer) {
+  const base64 = buffer.toString('base64');
+  console.log('Using binary fallback (document API)');
+  const prompt = `Extract all transactions from this bank statement PDF. Output ONLY valid JSON, no markdown.
+{"confidence":87,"bankDetected":"Barclays","openingBalance":null,"closingBalance":null,"totalTransactionsFound":47,"warnings":[],"transactions":[{"date":"DD Mon YYYY","description":"merchant name","amount":1.23,"type":"debit"}]}
+Rules: amount positive, type debit/out or credit/in, extract ALL pages, skip pot transfers and balance rows, strip payment prefixes, returned/reversed/recalled → credit.`;
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
@@ -57,51 +136,46 @@ Rules:
     messages: [{
       role: "user",
       content: [
-        {
-          type: "document",
-          source: {
-            type: "base64",
-            media_type: "application/pdf",
-            data: base64,
-          },
-        },
+        { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
         { type: "text", text: prompt },
       ],
     }],
   });
 
-  const inputTokens  = response.usage?.input_tokens  ?? 0;
-  const outputTokens = response.usage?.output_tokens ?? 0;
+  const USAGE = { inputTokens: response.usage?.input_tokens ?? 0, outputTokens: response.usage?.output_tokens ?? 0 };
+  return parseClaudeResponse(response.content[0].text, USAGE, { opening: null, closing: null });
+}
 
-  const raw = response.content[0].text.trim()
+// Shared response parser
+function parseClaudeResponse(rawText, usage, preBalances) {
+  const raw = rawText.trim()
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
     .replace(/```\s*$/i, '')
     .trim();
 
-  const USAGE = { inputTokens, outputTokens };
-  const EMPTY = { bank: 'Unknown', transactions: [], confidence: 40, openingBalance: null, closingBalance: null, totalTransactionsFound: 0, warnings: ['Parser returned no usable data'], bankDetected: 'Unknown', usage: USAGE };
+  const EMPTY = { bank: 'Unknown', transactions: [], confidence: 40, openingBalance: preBalances.opening, closingBalance: preBalances.closing, totalTransactionsFound: 0, warnings: ['Parser returned no usable data'], bankDetected: 'Unknown', usage };
 
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object' && Array.isArray(parsed.transactions)) {
       return {
-        bank:                  parsed.bankDetected || parsed.bank || 'Unknown',
-        transactions:          parsed.transactions,
-        confidence:            typeof parsed.confidence === 'number' ? parsed.confidence : 70,
-        openingBalance:        parsed.openingBalance ?? null,
-        closingBalance:        parsed.closingBalance ?? null,
+        bank:                   parsed.bankDetected || parsed.bank || 'Unknown',
+        transactions:           parsed.transactions,
+        confidence:             typeof parsed.confidence === 'number' ? parsed.confidence : 70,
+        openingBalance:         parsed.openingBalance ?? preBalances.opening,
+        closingBalance:         parsed.closingBalance ?? preBalances.closing,
         totalTransactionsFound: parsed.totalTransactionsFound ?? parsed.transactions.length,
-        warnings:              Array.isArray(parsed.warnings) ? parsed.warnings : [],
-        bankDetected:          parsed.bankDetected || parsed.bank || 'Unknown',
-        usage:                 USAGE,
+        warnings:               Array.isArray(parsed.warnings) ? parsed.warnings : [],
+        bankDetected:           parsed.bankDetected || parsed.bank || 'Unknown',
+        usage,
       };
     }
     if (Array.isArray(parsed)) {
-      return { ...EMPTY, bank: 'Unknown', transactions: parsed, confidence: 50, warnings: ['Incomplete response — bank metadata missing'], totalTransactionsFound: parsed.length };
+      return { ...EMPTY, transactions: parsed, confidence: 50, warnings: ['Incomplete response — bank metadata missing'], totalTransactionsFound: parsed.length };
     }
     return EMPTY;
-  } catch(e) {
+  } catch (e) {
     const txStart = raw.indexOf('"transactions"');
     const arrStart = txStart > -1 ? raw.indexOf('[', txStart) : raw.indexOf('[');
     if (arrStart > -1) {
@@ -113,7 +187,7 @@ Rules:
             console.log("Salvaged", partial.length, "transactions");
             return { ...EMPTY, transactions: partial, confidence: 45, warnings: ['Response was truncated — results may be incomplete'], totalTransactionsFound: partial.length };
           }
-        } catch(e2) {}
+        } catch (e2) {}
       }
     }
     console.error("Parse failed:", e.message);
