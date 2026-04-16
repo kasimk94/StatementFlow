@@ -106,6 +106,10 @@ async function parseWithClaude(buffer) {
       rawText = result.text.join('\n');
     }
     console.log(`unpdf extracted: ${rawText.length} chars`);
+    // DEBUG - log first 500 chars of extracted text to see format
+    console.log('=== RAW TEXT SAMPLE ===');
+    console.log(rawText.substring(0, 500));
+    console.log('=== END SAMPLE ===');
   } catch (e) {
     console.warn('unpdf extraction failed, falling back to binary:', e.message);
     return parseWithClaudeBinary(buffer);
