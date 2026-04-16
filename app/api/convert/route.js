@@ -95,23 +95,18 @@ function extractBalances(text) {
 }
 
 async function parseWithClaude(buffer) {
-  // ── Step 1: Extract text from PDF ────────────────────────────────────────
+  // ── Step 1: Extract text from PDF (pdf-parse preserves line structure) ───
   let rawText = '';
   try {
-    const { extractText } = await import('unpdf');
-    const result = await extractText(new Uint8Array(buffer), { mergePages: true });
-    if (typeof result.text === 'string') {
-      rawText = result.text;
-    } else if (Array.isArray(result.text)) {
-      rawText = result.text.join('\n');
-    }
-    console.log(`unpdf extracted: ${rawText.length} chars`);
-    // DEBUG - log first 500 chars of extracted text to see format
+    const pdfParse = (await import('pdf-parse')).default;
+    const pdfData  = await pdfParse(buffer);
+    rawText = pdfData.text;
+    console.log(`pdf-parse extracted: ${rawText.length} chars`);
     console.log('=== RAW TEXT SAMPLE ===');
-    console.log(rawText.substring(0, 500));
+    console.log(rawText.substring(0, 800));
     console.log('=== END SAMPLE ===');
   } catch (e) {
-    console.warn('unpdf extraction failed, falling back to binary:', e.message);
+    console.warn('pdf-parse extraction failed, falling back to binary:', e.message);
     return parseWithClaudeBinary(buffer);
   }
 
