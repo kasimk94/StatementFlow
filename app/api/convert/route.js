@@ -94,36 +94,56 @@ function extractBalances(text) {
   return { opening, closing };
 }
 
+// TODO: implement proper line-based extraction when pdf-parse alternative found.
+// Cost target: <$0.05 per upload is acceptable for now. Focus on accuracy over cost.
+function smartTruncate(text, maxChars = 10000) {
+  if (text.length <= maxChars) return text;
+
+  // Try to find where transactions start (first UK date pattern)
+  const transactionStart = text.search(/\b(0[1-9]|[12][0-9]|3[01])\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i);
+
+  if (transactionStart > 0 && transactionStart < text.length * 0.4) {
+    const trimmed = text.substring(transactionStart, transactionStart + maxChars);
+    console.log(`Smart truncated: started at char ${transactionStart}, ${trimmed.length} chars`);
+    return trimmed;
+  }
+
+  // Fallback: skip first 10% (usually header/address block) and take maxChars from there
+  const start = Math.floor(text.length * 0.1);
+  const trimmed = text.substring(start, start + maxChars);
+  console.log(`Fallback truncated from char ${start}, ${trimmed.length} chars`);
+  return trimmed;
+}
+
 async function parseWithClaude(buffer) {
-  // ── Step 1: Extract text from PDF (pdf-parse preserves line structure) ───
+  // ── Step 1: Extract text from PDF ────────────────────────────────────────
   let rawText = '';
   try {
     const pdfParse = (await import('pdf-parse')).default;
     const pdfData  = await pdfParse(buffer);
     rawText = pdfData.text;
     console.log(`pdf-parse extracted: ${rawText.length} chars`);
-    console.log('=== RAW TEXT SAMPLE ===');
-    console.log(rawText.substring(0, 800));
-    console.log('=== END SAMPLE ===');
   } catch (e) {
     console.warn('pdf-parse extraction failed, falling back to binary:', e.message);
     return parseWithClaudeBinary(buffer);
   }
 
-  // ── Step 2: INLINE balance extraction (before filtering removes them) ─────
+  // ── Step 2: INLINE balance extraction (before any truncation removes them) ─
   const openingMatch = rawText.match(/(?:balance brought forward|opening balance|brought forward)[:\s£]+([\d,]+\.\d{2})/i);
   const closingMatch = rawText.match(/(?:balance carried forward|closing balance|carried forward)[:\s£]+([\d,]+\.\d{2})/i);
   const openingBalance = openingMatch ? parseFloat(openingMatch[1].replace(/,/g, '')) : null;
   const closingBalance = closingMatch ? parseFloat(closingMatch[1].replace(/,/g, '')) : null;
   console.log(`Pre-extracted balances — opening: ${openingBalance}, closing: ${closingBalance}`);
 
-  // ── Step 3: INLINE text reduction — keep only transaction-like lines ──────
-  const lines = rawText.split('\n');
+  // ── Step 3: Smart truncate if over 10,000 chars ───────────────────────────
+  const truncatedText = smartTruncate(rawText);
+
+  // ── Step 4: INLINE line filter — keep transaction-like lines ─────────────
+  const lines = truncatedText.split('\n');
   const filteredLines = lines.filter(line => {
     const t = line.trim();
     if (t.length < 4) return false;
     if (/^(sort code|account number|statement period|barclays bank|hsbc|lloyds|natwest|santander|page \d|continued|date\s+description|transaction type|payments in|payments out|debit|credit|balance)\s*$/i.test(t)) return false;
-    // Keep lines with a currency amount (two decimal places) or a UK date
     return /\d+\.\d{2}/.test(t)
         || /\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(t)
         || /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(t);
