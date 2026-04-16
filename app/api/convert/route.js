@@ -95,41 +95,50 @@ function extractBalances(text) {
 }
 
 async function parseWithClaude(buffer) {
-  // ── Step 1: Extract text from PDF (unpdf, no binary sent to Claude) ──────
-  let fullText = '';
+  // ── Step 1: Extract text from PDF ────────────────────────────────────────
+  let rawText = '';
   try {
     const { extractText } = await import('unpdf');
     const result = await extractText(new Uint8Array(buffer), { mergePages: true });
-    // unpdf returns { text: string[] } per page or merged string — handle both
     if (typeof result.text === 'string') {
-      fullText = result.text;
+      rawText = result.text;
     } else if (Array.isArray(result.text)) {
-      fullText = result.text.join('\n');
+      rawText = result.text.join('\n');
     }
+    console.log(`unpdf extracted: ${rawText.length} chars`);
   } catch (e) {
     console.warn('unpdf extraction failed, falling back to binary:', e.message);
-    // Fallback: send binary if text extraction fails
     return parseWithClaudeBinary(buffer);
   }
 
-  // ── Step 2: Pre-extract balances before filtering ─────────────────────────
-  const preBalances = extractBalances(fullText);
-  console.log(`Pre-extracted balances — opening: ${preBalances.opening}, closing: ${preBalances.closing}`);
+  // ── Step 2: INLINE balance extraction (before filtering removes them) ─────
+  const openingMatch = rawText.match(/(?:balance brought forward|opening balance|brought forward)[:\s£]+([\d,]+\.\d{2})/i);
+  const closingMatch = rawText.match(/(?:balance carried forward|closing balance|carried forward)[:\s£]+([\d,]+\.\d{2})/i);
+  const openingBalance = openingMatch ? parseFloat(openingMatch[1].replace(/,/g, '')) : null;
+  const closingBalance = closingMatch ? parseFloat(closingMatch[1].replace(/,/g, '')) : null;
+  console.log(`Pre-extracted balances — opening: ${openingBalance}, closing: ${closingBalance}`);
 
-  // ── Step 3: Strip noise, then filter to transaction lines only ───────────
-  const noised   = stripPDFNoise(fullText);
-  const filtered = extractTransactionLinesOnly(noised);
-  console.log(`Text reduced: ${fullText.length} chars → ${filtered.length} chars (${Math.round((1 - filtered.length / fullText.length) * 100)}% reduction)`);
+  // ── Step 3: INLINE text reduction — keep only transaction-like lines ──────
+  const lines = rawText.split('\n');
+  const filteredLines = lines.filter(line => {
+    const t = line.trim();
+    if (t.length < 4) return false;
+    if (/^(sort code|account number|statement period|barclays bank|hsbc|lloyds|natwest|santander|page \d|continued|date\s+description|transaction type|payments in|payments out|debit|credit|balance)\s*$/i.test(t)) return false;
+    // Keep lines with a currency amount (two decimal places) or a UK date
+    return /\d+\.\d{2}/.test(t)
+        || /\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(t)
+        || /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(t);
+  });
+  const filteredText = filteredLines.join('\n');
+  console.log(`Text reduced: ${rawText.length} chars → ${filteredText.length} chars (${Math.round((1 - filteredText.length / rawText.length) * 100)}% reduction)`);
 
-  if (!filtered.trim()) {
+  if (!filteredText.trim()) {
     console.warn('No transaction lines found after filtering — falling back to binary');
     return parseWithClaudeBinary(buffer);
   }
 
-  // ── Step 4: Build prompt with pre-known balances ─────────────────────────
-  const balanceHint = preBalances.opening !== null
-    ? `Opening balance: £${preBalances.opening.toFixed(2)}. Closing balance: ${preBalances.closing !== null ? '£' + preBalances.closing.toFixed(2) : 'unknown'}.`
-    : '';
+  // ── Step 4: Build prompt with pre-known balances injected ────────────────
+  const balanceHint = `Known opening balance: £${openingBalance ?? 'unknown'}, Known closing balance: £${closingBalance ?? 'unknown'}`;
 
   const prompt = `You will receive pre-filtered transaction lines extracted from a UK bank statement. Parse every line into a structured transaction. ${balanceHint}
 
@@ -137,14 +146,14 @@ Output ONLY valid JSON, no markdown:
 {"confidence":87,"bankDetected":"Barclays","openingBalance":1234.56,"closingBalance":987.65,"totalTransactionsFound":47,"warnings":[],"transactions":[{"date":"DD Mon YYYY","description":"merchant name","amount":1.23,"type":"debit"}]}
 
 Rules:
-- amount: always positive number; type: "debit" (out) or "credit" (in)
+- amount: always positive number; type: "debit" (money out) or "credit" (money in)
 - Strip prefixes: CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, BP
 - Returned/reversed/recalled/refunded/unpaid → type "credit"
 - confidence: 0–100; deduct for missing dates or ambiguous columns
 - Do not invent transactions
 
 TRANSACTION LINES:
-${filtered}`;
+${filteredText}`;
 
   console.log(`Prompt length: ${prompt.length} chars, ~${Math.round(prompt.length / 4)} estimated tokens`);
 
@@ -154,11 +163,8 @@ ${filtered}`;
     messages: [{ role: "user", content: prompt }],
   });
 
-  const inputTokens  = response.usage?.input_tokens  ?? 0;
-  const outputTokens = response.usage?.output_tokens ?? 0;
-  const USAGE = { inputTokens, outputTokens };
-
-  return parseClaudeResponse(response.content[0].text, USAGE, preBalances);
+  const USAGE = { inputTokens: response.usage?.input_tokens ?? 0, outputTokens: response.usage?.output_tokens ?? 0 };
+  return parseClaudeResponse(response.content[0].text, USAGE, { opening: openingBalance, closing: closingBalance });
 }
 
 // Binary fallback — used if text extraction fails
