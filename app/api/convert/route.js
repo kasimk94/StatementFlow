@@ -9,8 +9,47 @@ const anthropic = new Anthropic();
 // ---------------------------------------------------------------------------
 // PDF vision parsing — sends raw PDF buffer to claude-haiku-4-5-20251001 as base64
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// PDF noise stripper — for use when extracting text before sending to Claude.
+// NOTE: current architecture sends the raw PDF binary (base64 document type),
+// so this is applied to any text fields we control (not the PDF bytes).
+// Ready for use if architecture switches to text-extraction pre-processing.
+// ---------------------------------------------------------------------------
+function stripPDFNoise(text) {
+  return text
+    .replace(/[ \t]{2,}/g, ' ')                        // Multiple spaces → single
+    .replace(/\n{3,}/g, '\n\n')                        // Multiple newlines → double
+    .replace(/^[-_=.]{3,}$/gm, '')                     // Separator lines
+    .replace(/^\s*Page \d+ of \d+\s*$/gm, '')          // Page numbers
+    .replace(/^\s*continued overleaf\s*$/gim, '')       // Continuation notices
+    .replace(/^\s*Statement of Account\s*$/gim, '')     // Repeated headers
+    .replace(/^\s*$/gm, '')                             // Whitespace-only lines
+    .trim();
+}
+
 async function parseWithClaude(buffer) {
   const base64 = buffer.toString('base64');
+
+  // Prompt kept tight — PDF document itself is ~1,500 tokens/page (the real cost driver).
+  // Every word here costs tokens; keep under 300 words.
+  const prompt = `Extract all transactions from this bank statement PDF. Output ONLY valid JSON, no markdown.
+
+{"confidence":87,"bankDetected":"Barclays","openingBalance":1234.56,"closingBalance":987.65,"totalTransactionsFound":47,"warnings":[],"transactions":[{"date":"DD Mon YYYY","description":"merchant name","amount":1.23,"type":"debit"}]}
+
+Rules:
+- amount: always a positive number
+- type: "debit" (money out) or "credit" (money in)
+- Extract ALL pages — do not stop early
+- Skip: pot transfers, balance rows, page headers, running-balance figures
+- Strip description prefixes: CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, BP
+- Multi-line descriptions: concatenate into one line, remove line breaks
+- Returned/reversed/recalled/refunded/unpaid → type "credit"
+- confidence: 0–100 (deduct for scanned/blurry/image PDFs)
+- openingBalance/closingBalance: number or null
+- warnings: [] or array of issue strings
+- Do not invent transactions`;
+
+  console.log(`Prompt length: ${prompt.length} chars, ~${Math.round(prompt.length / 4)} estimated tokens`);
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
@@ -26,46 +65,7 @@ async function parseWithClaude(buffer) {
             data: base64,
           },
         },
-        {
-          type: "text",
-          text: `You are a senior Financial Auditor. Extract every real transaction from this bank statement PDF with maximum accuracy.
-
-EXTRACTION RULES:
-1. Read the PDF visually — identify the exact column layout (some banks use separate IN/OUT columns, others use a single signed amount column).
-2. Every transaction MUST have: date, description, amount (always a positive number), type ("debit" or "credit").
-3. Credits = money coming IN (salary, transfers in, refunds, cashback).
-4. Debits = money going OUT (purchases, bill payments, ATM withdrawals).
-5. SKIP: internal pot/savings transfers (Monzo "Transfer from Pot", "Transfer to Pot"), balance rows, page headers, bank registration text, running-balance numbers.
-6. Clean descriptions: strip payment-type prefixes (CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, etc.) — keep only the merchant or person name. If a description spans multiple lines in the PDF, concatenate all lines into a single clean description — remove all line breaks within descriptions.
-7. Multi-page statements: extract ALL transactions from ALL pages — do NOT stop at page 1.
-7a. If a transaction is marked as "returned", "reversed", "unpaid", "recalled", or "refunded", treat it as a CREDIT (money coming back to the account) regardless of which column it appears in.
-8. Opening balance: the balance figure shown at the very start of the statement period.
-9. Closing balance: the balance figure shown at the very end of the statement period.
-10. Do NOT invent or hallucinate transactions. Only extract what is clearly printed.
-11. If the same merchant appears on the same date with the same amount more than once, include each occurrence separately (genuine repeat transactions happen).
-12. Assign your confidence (0–100) in the accuracy of your extraction. Deduct points for: scanned/image PDFs, illegible text, ambiguous column layout, missing dates, mixed currencies.
-
-Return ONLY a JSON object — no markdown, no explanation:
-{
-  "confidence": 87,
-  "bankDetected": "Barclays",
-  "openingBalance": 1234.56,
-  "closingBalance": 987.65,
-  "totalTransactionsFound": 47,
-  "warnings": ["Page 3 text quality low — some amounts may be misread"],
-  "transactions": [
-    {"date": "DD Mon YYYY", "description": "clean merchant name", "amount": 1.23, "type": "debit"}
-  ]
-}
-
-Rules for the top-level fields:
-- confidence: integer 0–100. Be honest — a scanned or blurry PDF should score 40–60.
-- bankDetected: bank name string (e.g. "HSBC", "Barclays", "Monzo") or "Unknown".
-- openingBalance: number or null if not found.
-- closingBalance: number or null if not found.
-- totalTransactionsFound: count of transactions you detected BEFORE any filtering.
-- warnings: array of strings describing any issues encountered (empty array if none).`,
-        },
+        { type: "text", text: prompt },
       ],
     }],
   });
