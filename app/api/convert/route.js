@@ -26,33 +26,72 @@ function stripPDFNoise(text) {
     .trim();
 }
 
-// Keep only lines that look like transaction rows (date or money amount present)
+// Keep only lines that look like transaction rows — exclude known header/footer patterns
 function extractTransactionLinesOnly(fullText) {
-  const lines = fullText.split('\n');
-  const out   = [];
-  for (const line of lines) {
+  const skipPatterns = [
+    /^sort\s+code/i,
+    /^account\s+(number|no)/i,
+    /^statement\s+period/i,
+    /^barclays\s+bank/i,
+    /^hsbc/i,
+    /^lloyds/i,
+    /^natwest/i,
+    /^santander/i,
+    /^page\s+\d/i,
+    /^continued/i,
+    /^brought\s+forward/i,
+    /^balance\s+brought/i,
+    /^opening\s+balance/i,
+    /^closing\s+balance/i,
+    /^balance\s+carried/i,
+    /^carried\s+forward/i,
+    /^date\s+(description|details|particulars)/i,
+    /^transaction\s+type/i,
+    /^payments\s+(in|out)/i,
+    /^(debit|credit|balance)\s*$/i,
+  ];
+
+  const filtered = fullText.split('\n').filter(line => {
     const t = line.trim();
-    if (!t) continue;
-    const hasDate   = /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(t) ||
-                      /\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(t);
-    const hasAmount = /£?\d+\.\d{2}/.test(t);
-    if (hasDate || hasAmount) out.push(t);
-  }
-  return out.join('\n');
+    if (!t || t.length < 5) return false;
+    if (skipPatterns.some(p => p.test(t))) return false;
+
+    const hasDate   = /\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(t) ||
+                      /\d{1,2}\/\d{1,2}\/\d{2,4}/.test(t) ||
+                      /\d{1,2}-\d{1,2}-\d{2,4}/.test(t);
+    const hasAmount = /\d+\.\d{2}/.test(t);
+
+    return hasDate || hasAmount;
+  });
+
+  return filtered.join('\n');
 }
 
-// Regex-extract opening/closing balances so Haiku doesn't have to hunt for them
+// Regex-extract opening/closing balances before line-filtering removes them
 function extractBalances(text) {
-  const openMatch = text.match(/opening\s+balance[:\s]+£?([\d,]+\.\d{2})/i) ||
-                    text.match(/balance\s+brought\s+forward[:\s]+£?([\d,]+\.\d{2})/i) ||
-                    text.match(/balance\s+b\/f[:\s]+£?([\d,]+\.\d{2})/i);
-  const closeMatch = text.match(/closing\s+balance[:\s]+£?([\d,]+\.\d{2})/i) ||
-                     text.match(/balance\s+carried\s+forward[:\s]+£?([\d,]+\.\d{2})/i) ||
-                     text.match(/balance\s+c\/f[:\s]+£?([\d,]+\.\d{2})/i);
-  return {
-    opening: openMatch  ? parseFloat(openMatch[1].replace(/,/g, ''))  : null,
-    closing: closeMatch ? parseFloat(closeMatch[1].replace(/,/g, '')) : null,
-  };
+  const openingPatterns = [
+    /balance\s+brought\s+forward[:\s]+£?([\d,]+\.\d{2})/i,
+    /brought\s+forward[:\s]+£?([\d,]+\.\d{2})/i,
+    /opening\s+balance[:\s]+£?([\d,]+\.\d{2})/i,
+    /balance\s+b\/f[:\s]+£?([\d,]+\.\d{2})/i,
+  ];
+  const closingPatterns = [
+    /balance\s+carried\s+forward[:\s]+£?([\d,]+\.\d{2})/i,
+    /carried\s+forward[:\s]+£?([\d,]+\.\d{2})/i,
+    /closing\s+balance[:\s]+£?([\d,]+\.\d{2})/i,
+    /balance\s+c\/f[:\s]+£?([\d,]+\.\d{2})/i,
+  ];
+
+  let opening = null, closing = null;
+  for (const p of openingPatterns) {
+    const m = text.match(p);
+    if (m) { opening = parseFloat(m[1].replace(/,/g, '')); break; }
+  }
+  for (const p of closingPatterns) {
+    const m = text.match(p);
+    if (m) { closing = parseFloat(m[1].replace(/,/g, '')); break; }
+  }
+  return { opening, closing };
 }
 
 async function parseWithClaude(buffer) {
