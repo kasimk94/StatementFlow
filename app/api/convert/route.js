@@ -185,7 +185,10 @@ ${filteredText}`;
     messages: [{ role: "user", content: prompt }],
   });
 
-  const USAGE = { inputTokens: response.usage?.input_tokens ?? 0, outputTokens: response.usage?.output_tokens ?? 0 };
+  const inTok  = response.usage?.input_tokens  ?? 0;
+  const outTok = response.usage?.output_tokens ?? 0;
+  logCallCost(`Parse/text (${MODEL_NAME})`, inTok, outTok);
+  const USAGE = { inputTokens: inTok, outputTokens: outTok };
   return parseClaudeResponse(response.content[0].text, USAGE, { opening: openingBalance, closing: closingBalance });
 }
 
@@ -209,7 +212,10 @@ Rules: amount positive, type debit/out or credit/in, extract ALL pages, skip pot
     }],
   });
 
-  const USAGE = { inputTokens: response.usage?.input_tokens ?? 0, outputTokens: response.usage?.output_tokens ?? 0 };
+  const inTok  = response.usage?.input_tokens  ?? 0;
+  const outTok = response.usage?.output_tokens ?? 0;
+  logCallCost(`Parse/binary (${MODEL_NAME})`, inTok, outTok);
+  const USAGE = { inputTokens: inTok, outputTokens: outTok };
   return parseClaudeResponse(response.content[0].text, USAGE, { opening: null, closing: null });
 }
 
@@ -651,14 +657,15 @@ export async function POST(req) {
     const validation = validateParse(parseResult, rawTransactions);
     console.log("Validation:", JSON.stringify({ isValid: validation.isValid, confidence: validation.confidence, errors: validation.errors.length, warnings: validation.warnings.length }));
 
-    // ── Cost breakdown ─────────────────────────────────────────────────────
-    const parseIn  = parseResult.usage?.inputTokens  ?? 0;
-    const parseOut = parseResult.usage?.outputTokens ?? 0;
-    const parseCost = logCallCost(`Parse (${MODEL_NAME})`, parseIn, parseOut);
-    const totalCost = parseCost; // extend here if more Claude calls are added
+    // ── Cost summary (individual calls already logged at point of use) ───────
+    const parseIn   = parseResult.usage?.inputTokens  ?? 0;
+    const parseOut  = parseResult.usage?.outputTokens ?? 0;
+    const parseCost = calcCost(parseIn, parseOut);
+    // Add further call costs here as: const totalCost = parseCost + otherCost;
+    const totalCost = parseCost;
     console.log("=== COST BREAKDOWN ===");
-    console.log(`Parse call: ${parseIn.toLocaleString()} in / ${parseOut.toLocaleString()} out = $${parseCost.toFixed(4)}`);
-    console.log(`Total estimated cost: $${totalCost.toFixed(4)}`);
+    console.log(`  parse:  ${parseIn.toLocaleString()} in / ${parseOut.toLocaleString()} out = $${parseCost.toFixed(4)}`);
+    console.log(`=== TOTAL API COST THIS REQUEST: $${totalCost.toFixed(4)} ===`);
     console.log("=== CONVERSION SUCCESS ===", transactions.length, "transactions");
 
     // ── Increment upload count for logged-in users ─────────────────────────
