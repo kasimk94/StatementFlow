@@ -128,12 +128,22 @@ async function parseWithClaude(buffer) {
     return parseWithClaudeBinary(buffer);
   }
 
-  // ── Step 2: INLINE balance extraction (before any truncation removes them) ─
+  // ── Step 2: INLINE extraction of balances + statement totals ─────────────
   const openingMatch = rawText.match(/(?:balance brought forward|opening balance|brought forward)[:\s£]+([\d,]+\.\d{2})/i);
   const closingMatch = rawText.match(/(?:balance carried forward|closing balance|carried forward)[:\s£]+([\d,]+\.\d{2})/i);
   const openingBalance = openingMatch ? parseFloat(openingMatch[1].replace(/,/g, '')) : null;
   const closingBalance = closingMatch ? parseFloat(closingMatch[1].replace(/,/g, '')) : null;
+
+  // Extract statement-level money in/out totals (printed in header/footer by most UK banks)
+  const totalInMatch  = rawText.match(/(?:total\s+(?:money\s+in|payments\s+in|credits?|money\s+received))[:\s£]+([\d,]+\.\d{2})/i)
+                     || rawText.match(/(?:money\s+in|payments\s+in)[:\s£]+([\d,]+\.\d{2})/i);
+  const totalOutMatch = rawText.match(/(?:total\s+(?:money\s+out|payments\s+out|debits?|money\s+paid))[:\s£]+([\d,]+\.\d{2})/i)
+                     || rawText.match(/(?:money\s+out|payments\s+out)[:\s£]+([\d,]+\.\d{2})/i);
+  const statementMoneyIn  = totalInMatch  ? parseFloat(totalInMatch[1].replace(/,/g, ''))  : null;
+  const statementMoneyOut = totalOutMatch ? parseFloat(totalOutMatch[1].replace(/,/g, '')) : null;
+
   console.log(`Pre-extracted balances — opening: ${openingBalance}, closing: ${closingBalance}`);
+  console.log(`Pre-extracted totals   — money in: ${statementMoneyIn}, money out: ${statementMoneyOut}`);
 
   // ── Step 3: Smart truncate if over 10,000 chars ───────────────────────────
   const truncatedText = smartTruncate(rawText);
@@ -156,12 +166,19 @@ async function parseWithClaude(buffer) {
     return parseWithClaudeBinary(buffer);
   }
 
-  // ── Step 4: Build prompt with pre-known balances injected ────────────────
-  const balanceHint = openingBalance !== null
-    ? `Known start balance: £${openingBalance.toFixed(2)}, known end balance: £${closingBalance !== null ? closingBalance.toFixed(2) : 'unknown'}. Use these as ground truth — your extracted transactions should reconcile to these figures.`
+  // ── Step 4: Build prompt with pre-known balances + totals injected ─────────
+  const groundTruthParts = [];
+  if (openingBalance !== null) groundTruthParts.push(`start balance £${openingBalance.toFixed(2)}`);
+  if (closingBalance !== null) groundTruthParts.push(`end balance £${closingBalance.toFixed(2)}`);
+  if (statementMoneyIn  !== null) groundTruthParts.push(`total money IN £${statementMoneyIn.toFixed(2)}`);
+  if (statementMoneyOut !== null) groundTruthParts.push(`total money OUT £${statementMoneyOut.toFixed(2)}`);
+
+  const groundTruthHint = groundTruthParts.length > 0
+    ? `CRITICAL: The statement header shows: ${groundTruthParts.join(', ')}. Your extracted transactions MUST sum to these exact amounts. If your credits do not total the money-in figure, you have missed transactions — look again carefully at every line.`
     : '';
 
-  const prompt = `You will receive pre-filtered transaction lines extracted from a UK bank statement. Parse every line into a structured transaction. ${balanceHint}
+  const prompt = `You will receive pre-filtered transaction lines extracted from a UK bank statement. Parse every line into a structured transaction.
+${groundTruthHint}
 
 Output ONLY valid JSON, no markdown:
 {"confidence":87,"bankDetected":"Barclays","openingBalance":1234.56,"closingBalance":987.65,"totalTransactionsFound":47,"warnings":[],"transactions":[{"date":"DD Mon YYYY","description":"merchant name","amount":1.23,"type":"debit"}]}
@@ -171,6 +188,7 @@ Rules:
 - Strip prefixes: CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, BP
 - Returned/reversed/recalled/refunded/unpaid → type "credit"
 - "Bill Payment to [name]", "Faster Payment to [name]", "Ref: [anything]" — these are REAL payments, not internal transfers. Include them all.
+- Include EVERY transaction — do not skip or merge any entries
 - confidence: 0–100; deduct for missing dates or ambiguous columns
 - Do not invent transactions
 
@@ -189,7 +207,7 @@ ${filteredText}`;
   const outTok = response.usage?.output_tokens ?? 0;
   logCallCost(`Parse/text (${MODEL_NAME})`, inTok, outTok);
   const USAGE = { inputTokens: inTok, outputTokens: outTok };
-  return parseClaudeResponse(response.content[0].text, USAGE, { opening: openingBalance, closing: closingBalance });
+  return parseClaudeResponse(response.content[0].text, USAGE, { opening: openingBalance, closing: closingBalance, moneyIn: statementMoneyIn, moneyOut: statementMoneyOut });
 }
 
 // Binary fallback — used if text extraction fails
@@ -216,7 +234,7 @@ Rules: amount positive, type debit/out or credit/in, extract ALL pages, skip pot
   const outTok = response.usage?.output_tokens ?? 0;
   logCallCost(`Parse/binary (${MODEL_NAME})`, inTok, outTok);
   const USAGE = { inputTokens: inTok, outputTokens: outTok };
-  return parseClaudeResponse(response.content[0].text, USAGE, { opening: null, closing: null });
+  return parseClaudeResponse(response.content[0].text, USAGE, { opening: null, closing: null, moneyIn: null, moneyOut: null });
 }
 
 // Shared response parser
@@ -227,7 +245,7 @@ function parseClaudeResponse(rawText, usage, preBalances) {
     .replace(/```\s*$/i, '')
     .trim();
 
-  const EMPTY = { bank: 'Unknown', transactions: [], confidence: 40, openingBalance: preBalances.opening, closingBalance: preBalances.closing, totalTransactionsFound: 0, warnings: ['Parser returned no usable data'], bankDetected: 'Unknown', usage };
+  const EMPTY = { bank: 'Unknown', transactions: [], confidence: 40, openingBalance: preBalances.opening, closingBalance: preBalances.closing, statementMoneyIn: preBalances.moneyIn ?? null, statementMoneyOut: preBalances.moneyOut ?? null, totalTransactionsFound: 0, warnings: ['Parser returned no usable data'], bankDetected: 'Unknown', usage };
 
   try {
     const parsed = JSON.parse(raw);
@@ -238,6 +256,8 @@ function parseClaudeResponse(rawText, usage, preBalances) {
         confidence:             typeof parsed.confidence === 'number' ? parsed.confidence : 70,
         openingBalance:         parsed.openingBalance ?? preBalances.opening,
         closingBalance:         parsed.closingBalance ?? preBalances.closing,
+        statementMoneyIn:       preBalances.moneyIn ?? null,
+        statementMoneyOut:      preBalances.moneyOut ?? null,
         totalTransactionsFound: parsed.totalTransactionsFound ?? parsed.transactions.length,
         warnings:               Array.isArray(parsed.warnings) ? parsed.warnings : [],
         bankDetected:           parsed.bankDetected || parsed.bank || 'Unknown',
@@ -310,6 +330,24 @@ function validateParse(parseResult, transactions) {
       errors.push(`Balance discrepancy of £${discrepancy.toFixed(2)} detected. Expected closing balance £${parseResult.closingBalance.toFixed(2)} but transactions sum to £${calcClose.toFixed(2)}. Some transactions may be missing.`);
     } else if (discrepancy > 10) {
       warnings.push(`Minor balance discrepancy of £${discrepancy.toFixed(2)} detected. Please review all transactions before exporting.`);
+    }
+  }
+
+  // 2b. Statement totals reconciliation (money in / money out)
+  const txCreditsTotal = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + Math.abs(t.amount), 0);
+  const txDebitsTotal  = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + Math.abs(t.amount), 0);
+  if (parseResult.statementMoneyIn != null) {
+    const inDiscrepancy = Math.abs(txCreditsTotal - parseResult.statementMoneyIn);
+    if (inDiscrepancy > 1) {
+      const dir = txCreditsTotal < parseResult.statementMoneyIn ? 'missing' : 'excess';
+      errors.push(`Money-in discrepancy of £${inDiscrepancy.toFixed(2)} detected. Statement shows total credits £${parseResult.statementMoneyIn.toFixed(2)} but extracted transactions sum to £${txCreditsTotal.toFixed(2)} — ${inDiscrepancy.toFixed(2)} ${dir}. Some income transactions may be missing.`);
+    }
+  }
+  if (parseResult.statementMoneyOut != null) {
+    const outDiscrepancy = Math.abs(txDebitsTotal - parseResult.statementMoneyOut);
+    if (outDiscrepancy > 1) {
+      const dir = txDebitsTotal < parseResult.statementMoneyOut ? 'missing' : 'excess';
+      errors.push(`Money-out discrepancy of £${outDiscrepancy.toFixed(2)} detected. Statement shows total debits £${parseResult.statementMoneyOut.toFixed(2)} but extracted transactions sum to £${txDebitsTotal.toFixed(2)} — ${outDiscrepancy.toFixed(2)} ${dir}. Some spending transactions may be missing.`);
     }
   }
 
@@ -406,23 +444,41 @@ function normaliseMerchant(raw) {
 }
 
 // ---------------------------------------------------------------------------
-// Exact-duplicate removal — same date + description + amount (FIX 1)
+// Duplicate removal — ONLY for known self-transfer / generic bank descriptions.
+// PayPal, Amazon, and any merchant that commonly recurs same-day are KEPT.
+// Transactions with reference numbers in the description are KEPT.
+// When in doubt: keep the transaction.
 // ---------------------------------------------------------------------------
+const NEVER_DEDUP = /paypal|amazon|amzn|uber|deliveroo|just.?eat|spotify|netflix|apple|google|contactless|card payment/i;
+const SELF_TRANSFER_DEDUP = /received\s+from\s+kasam|received\s+from\s+kasim|transfer\s+from\s+kasam|transfer\s+from\s+kasim|own\s+account\s+transfer/i;
+
 function deduplicateParsed(transactions) {
   const seen = new Map();
   const result = [];
   let removed = 0;
   for (const t of transactions) {
-    const key = `${(t.date || '').trim()}||${(t.description || '').toLowerCase().trim()}||${parseFloat(t.amount || 0).toFixed(2)}`;
-    if (seen.has(key)) {
+    const desc = (t.description || '').trim();
+    const descLower = desc.toLowerCase();
+
+    // Hard rule: never dedup merchants that legitimately recur same-day
+    if (NEVER_DEDUP.test(descLower)) { result.push(t); continue; }
+
+    // Hard rule: never dedup if description contains a reference/ID number
+    if (/\b[A-Z0-9]{6,}\b/.test(desc)) { result.push(t); continue; }
+
+    // Only dedup if it matches a known self-transfer pattern
+    const isSelfTransfer = SELF_TRANSFER_DEDUP.test(descLower);
+    const key = `${(t.date || '').trim()}||${descLower}||${parseFloat(t.amount || 0).toFixed(2)}`;
+
+    if (isSelfTransfer && seen.has(key)) {
       removed++;
-      console.log(`Dedup removed: ${t.date} "${t.description}" £${t.amount}`);
+      console.log(`Dedup removed (self-transfer): ${t.date} "${desc}" £${t.amount}`);
     } else {
       seen.set(key, true);
       result.push(t);
     }
   }
-  if (removed > 0) console.log(`Deduplication: removed ${removed} exact duplicate(s), ${result.length} remain`);
+  if (removed > 0) console.log(`Deduplication: removed ${removed} self-transfer duplicate(s), ${result.length} remain`);
   return result;
 }
 
