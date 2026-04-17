@@ -157,7 +157,9 @@ async function parseWithClaude(buffer) {
   }
 
   // ── Step 4: Build prompt with pre-known balances injected ────────────────
-  const balanceHint = `Known opening balance: £${openingBalance ?? 'unknown'}, Known closing balance: £${closingBalance ?? 'unknown'}`;
+  const balanceHint = openingBalance !== null
+    ? `Known start balance: £${openingBalance.toFixed(2)}, known end balance: £${closingBalance !== null ? closingBalance.toFixed(2) : 'unknown'}. Use these as ground truth — your extracted transactions should reconcile to these figures.`
+    : '';
 
   const prompt = `You will receive pre-filtered transaction lines extracted from a UK bank statement. Parse every line into a structured transaction. ${balanceHint}
 
@@ -168,6 +170,7 @@ Rules:
 - amount: always positive number; type: "debit" (money out) or "credit" (money in)
 - Strip prefixes: CONTACTLESS, FASTER PAYMENT, DD, SO, VIS, CR, BACS, CHQ, FP, BP
 - Returned/reversed/recalled/refunded/unpaid → type "credit"
+- "Bill Payment to [name]", "Faster Payment to [name]", "Ref: [anything]" — these are REAL payments, not internal transfers. Include them all.
 - confidence: 0–100; deduct for missing dates or ambiguous columns
 - Do not invent transactions
 
@@ -493,20 +496,19 @@ export async function POST(req) {
       }
     }
 
-    // ── 7. Filter genuine pot/internal transfers only — be conservative ───────
-    // Rule: only remove if BOTH a pot/internal keyword AND a transfer direction are present.
-    // Never remove credits over £500 or anything salary-like.
+    // ── 7. Filter ONLY explicit Monzo pot transfers ───────────────────────────
+    // If in doubt → KEEP. It is better to include everything than silently drop
+    // real transactions. Bill payments, P2P payments, "Ref: Monzo" payments,
+    // anything over £100 — all kept unconditionally.
     function isGenuinePotTransfer(t) {
-      const d  = (t.description || '').toLowerCase();
+      const d   = (t.description || '').toLowerCase();
       const amt = Math.abs(typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0);
-      // Never remove large credits — could be salary or real income
-      if (t.type === 'credit' && amt >= 500) return false;
-      // Salary/wage signals — always keep
-      if (/salary|wages|payroll|bacs credit/i.test(d)) return false;
-      // Monzo pot transfers (must mention both "pot" and "transfer")
-      if (/\bpot\b/.test(d) && /transfer/i.test(d)) return true;
-      // Placeholder-only descriptions with no real merchant info
-      if (/^withdrawal$|^deposit$/.test(d.trim())) return true;
+      // Hard keeps — never remove these regardless of description
+      if (amt >= 100) return false;
+      if (/bill payment|faster payment|ref:/i.test(d)) return false;
+      if (/salary|wages|payroll|bacs/i.test(d)) return false;
+      // Only remove: Monzo "Transfer to/from Pot" — must contain BOTH words
+      if (/\bpot\b/.test(d) && /\btransfer\b/.test(d)) return true;
       return false;
     }
 
@@ -1158,8 +1160,11 @@ function categoriseTransaction(rawDesc, amount, type) {
   }
 
   // Step 2 — Internal transfers (flag with isInternal)
-  if (/kasam khalid|kasim khalid|k khalid|ref:\s*monzo/i.test(raw))
-    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false, isInternal: true };
+  // ONLY flag genuine own-account transfers as internal.
+  // "Ref: Monzo" = payment TO a Monzo account — real spending, NOT internal.
+  // People's names = real P2P payments — NOT internal.
+  // (No patterns here intentionally — isInternal should only come from categoriseTransaction
+  //  when we have strong evidence it's a self-transfer, e.g. matching account numbers.)
 
   // Step 3 — Transfers Received (specific known payees)
   if (
