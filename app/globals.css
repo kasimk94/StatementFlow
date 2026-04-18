@@ -33,6 +33,18 @@ body {
   overflow-x: hidden; /* prevent horizontal scroll from any overflowing animated elements */
 }
 
+h1, h2, h3 {
+  font-family: var(--font-bricolage), var(--font-inter), sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.hero-headline {
+  font-size: clamp(3rem, 6vw, 5.5rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.0 !important;
+  letter-spacing: -0.04em !important;
+}
+
 /* Transaction row entrance animation */
 @keyframes rowFadeIn {
   from { opacity: 0; transform: translateY(6px); }
@@ -400,7 +412,7 @@ img, video { max-width: 100%; height: auto; }
 
 /* ── Homepage section padding reduction on mobile ───────────────── */
 .hp-section {
-  padding: 120px 24px;
+  padding: 100px 24px;
 }
 
 /* ── Before/After transformation grid ──────────────────────────── */

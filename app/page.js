@@ -323,14 +323,14 @@ export default function Home() {
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         background: "#080C14", position: "relative", overflow: "hidden",
-        paddingTop: 80, paddingBottom: 80,
+        padding: "120px 24px 80px",
       }}>
-        {/* Radial gold glow */}
+        {/* Radial gold glow — centred behind headline text */}
         <div style={{
-          position: "absolute", top: "-20%", left: "50%", transform: "translateX(-50%)",
-          width: 800, height: 800, borderRadius: "50%",
-          background: "radial-gradient(ellipse at center, rgba(201,168,76,0.18) 0%, rgba(201,168,76,0.06) 40%, transparent 70%)",
-          filter: "blur(40px)",
+          position: "absolute", top: "15%", left: "50%", transform: "translateX(-50%)",
+          width: 800, height: 600, borderRadius: "50%",
+          background: "radial-gradient(ellipse at center, rgba(201,168,76,0.2) 0%, rgba(201,168,76,0.07) 45%, transparent 72%)",
+          filter: "blur(50px)",
           pointerEvents: "none",
         }} />
         {/* Noise texture overlay */}
@@ -340,7 +340,7 @@ export default function Home() {
           pointerEvents: "none", opacity: 0.4,
         }} />
 
-        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center", padding: "0 24px", position: "relative", zIndex: 1 }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
           {/* Badge */}
           <div className="animate-fade-up" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
@@ -422,7 +422,7 @@ export default function Home() {
           </div>
 
           {/* Dashboard mockup preview */}
-          <div className="animate-fade-up-delay-3" style={{ marginTop: 64, position: "relative" }}>
+          <div className="animate-fade-up-delay-3" style={{ marginTop: 60, position: "relative" }}>
             {/* Floating verified badge */}
             <div style={{
               position: "absolute", top: -14, right: "8%", zIndex: 10,
@@ -515,10 +515,11 @@ export default function Home() {
               <div key={i} className="scroll-animate" style={{
                 display: "flex", gap: 20, alignItems: "flex-start",
                 transitionDelay: `${i * 0.1}s`,
-                background: "#0D1117",
+                background: "linear-gradient(135deg, #0D1117, #111820)",
                 border: "1px solid #1E2A3A",
-                borderLeft: `3px solid ${color}`,
+                borderLeft: "3px solid #C9A84C",
                 borderRadius: 14, padding: "24px 28px",
+                paddingLeft: 20,
                 transition: "box-shadow 0.2s ease",
               }}
               onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 24px rgba(0,0,0,0.3), inset 0 0 0 0 transparent`}
