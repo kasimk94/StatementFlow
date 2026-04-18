@@ -22,23 +22,23 @@ const NAVBAR_CSS = `
   }
 
   .ntry {
-    background: linear-gradient(135deg, #C9A84C, #E8C97A);
+    background: linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%);
     color: #080C14;
     font-size: 0.875rem;
-    font-weight: 700;
-    padding: 10px 22px;
-    border-radius: 8px;
+    font-weight: 600;
+    padding: 9px 20px;
+    border-radius: 50px;
     border: none;
     cursor: pointer;
-    transition: box-shadow 0.2s ease, transform 0.2s ease, filter 0.2s ease;
-    box-shadow: 0 4px 20px rgba(201,168,76,0.35);
+    letter-spacing: -0.01em;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
     min-height: 36px;
     white-space: nowrap;
   }
   .ntry:hover {
-    filter: brightness(1.08);
     transform: translateY(-1px);
-    box-shadow: 0 6px 28px rgba(201,168,76,0.55);
+    box-shadow: 0 6px 28px rgba(201,168,76,0.5);
   }
 
   /* Desktop nav — hidden on mobile */

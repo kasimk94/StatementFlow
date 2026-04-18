@@ -380,32 +380,34 @@ export default function Home() {
           </p>
 
           {/* CTA buttons */}
-          <div className="hero-cta-group animate-fade-up-delay-3" style={{ marginBottom: 48, gap: "14px" }}>
+          <div className="hero-cta-group animate-fade-up-delay-3" style={{ marginBottom: 48, gap: "12px" }}>
             <button
               onClick={scrollToUpload}
               className="btn-gold-pulse"
               style={{
-                background: "linear-gradient(135deg, #C9A84C, #E8C97A)", color: "#080C14", fontWeight: 700,
-                fontSize: "1rem", padding: "16px 32px", borderRadius: 10,
-                border: "none", cursor: "pointer", minHeight: 52,
-                boxShadow: "0 4px 24px rgba(201,168,76,0.3)",
+                background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)",
+                color: "#080C14", fontWeight: 600, fontSize: "0.95rem",
+                padding: "14px 32px", borderRadius: 50, border: "none", cursor: "pointer",
+                letterSpacing: "-0.01em",
+                boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)",
+                transition: "all 0.2s ease",
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(201,168,76,0.45)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 24px rgba(201,168,76,0.3)"; }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)"; }}
             >
               Convert My Statement →
             </button>
             <button
               onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
               style={{
-                color: "#C9A84C", fontWeight: 600, fontSize: "1rem",
-                padding: "16px 32px", borderRadius: 10,
+                color: "#C9A84C", fontWeight: 500, fontSize: "0.95rem",
+                padding: "14px 32px", borderRadius: 50,
                 border: "1px solid rgba(201,168,76,0.35)",
-                background: "transparent", cursor: "pointer", minHeight: 52,
-                transition: "background 0.2s ease, border-color 0.2s ease",
+                background: "transparent", cursor: "pointer",
+                letterSpacing: "-0.01em", transition: "all 0.2s ease",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,168,76,0.08)"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.6)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.35)"; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.7)"; e.currentTarget.style.background = "rgba(201,168,76,0.05)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.35)"; e.currentTarget.style.background = "transparent"; }}
             >
               See How It Works
             </button>
@@ -625,9 +627,9 @@ export default function Home() {
               </ul>
               <div style={{ flex: 1 }} />
               <div style={{ paddingTop: 32 }}>
-                <button onClick={scrollToUpload} style={{ width: "100%", textAlign: "center", background: "#C9A84C", color: "#080C14", fontWeight: 700, padding: "14px 24px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: "0.95rem", transition: "filter 0.2s ease" }}
-                  onMouseEnter={e => e.currentTarget.style.filter = "brightness(1.1)"}
-                  onMouseLeave={e => e.currentTarget.style.filter = "none"}
+                <button onClick={scrollToUpload} style={{ width: "100%", textAlign: "center", background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)", color: "#080C14", fontWeight: 600, padding: "14px 24px", borderRadius: 50, border: "none", cursor: "pointer", fontSize: "0.95rem", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)", transition: "all 0.2s ease" }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)"; }}
                 >Try Free →</button>
               </div>
             </div>
@@ -658,9 +660,9 @@ export default function Home() {
               </ul>
               <div style={{ flex: 1 }} />
               <div style={{ paddingTop: 32 }}>
-                <button onClick={scrollToUpload} style={{ width: "100%", textAlign: "center", background: "transparent", color: "#C9A84C", fontWeight: 700, padding: "14px 24px", borderRadius: 10, border: "1px solid rgba(201,168,76,0.5)", cursor: "pointer", fontSize: "0.95rem", transition: "background 0.2s ease" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(201,168,76,0.08)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                <button onClick={scrollToUpload} style={{ width: "100%", textAlign: "center", background: "transparent", color: "#C9A84C", fontWeight: 500, padding: "14px 24px", borderRadius: 50, border: "1px solid rgba(201,168,76,0.35)", cursor: "pointer", fontSize: "0.95rem", letterSpacing: "-0.01em", transition: "all 0.2s ease" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.7)"; e.currentTarget.style.background = "rgba(201,168,76,0.05)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.35)"; e.currentTarget.style.background = "transparent"; }}
                 >See Business Features →</button>
               </div>
             </div>
@@ -772,8 +774,12 @@ export default function Home() {
 
           <div style={{ textAlign: "center", marginTop: 48 }}>
             <button onClick={scrollToUpload} className="btn-gold-pulse" style={{
-              background: "#C9A84C", color: "#080C14", fontWeight: 700,
-              fontSize: "1rem", padding: "14px 36px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)",
+              color: "#080C14", fontWeight: 600, fontSize: "0.95rem",
+              padding: "14px 36px", borderRadius: 50, border: "none", cursor: "pointer",
+              letterSpacing: "-0.01em",
+              boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)",
+              transition: "all 0.2s ease",
             }}>
               Convert My Statement Free →
             </button>
@@ -979,9 +985,9 @@ export default function Home() {
                 <PricingFeature text="CSV export" />
                 <PricingFeature text="Monthly spending report" />
               </ul>
-              <button onClick={scrollToUpload} style={{ width: "100%", padding: "12px 0", borderRadius: 10, fontSize: "0.875rem", fontWeight: 700, color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)", background: "transparent", cursor: "pointer", transition: "background 0.2s ease" }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(201,168,76,0.08)"}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              <button onClick={scrollToUpload} style={{ width: "100%", padding: "13px 0", borderRadius: 50, fontSize: "0.875rem", fontWeight: 500, color: "#C9A84C", border: "1px solid rgba(201,168,76,0.35)", background: "transparent", cursor: "pointer", letterSpacing: "-0.01em", transition: "all 0.2s ease" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.7)"; e.currentTarget.style.background = "rgba(201,168,76,0.05)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.35)"; e.currentTarget.style.background = "transparent"; }}
               >Get Started Free</button>
             </div>
 
@@ -1025,9 +1031,9 @@ export default function Home() {
                 <PricingFeature text="Monthly spending report" included pro />
                 <PricingFeature text="3 months statement history" included pro />
               </ul>
-              <button onClick={() => handleCheckout("PRO")} disabled={checkoutLoading === "PRO"} style={{ width: "100%", padding: "14px 0", borderRadius: 10, fontSize: "0.875rem", fontWeight: 700, color: "#080C14", background: "#C9A84C", border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(201,168,76,0.4)", transition: "filter 0.2s ease", opacity: checkoutLoading === "PRO" ? 0.6 : 1 }}
-                onMouseEnter={e => e.currentTarget.style.filter = "brightness(1.1)"}
-                onMouseLeave={e => e.currentTarget.style.filter = "none"}
+              <button onClick={() => handleCheckout("PRO")} disabled={checkoutLoading === "PRO"} style={{ width: "100%", padding: "14px 0", borderRadius: 50, fontSize: "0.875rem", fontWeight: 600, color: "#080C14", background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)", border: "none", cursor: "pointer", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)", transition: "all 0.2s ease", opacity: checkoutLoading === "PRO" ? 0.6 : 1 }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)"; }}
               >{checkoutLoading === "PRO" ? "Redirecting…" : "Start Pro"}</button>
             </div>
 
@@ -1057,9 +1063,9 @@ export default function Home() {
                 <PricingFeature text="Business expense tagging" included comingSoon />
                 <PricingFeature text="Priority support" included />
               </ul>
-              <button onClick={() => handleCheckout("BUSINESS")} disabled={checkoutLoading === "BUSINESS"} style={{ width: "100%", padding: "12px 0", borderRadius: 10, fontSize: "0.875rem", fontWeight: 700, color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)", background: "transparent", cursor: "pointer", transition: "background 0.2s ease", opacity: checkoutLoading === "BUSINESS" ? 0.6 : 1 }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(201,168,76,0.08)"}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              <button onClick={() => handleCheckout("BUSINESS")} disabled={checkoutLoading === "BUSINESS"} style={{ width: "100%", padding: "13px 0", borderRadius: 50, fontSize: "0.875rem", fontWeight: 500, color: "#C9A84C", border: "1px solid rgba(201,168,76,0.35)", background: "transparent", cursor: "pointer", letterSpacing: "-0.01em", transition: "all 0.2s ease", opacity: checkoutLoading === "BUSINESS" ? 0.6 : 1 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.7)"; e.currentTarget.style.background = "rgba(201,168,76,0.05)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.35)"; e.currentTarget.style.background = "transparent"; }}
               >{checkoutLoading === "BUSINESS" ? "Redirecting…" : "Start Business"}</button>
             </div>
           </div>
@@ -1194,13 +1200,15 @@ export default function Home() {
               onClick={scrollToUpload}
               className="btn-gold-pulse"
               style={{
-                background: "linear-gradient(135deg, #C9A84C, #E8C97A)", color: "#080C14",
-                fontWeight: 800, fontSize: "1.05rem", padding: "16px 40px", borderRadius: 10,
-                border: "none", cursor: "pointer", minHeight: 52,
-                boxShadow: "0 4px 24px rgba(201,168,76,0.3)",
+                background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)",
+                color: "#080C14", fontWeight: 600, fontSize: "0.95rem",
+                padding: "14px 40px", borderRadius: 50, border: "none", cursor: "pointer",
+                letterSpacing: "-0.01em",
+                boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)",
+                transition: "all 0.2s ease",
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(201,168,76,0.45)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 24px rgba(201,168,76,0.3)"; }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)"; }}
             >
               Convert My Statement Free →
             </button>
