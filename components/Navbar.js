@@ -345,7 +345,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
           <LogoIcon size={30} />
           <div>
             <span style={{
-              fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
+              fontSize: "1.1rem", fontWeight: 800, letterSpacing: "-0.02em",
               background: "linear-gradient(135deg, #F5F0E8 0%, #E8C97A 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               display: "block",
