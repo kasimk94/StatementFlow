@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Bricolage_Grotesque } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import AuthSessionProvider from "@/components/SessionProvider";
 
@@ -7,13 +8,6 @@ const inter = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-inter",
-  display: "swap",
-});
-
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -221,7 +215,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-GB" className={`${inter.variable} ${bricolage.variable} ${playfair.variable} h-full antialiased`}>
+    <html lang="en-GB" className={`${inter.variable} ${GeistSans.variable} ${playfair.variable} h-full antialiased`}>
       <head>
         <script
           type="application/ld+json"
