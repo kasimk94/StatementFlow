@@ -34,7 +34,9 @@
       "Bash(find C:/Users/Lenovo/Desktop/bank-converter/node_modules/@prisma -name *.md)",
       "Bash(find C:/Users/Lenovo/Desktop/bank-converter/node_modules/prisma -name CHANGELOG* -o -name README*)",
       "Bash(find C:/Users/Lenovo/Desktop/bank-converter/node_modules/prisma -name config*)",
-      "Bash(\"C:/Users/Lenovo/Desktop/bank-converter/.gitignore\")"
+      "Bash(\"C:/Users/Lenovo/Desktop/bank-converter/.gitignore\")",
+      "Bash(npm list:*)",
+      "Bash(find C:/Users/Lenovo/Desktop/bank-converter/app/api -name *.js -o -name *.ts)"
     ]
   }
 }

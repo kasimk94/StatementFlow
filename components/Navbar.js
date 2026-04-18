@@ -172,7 +172,8 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
     top:                 16,
     left:                "50%",
     transform:           "translateX(-50%)",
-    zIndex:              9999,
+    zIndex:              99999,
+    isolation:           "isolate",
     // Sizing — auto, NOT 100%
     width:               "auto",
     whiteSpace:          "nowrap",
@@ -197,7 +198,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
   };
 
   return (
-    <div ref={wrapperRef} style={pillStyle}>
+    <div ref={wrapperRef} data-navbar style={pillStyle}>
 
       {/* Logo */}
       <Link

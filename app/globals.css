@@ -33,6 +33,12 @@ body {
   overflow-x: hidden; /* prevent horizontal scroll from any overflowing animated elements */
 }
 
+/* ── Navbar always on top ──────────────────────────────────────────────────── */
+[data-navbar] {
+  z-index: 99999 !important;
+  position: fixed !important;
+}
+
 h1, h2, h3 {
   font-family: var(--font-geist-sans), 'Inter', sans-serif;
   letter-spacing: -0.03em;

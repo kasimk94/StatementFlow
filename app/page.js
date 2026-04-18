@@ -477,7 +477,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           2. STATS BAR
       ══════════════════════════════════════════════════════════════ */}
-      <section style={{ background: "#0D1117", borderTop: "1px solid rgba(201,168,76,0.12)", borderBottom: "1px solid rgba(201,168,76,0.12)", padding: "40px 24px", position: "relative", zIndex: 1 }}>
+      <section style={{ background: "#0D1117", borderTop: "1px solid rgba(201,168,76,0.12)", borderBottom: "1px solid rgba(201,168,76,0.12)", padding: "40px 24px", position: "relative", zIndex: 1, scrollMarginTop: "80px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0 }}>
           {[
             ["40+",       "UK Banks Supported"],
@@ -544,7 +544,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           4. HOW IT WORKS
       ══════════════════════════════════════════════════════════════ */}
-      <section id="how-it-works" className="hp-section" style={{ background: "#0D1117" }}>
+      <section id="how-it-works" className="hp-section" style={{ background: "#0D1117", scrollMarginTop: "80px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#C9A84C", textTransform: "uppercase", marginBottom: 12 }}>How It Works</p>
@@ -790,7 +790,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           7. FEATURES GRID
       ══════════════════════════════════════════════════════════════ */}
-      <section id="features" className="hp-section" style={{ background: "#080C14" }}>
+      <section id="features" className="hp-section" style={{ background: "#080C14", scrollMarginTop: "80px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
             <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Features</p>
@@ -837,7 +837,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           8. SECURITY
       ══════════════════════════════════════════════════════════════ */}
-      <section id="security" className="hp-section" style={{ background: "#0D1117" }}>
+      <section id="security" className="hp-section" style={{ background: "#0D1117", scrollMarginTop: "80px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#C9A84C", textTransform: "uppercase", marginBottom: 12 }}>Security &amp; Privacy</p>
@@ -938,7 +938,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           10. PRICING
       ══════════════════════════════════════════════════════════════ */}
-      <section id="pricing" className="hp-section" style={{ background: "#0D1117" }}>
+      <section id="pricing" className="hp-section" style={{ background: "#0D1117", scrollMarginTop: "80px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
             <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Pricing</p>
