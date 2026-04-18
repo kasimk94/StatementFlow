@@ -167,21 +167,21 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
 
   // ── Pill styles (all inline — no class dependency) ───────────────────────
   const pillStyle = {
-    // Positioning
+    // Positioning — 16px gap from top edge for floating effect
     position:            "fixed",
-    top:                 20,
+    top:                 16,
     left:                "50%",
     transform:           "translateX(-50%)",
     zIndex:              1000,
     // Sizing — auto, NOT 100%
     width:               "auto",
     whiteSpace:          "nowrap",
-    // Visual pill
-    background:          "rgba(8,12,20,0.9)",
-    backdropFilter:      "blur(20px)",
-    WebkitBackdropFilter:"blur(20px)",
+    // Visual pill — background is always dark, never gold
+    background:          scrolled ? "rgba(8,12,20,0.97)" : "rgba(8,12,20,0.9)",
+    backdropFilter:      "blur(24px)",
+    WebkitBackdropFilter:"blur(24px)",
     border:              scrolled
-                           ? "1px solid rgba(201,168,76,0.35)"
+                           ? "1px solid rgba(201,168,76,0.4)"
                            : "1px solid rgba(201,168,76,0.25)",
     borderRadius:        menuOpen ? "28px 28px 16px 16px" : 50,
     padding:             "8px 8px 8px 20px",
@@ -189,11 +189,11 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
     alignItems:          "center",
     gap:                 32,
     boxShadow:           scrolled
-                           ? "0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(201,168,76,0.08)"
-                           : "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.04)",
+                           ? "0 8px 40px rgba(0,0,0,0.6)"
+                           : "0 8px 32px rgba(0,0,0,0.5)",
     // Mount fade
     opacity:             mounted ? 1 : 0,
-    transition:          "opacity 0.35s ease, border-color 0.25s ease, box-shadow 0.25s ease, border-radius 0.2s ease",
+    transition:          "opacity 0.35s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, border-radius 0.2s ease",
   };
 
   return (
