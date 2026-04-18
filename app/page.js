@@ -323,7 +323,7 @@ export default function Home() {
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         background: "#080C14", position: "relative", overflow: "hidden",
-        padding: "100px 24px 80px",
+        padding: "120px 24px 80px",
       }}>
         {/* Radial gold glow — centred behind headline text */}
         <div style={{
