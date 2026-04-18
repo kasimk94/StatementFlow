@@ -172,7 +172,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
     top:                 16,
     left:                "50%",
     transform:           "translateX(-50%)",
-    zIndex:              1000,
+    zIndex:              9999,
     // Sizing — auto, NOT 100%
     width:               "auto",
     whiteSpace:          "nowrap",
@@ -183,7 +183,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
     border:              scrolled
                            ? "1px solid rgba(201,168,76,0.4)"
                            : "1px solid rgba(201,168,76,0.25)",
-    borderRadius:        menuOpen ? "28px 28px 16px 16px" : 50,
+    borderRadius:        50,
     padding:             "8px 8px 8px 20px",
     display:             "flex",
     alignItems:          "center",

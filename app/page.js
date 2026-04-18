@@ -477,7 +477,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           2. STATS BAR
       ══════════════════════════════════════════════════════════════ */}
-      <section style={{ background: "#0D1117", borderTop: "1px solid rgba(201,168,76,0.12)", borderBottom: "1px solid rgba(201,168,76,0.12)", padding: "40px 24px" }}>
+      <section style={{ background: "#0D1117", borderTop: "1px solid rgba(201,168,76,0.12)", borderBottom: "1px solid rgba(201,168,76,0.12)", padding: "40px 24px", position: "relative", zIndex: 1 }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0 }}>
           {[
             ["40+",       "UK Banks Supported"],
