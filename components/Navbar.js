@@ -9,7 +9,7 @@ const NAVBAR_CSS = `
   .npill {
     position: relative;
     z-index: 1;
-    font-size: 14px;
+    font-size: 0.9rem;
     font-weight: 500;
     text-decoration: none;
     padding: 6px 14px;
@@ -22,7 +22,7 @@ const NAVBAR_CSS = `
   }
 
   .ntry {
-    background: #C9A84C;
+    background: linear-gradient(135deg, #C9A84C, #E8C97A);
     color: #080C14;
     font-size: 0.875rem;
     font-weight: 700;
@@ -30,14 +30,15 @@ const NAVBAR_CSS = `
     border-radius: 8px;
     border: none;
     cursor: pointer;
-    transition: box-shadow 0.2s ease, filter 0.2s ease;
-    box-shadow: 0 0 16px rgba(201,168,76,0.35);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.35);
     min-height: 36px;
     white-space: nowrap;
   }
   .ntry:hover {
-    filter: brightness(1.1);
-    box-shadow: 0 0 24px rgba(201,168,76,0.55);
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(201,168,76,0.55);
   }
 
   /* Desktop nav — hidden on mobile */
@@ -150,6 +151,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
   const [activeSection, setActiveSection] = useState("");
   const [hoveredIdx,    setHoveredIdx]    = useState(null);
   const [menuOpen,      setMenuOpen]      = useState(false);
+  const [scrolled,      setScrolled]      = useState(false);
 
   const [pill, setPill] = useState({ left: 0, width: 0, opacity: 0 });
 
@@ -237,6 +239,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
     function handleScroll() {
       if (!hasMounted.current) return;
       const y = window.scrollY;
+      setScrolled(y > 80);
       if (y <= 0) { show(); }
       else if (!hoverTopRef.current && y > lastScrollY.current + 4) {
         if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
@@ -316,7 +319,8 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null, showR
         backdropFilter:      "blur(20px)",
         WebkitBackdropFilter:"blur(20px)",
         boxShadow:           "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(201,168,76,0.08)",
-        border:              "1px solid rgba(201,168,76,0.12)",
+        border:              scrolled ? "1px solid rgba(201,168,76,0.3)" : "1px solid rgba(201,168,76,0.12)",
+        borderBottom:        scrolled ? "1px solid rgba(201,168,76,0.5)" : "1px solid rgba(201,168,76,0.12)",
         padding:             menuOpen ? 0 : 0,
       }}
     >

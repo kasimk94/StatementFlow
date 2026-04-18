@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Playfair_Display } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import AuthSessionProvider from "@/components/SessionProvider";
 
-const geist = Geist({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -213,7 +214,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-GB" className={`${geist.variable} ${playfair.variable} h-full antialiased`}>
+    <html lang="en-GB" className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
       <head>
         <script
           type="application/ld+json"
