@@ -3,6 +3,21 @@
 :root {
   --background: #080C14;
   --foreground: #F0F4FF;
+
+  /* ── Gold design system ─────────────────────────────── */
+  --color-bg:             #080C14;
+  --color-surface:        #0D1117;
+  --color-surface-2:      #111820;
+  --color-border:         #1E2A3A;
+  --color-border-gold:    #C9A84C40;
+  --color-gold:           #C9A84C;
+  --color-gold-light:     #E8C97A;
+  --color-gold-dim:       #C9A84C80;
+  --color-text:           #F5F0E8;
+  --color-text-secondary: #8A9BB5;
+  --color-text-muted:     #4A5568;
+  --color-success:        #00D4A0;
+  --color-error:          #EF4444;
 }
 
 @theme inline {
@@ -143,13 +158,26 @@ html {
   transform: scale(1);
 }
 
-/* ── Primary CTA glow on hover ─────────────────────────────────────────────── */
+/* ── Primary CTA glow on hover (gold) ─────────────────────────────────────── */
 .btn-primary {
   transition: background-color 0.15s ease, box-shadow 0.3s ease, transform 0.2s ease;
 }
 .btn-primary:hover {
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 8px 32px rgba(59, 130, 246, 0.28);
+  box-shadow: 0 0 0 4px rgba(201,168,76,0.2), 0 8px 32px rgba(201,168,76,0.35);
   transform: translateY(-1px);
+}
+
+/* ── Gold CTA pulse animation ──────────────────────────────────────────────── */
+@keyframes goldGlow {
+  0%, 100% { box-shadow: 0 0 24px rgba(201,168,76,0.4), 0 8px 24px rgba(201,168,76,0.25); }
+  50%       { box-shadow: 0 0 40px rgba(201,168,76,0.65), 0 12px 32px rgba(201,168,76,0.4); }
+}
+.btn-gold-pulse {
+  animation: goldGlow 2.5s ease-in-out infinite;
+  transition: transform 0.2s ease;
+}
+.btn-gold-pulse:hover {
+  transform: translateY(-2px);
 }
 
 /* ── Secondary CTA lift on hover ───────────────────────────────────────────── */
@@ -410,10 +438,10 @@ img, video { max-width: 100%; height: auto; }
   background: inherit;
 }
 .comparison-table thead th:first-child {
-  background: #f8fafc;
+  background: #0D1117;
 }
-.comparison-table tr:nth-child(odd) td:first-child  { background: inherit; }
-.comparison-table tr:nth-child(even) td:first-child { background: inherit; }
+.comparison-table tr:nth-child(odd) td:first-child  { background: #080C14; }
+.comparison-table tr:nth-child(even) td:first-child { background: #0D1117; }
 
 /* ── Dashboard: view toggle full-width ──────────────────────────── */
 .view-toggle-full {
@@ -498,7 +526,7 @@ img, video { max-width: 100%; height: auto; }
     display: block;
     text-align: center;
     font-size: 2rem;
-    color: #6C63FF;
+    color: #C9A84C;
     font-weight: 900;
     padding: 12px 0;
   }
