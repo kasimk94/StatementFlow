@@ -392,7 +392,7 @@ export default function Home() {
                 boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)",
                 transition: "all 0.2s ease",
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45)"; }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45), 0 0 0 4px rgba(201,168,76,0.15), 0 0 0 8px rgba(201,168,76,0.06)"; }}
               onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)"; }}
             >
               Convert My Statement →
@@ -628,7 +628,7 @@ export default function Home() {
               <div style={{ flex: 1 }} />
               <div style={{ paddingTop: 32 }}>
                 <button onClick={scrollToUpload} style={{ width: "100%", textAlign: "center", background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)", color: "#080C14", fontWeight: 600, padding: "14px 24px", borderRadius: 50, border: "none", cursor: "pointer", fontSize: "0.95rem", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)", transition: "all 0.2s ease" }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45), 0 0 0 4px rgba(201,168,76,0.15), 0 0 0 8px rgba(201,168,76,0.06)"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)"; }}
                 >Try Free →</button>
               </div>
@@ -1032,7 +1032,7 @@ export default function Home() {
                 <PricingFeature text="3 months statement history" included pro />
               </ul>
               <button onClick={() => handleCheckout("PRO")} disabled={checkoutLoading === "PRO"} style={{ width: "100%", padding: "14px 0", borderRadius: 50, fontSize: "0.875rem", fontWeight: 600, color: "#080C14", background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)", border: "none", cursor: "pointer", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)", transition: "all 0.2s ease", opacity: checkoutLoading === "PRO" ? 0.6 : 1 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45)"; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45), 0 0 0 4px rgba(201,168,76,0.15), 0 0 0 8px rgba(201,168,76,0.06)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)"; }}
               >{checkoutLoading === "PRO" ? "Redirecting…" : "Start Pro"}</button>
             </div>
@@ -1207,7 +1207,7 @@ export default function Home() {
                 boxShadow: "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)",
                 transition: "all 0.2s ease",
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45)"; }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45), 0 0 0 4px rgba(201,168,76,0.15), 0 0 0 8px rgba(201,168,76,0.06)"; }}
               onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)"; }}
             >
               Convert My Statement Free →
