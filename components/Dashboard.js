@@ -138,7 +138,7 @@ function parseDateStr(s) {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function CategoryBadge({ name }) {
-  const pill = CAT_PILL_STYLE[name] ?? { bg: "#f9fafb", color: "#6b7280" };
+  const pill = CAT_PILL_STYLE[name] ?? { bg: "#1E2A3A", color: "#8A9BB5" };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: pill.bg, color: pill.color, padding: "4px 10px", borderRadius: 999, fontSize: "0.72rem", fontWeight: 600, whiteSpace: "nowrap" }}>
       {catEmoji(name)} {name}
@@ -146,8 +146,8 @@ function CategoryBadge({ name }) {
   );
 }
 
-// Vibrant gradient stat card
-function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge }) {
+// Dark-gold themed stat card
+function StatCard({ label, value, sub, gradient, border, numColor, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge }) {
   const _counted = useCountUp(
     countTarget ?? 0,
     1500,
@@ -165,30 +165,31 @@ function StatCard({ label, value, sub, gradient, icon, loaded, delay, countTarge
       className="relative rounded-2xl p-5 flex items-center gap-3 overflow-hidden"
       style={{
         background: gradient,
+        border: border || "1px solid #1E2A3A",
         borderRadius: 16,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.18)",
+        boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
         opacity:    loaded ? 1 : 0,
         transform:  loaded ? "translateY(0)" : "translateY(24px)",
         transition: `opacity 0.5s ease-out ${delay}ms, transform 0.5s ease-out ${delay}ms`,
       }}
     >
       {/* Decorative background circles */}
-      <div className="pointer-events-none absolute -top-8 -right-8 w-36 h-36 rounded-full bg-white/10" />
-      <div className="pointer-events-none absolute -bottom-6 right-12 w-20 h-20 rounded-full bg-white/5" />
+      <div className="pointer-events-none absolute -top-8 -right-8 w-36 h-36 rounded-full" style={{ background: "rgba(255,255,255,0.03)" }} />
+      <div className="pointer-events-none absolute -bottom-6 right-12 w-20 h-20 rounded-full" style={{ background: "rgba(255,255,255,0.02)" }} />
 
-      <div className="relative w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 text-white text-2xl">
+      <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 text-2xl" style={{ background: "rgba(255,255,255,0.08)", color: numColor || "#F5F0E8" }}>
         {icon}
       </div>
       <div className="relative min-w-0 flex-1">
-        <p className="text-xs font-bold text-white/60 uppercase tracking-widest">{label}</p>
-        <p className="font-extrabold text-white mt-1 leading-none" style={{ fontSize: numFontSize, whiteSpace: "nowrap" }}>{displayValue}</p>
-        {sub && <p className="text-sm text-white/60 mt-1.5">{sub}</p>}
+        <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>{label}</p>
+        <p style={{ fontWeight: 800, color: numColor || "#F5F0E8", marginTop: 4, lineHeight: 1, fontSize: numFontSize, whiteSpace: "nowrap" }}>{displayValue}</p>
+        {sub && <p style={{ fontSize: "0.82rem", color: "#8A9BB5", marginTop: 6 }}>{sub}</p>}
         {gauge && (
           <div style={{ marginTop: 8 }}>
-            <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.3)", overflow: "hidden" }}>
+            <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${gauge.pct}%`, background: gauge.color, borderRadius: 999, transition: "width 1s ease 0.6s" }} />
             </div>
-            <p style={{ margin: "3px 0 0", fontSize: "0.68rem", color: "rgba(255,255,255,0.72)" }}>{gauge.label}</p>
+            <p style={{ margin: "3px 0 0", fontSize: "0.68rem", color: "#8A9BB5" }}>{gauge.label}</p>
           </div>
         )}
       </div>
@@ -200,8 +201,8 @@ function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const d = payload[0];
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2 text-sm">
-      <p className="font-semibold text-slate-700">{d.name}</p>
+    <div style={{ background: "#0D1117", border: "1px solid #1E2A3A", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", padding: "8px 14px", fontSize: "0.85rem" }}>
+      <p style={{ fontWeight: 600, color: "#F5F0E8", marginBottom: 2 }}>{d.name}</p>
       <p style={{ color: d.payload?.fill ?? d.color }}>{fmt(d.value)}</p>
     </div>
   );
@@ -210,17 +211,16 @@ function ChartTooltip({ active, payload }) {
 // Improved legend: colour dot + name + amount + percentage
 function PieLegend({ data, totalExpenses }) {
   return (
-    <div className="space-y-2.5 mt-5">
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
       {data.map((entry) => {
         const pct = totalExpenses > 0 ? ((entry.value / totalExpenses) * 100).toFixed(1) : "0.0";
         return (
-          <div key={entry.name} className="flex items-center gap-2.5">
-            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
-            <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>{entry.name}</span>
-            <span className="text-sm font-bold text-slate-800 shrink-0">{fmtShort(entry.value)}</span>
+          <div key={entry.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ width: 12, height: 12, borderRadius: "50%", flexShrink: 0, backgroundColor: entry.fill }} />
+            <span style={{ fontSize: "12px", color: "#F5F0E8", flex: 1 }}>{entry.name}</span>
+            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#8A9BB5", flexShrink: 0 }}>{fmtShort(entry.value)}</span>
             <span
-              className="text-xs text-white font-semibold rounded-full px-1.5 py-0.5 shrink-0"
-              style={{ backgroundColor: entry.fill, minWidth: "3rem", textAlign: "center" }}
+              style={{ fontSize: "0.75rem", color: "#fff", fontWeight: 600, backgroundColor: entry.fill, borderRadius: 999, padding: "2px 6px", minWidth: "3rem", textAlign: "center", flexShrink: 0 }}
             >
               {pct}%
             </span>
@@ -234,8 +234,8 @@ function PieLegend({ data, totalExpenses }) {
 function BarTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2 text-sm">
-      <p className="font-semibold text-slate-700 mb-1">{label}</p>
+    <div style={{ background: "#0D1117", border: "1px solid #1E2A3A", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", padding: "8px 14px", fontSize: "0.85rem" }}>
+      <p style={{ fontWeight: 600, color: "#F5F0E8", marginBottom: 4 }}>{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} style={{ color: p.fill }}>{fmt(p.value)}</p>
       ))}
@@ -294,39 +294,39 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
     .filter(c => c.total > 0 && !["Groceries","Cash & ATM","Transfers Sent","Transfers Received","Refunds","Charity","Rent & Mortgage"].includes(c.name))
     .map(c => ({ name: c.name, spend: c.total, vat: vatBreakdown[c.name] || 0 }));
 
-  const rowStyle  = { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: "0.9rem" };
-  const divStyle  = { borderTop: "2px solid #e2e8f0", margin: "4px 0" };
-  const cardStyle = { background: "#fff", borderRadius: 16, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: "24px 28px", border: "1px solid #f1f5f9", borderTop: "3px solid #6d28d9" };
+  const rowStyle  = { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1E2A3A", fontSize: "0.9rem" };
+  const divStyle  = { borderTop: "2px solid #1E2A3A", margin: "4px 0" };
+  const cardStyle = { background: "#0D1117", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.4)", padding: "24px 28px", border: "1px solid #1E2A3A", borderTop: "3px solid #C9A84C" };
 
   return (
     <div className="accountant-panel" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* ── MODE BANNER ── */}
-      <div style={{ background: "linear-gradient(135deg, #1e3a5f, #2563eb)", borderRadius: 12, padding: "12px 20px" }}>
-        <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "white" }}>📊 Accountant View — Professional Analysis</p>
-        <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "rgba(255,255,255,0.65)" }}>Switch to Personal View for the standard dashboard</p>
+      <div style={{ background: "linear-gradient(135deg, #0a1525, #111820)", borderRadius: 12, padding: "12px 20px", border: "1px solid rgba(201,168,76,0.2)" }}>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#F5F0E8" }}>📊 Accountant View — Professional Analysis</p>
+        <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "#8A9BB5" }}>Switch to Personal View for the standard dashboard</p>
       </div>
 
       {/* ── RECONCILIATION STATUS BANNER ── */}
-      <div className="recon-banner">
-        <div style={{ width: 40, height: 40, background: "#16a34a", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 20, flexShrink: 0 }}>✓</div>
+      <div className="recon-banner" style={{ background: "#0D1117", border: "1px solid #1E2A3A", borderLeft: "4px solid #00D4A0", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 40, height: 40, background: "#00D4A0", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#080C14", fontSize: 20, flexShrink: 0, fontWeight: 700 }}>✓</div>
         <div>
-          <p style={{ fontWeight: 700, color: "#166534", margin: "0 0 2px 0", fontSize: "0.95rem" }}>Statement Reconciled</p>
-          <p style={{ color: "#4ade80", margin: 0, fontSize: "0.8rem" }}>
+          <p style={{ fontWeight: 700, color: "#00D4A0", margin: "0 0 2px 0", fontSize: "0.95rem" }}>Statement Reconciled</p>
+          <p style={{ color: "#8A9BB5", margin: 0, fontSize: "0.8rem" }}>
             All transactions verified · {reversalsCount} reversal{reversalsCount !== 1 ? "s" : ""} matched · {internalCount} internal transfer{internalCount !== 1 ? "s" : ""} excluded
           </p>
         </div>
-        <div className="recon-banner-right">
-          <p style={{ fontWeight: 700, color: "#166534", margin: "0 0 2px 0", fontSize: "0.95rem" }}>Audit Ready</p>
-          <p style={{ color: "#6b7280", margin: 0, fontSize: "0.75rem" }}>{new Date().toLocaleDateString("en-GB")}</p>
+        <div className="recon-banner-right" style={{ marginLeft: "auto", textAlign: "right" }}>
+          <p style={{ fontWeight: 700, color: "#F5F0E8", margin: "0 0 2px 0", fontSize: "0.95rem" }}>Audit Ready</p>
+          <p style={{ color: "#8A9BB5", margin: 0, fontSize: "0.75rem" }}>{new Date().toLocaleDateString("en-GB")}</p>
         </div>
       </div>
 
       {/* ── CARD 1: P&L STATEMENT ── */}
       <div style={cardStyle} className="pl-card">
         <div style={{ marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Profit &amp; Loss Summary</h3>
-          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>{periodStr} · Prepared by StatementFlow</p>
+          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#F5F0E8" }}>Profit &amp; Loss Summary</h3>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#8A9BB5" }}>{periodStr} · Prepared by StatementFlow</p>
         </div>
 
         <div className="pl-grid">
@@ -335,17 +335,17 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
             <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#059669", textTransform: "uppercase", letterSpacing: "0.08em" }}>Income</p>
             {incomeCategories.map(([cat, amt]) => (
               <div key={cat} style={rowStyle}>
-                <span style={{ color: "#475569" }}>{cat}</span>
-                <span style={{ fontWeight: 600, color: "#1e293b" }}>{fmt(amt)}</span>
+                <span style={{ color: "#8A9BB5" }}>{cat}</span>
+                <span style={{ fontWeight: 600, color: "#F5F0E8" }}>{fmt(amt)}</span>
               </div>
             ))}
             <div style={divStyle} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#059669" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#00D4A0" }}>
                 TOTAL INCOME
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>✓ Verified</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,212,160,0.15)", color: "#00D4A0", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999, border: "1px solid rgba(0,212,160,0.3)" }}>✓ Verified</span>
               </span>
-              <span style={{ color: "#059669" }}>{fmt(income)}</span>
+              <span style={{ color: "#00D4A0" }}>{fmt(income)}</span>
             </div>
           </div>
 
@@ -354,68 +354,68 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
             <p style={{ margin: "0 0 12px", fontSize: "0.7rem", fontWeight: 700, color: "#dc2626", textTransform: "uppercase", letterSpacing: "0.08em" }}>Expenditure</p>
             {categoryBreakdown.filter(c => c.total > 0).map(({ name, total }) => (
               <div key={name} style={rowStyle}>
-                <span style={{ color: "#475569" }}>{name}</span>
-                <span style={{ fontWeight: 600, color: "#1e293b" }}>{fmt(total)}</span>
+                <span style={{ color: "#8A9BB5" }}>{name}</span>
+                <span style={{ fontWeight: 600, color: "#F5F0E8" }}>{fmt(total)}</span>
               </div>
             ))}
             <div style={divStyle} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0 0", fontWeight: 800, fontSize: "0.95rem" }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#dc2626" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#EF4444" }}>
                 TOTAL EXPENDITURE
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>✓ Verified</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,212,160,0.15)", color: "#00D4A0", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999, border: "1px solid rgba(0,212,160,0.3)" }}>✓ Verified</span>
               </span>
-              <span style={{ color: "#dc2626" }}>{fmt(expenses)}</span>
+              <span style={{ color: "#EF4444" }}>{fmt(expenses)}</span>
             </div>
           </div>
         </div>
 
         {/* Net position */}
-        <div style={{ marginTop: 24, padding: "16px 20px", borderRadius: 12, background: net >= 0 ? "#f0fdf4" : "#fff1f2", border: `2px solid ${net >= 0 ? "#86efac" : "#fecaca"}`, textAlign: "center" }}>
-          <p style={{ margin: "0 0 4px", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Net Position</p>
-          <p style={{ margin: 0, fontWeight: 900, fontSize: "1.6rem", color: net >= 0 ? "#16a34a" : "#dc2626" }}>
+        <div style={{ marginTop: 24, padding: "16px 20px", borderRadius: 12, background: net >= 0 ? "rgba(0,212,160,0.08)" : "rgba(239,68,68,0.08)", border: `2px solid ${net >= 0 ? "rgba(0,212,160,0.3)" : "rgba(239,68,68,0.3)"}`, textAlign: "center" }}>
+          <p style={{ margin: "0 0 4px", fontSize: "0.78rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.06em" }}>Net Position</p>
+          <p style={{ margin: 0, fontWeight: 900, fontSize: "1.6rem", color: net >= 0 ? "#00D4A0" : "#EF4444" }}>
             {net >= 0 ? "+" : "−"}{fmt(Math.abs(net))}
           </p>
-          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#64748b" }}>{net >= 0 ? "Surplus for the period" : "Deficit for the period"}</p>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#8A9BB5" }}>{net >= 0 ? "Surplus for the period" : "Deficit for the period"}</p>
         </div>
       </div>
 
       {/* ── CARD 2: VAT SUMMARY ── */}
       <div style={cardStyle}>
         <div style={{ marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Estimated VAT Reclaimable</h3>
-          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Standard rate 20% · Verify all claims with HMRC</p>
+          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#F5F0E8" }}>Estimated VAT Reclaimable</h3>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#8A9BB5" }}>Standard rate 20% · Verify all claims with HMRC</p>
         </div>
 
         <div className="vat-layout">
           {/* Left: total figure */}
-          <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #f3f0ff, #ede9fe)", borderRadius: 12, textAlign: "center", minWidth: 160 }}>
-            <p style={{ margin: "0 0 4px", fontSize: "0.7rem", fontWeight: 700, color: "#6d28d9", textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Est. VAT</p>
-            <p style={{ margin: "0 0 4px", fontSize: "2rem", fontWeight: 900, color: "#4c1d95", lineHeight: 1 }}>{fmt(vatTotal)}</p>
-            <p style={{ margin: 0, fontSize: "0.72rem", color: "#7c3aed" }}>across {vatCount} transaction{vatCount !== 1 ? "s" : ""}</p>
+          <div style={{ padding: "20px 24px", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 12, textAlign: "center", minWidth: 160 }}>
+            <p style={{ margin: "0 0 4px", fontSize: "0.7rem", fontWeight: 700, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Est. VAT</p>
+            <p style={{ margin: "0 0 4px", fontSize: "2rem", fontWeight: 900, color: "#E8C97A", lineHeight: 1 }}>{fmt(vatTotal)}</p>
+            <p style={{ margin: 0, fontSize: "0.72rem", color: "#8A9BB5" }}>across {vatCount} transaction{vatCount !== 1 ? "s" : ""}</p>
           </div>
 
           {/* Right: breakdown table */}
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
             <thead>
-              <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+              <tr style={{ borderBottom: "2px solid #1E2A3A" }}>
                 {["Category", "Gross Spend", "Est. VAT"].map(h => (
-                  <th key={h} style={{ padding: "6px 10px", textAlign: h === "Category" ? "left" : "right", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                  <th key={h} style={{ padding: "6px 10px", textAlign: h === "Category" ? "left" : "right", fontWeight: 700, color: "#8A9BB5", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {vatCatRows.map(({ name, spend, vat }) => (
-                <tr key={name} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "6px 10px", color: "#475569" }}>{name}</td>
-                  <td style={{ padding: "6px 10px", textAlign: "right", color: "#1e293b", fontWeight: 600 }}>{fmt(spend)}</td>
-                  <td style={{ padding: "6px 10px", textAlign: "right", color: vat > 0 ? "#6d28d9" : "#94a3b8", fontWeight: vat > 0 ? 700 : 400 }}>{fmt(vat)}</td>
+                <tr key={name} style={{ borderBottom: "1px solid #1E2A3A" }}>
+                  <td style={{ padding: "6px 10px", color: "#8A9BB5" }}>{name}</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", color: "#F5F0E8", fontWeight: 600 }}>{fmt(spend)}</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", color: vat > 0 ? "#C9A84C" : "#4A5568", fontWeight: vat > 0 ? 700 : 400 }}>{fmt(vat)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <p style={{ margin: "20px 0 0", fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic", lineHeight: 1.6 }}>
+        <p style={{ margin: "20px 0 0", fontSize: "0.75rem", color: "#8A9BB5", fontStyle: "italic", lineHeight: 1.6 }}>
           ⚠️ VAT estimates are based on standard 20% rate applied to gross amounts. Actual VAT reclaimable depends on your business type, VAT registration status, and HMRC guidelines. Always verify with a qualified accountant before submitting claims.
         </p>
       </div>
@@ -424,21 +424,21 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
       {reviewTx.length > 0 && (
         <div style={cardStyle} className="no-print">
           <div style={{ marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>Transactions to Review</h3>
-            <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>Flag which are genuine business expenses</p>
+            <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#F5F0E8" }}>Transactions to Review</h3>
+            <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#8A9BB5" }}>Flag which are genuine business expenses</p>
           </div>
 
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
               <thead>
-                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</th>
-                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Description</th>
-                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Category</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Amount</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>VAT Est.</th>
-                  <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</th>
-                  <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, color: "#64748b", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <tr style={{ borderBottom: "2px solid #1E2A3A" }}>
+                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#8A9BB5", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</th>
+                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#8A9BB5", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Description</th>
+                  <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#8A9BB5", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Category</th>
+                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#8A9BB5", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Amount</th>
+                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#8A9BB5", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>VAT Est.</th>
+                  <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, color: "#8A9BB5", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</th>
+                  <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, color: "#8A9BB5", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     <input type="checkbox" checked={checkedRows.size === reviewTx.length && reviewTx.length > 0} onChange={toggleAll} style={{ cursor: "pointer" }} title="Select all" />
                   </th>
                 </tr>
@@ -447,22 +447,22 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
                 {reviewTx.map((t, i) => (
                   <tr
                     key={i}
-                    style={{ borderBottom: "1px solid #f1f5f9", background: checkedRows.has(i) ? "#faf5ff" : (i % 2 === 0 ? "#fff" : "#fafafa"), cursor: "pointer" }}
+                    style={{ borderBottom: "1px solid #1E2A3A", background: checkedRows.has(i) ? "rgba(201,168,76,0.08)" : (i % 2 === 0 ? "#0D1117" : "#111820"), cursor: "pointer" }}
                     onClick={() => toggleRow(i)}
                   >
-                    <td style={{ padding: "8px 12px", color: "#64748b", whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t.date}</td>
-                    <td style={{ padding: "8px 12px", color: "#1e293b", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.description}</td>
+                    <td style={{ padding: "8px 12px", color: "#8A9BB5", whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t.date}</td>
+                    <td style={{ padding: "8px 12px", color: "#F5F0E8", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.description}</td>
                     <td style={{ padding: "8px 12px" }}><CategoryBadge name={t.category} /></td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#dc2626" }}>{fmt(t.amount)}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", color: t.vatAmount > 0 ? "#6d28d9" : "#94a3b8", fontWeight: t.vatAmount > 0 ? 700 : 400 }}>{t.vatAmount > 0 ? fmt(t.vatAmount) : "—"}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#EF4444" }}>{fmt(t.amount)}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", color: t.vatAmount > 0 ? "#C9A84C" : "#4A5568", fontWeight: t.vatAmount > 0 ? 700 : 400 }}>{t.vatAmount > 0 ? fmt(t.vatAmount) : "—"}</td>
                     <td style={{ padding: "8px 12px", textAlign: "center" }}>
                       {t.isInternal
-                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#dbeafe", color: "#1e40af", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>↔ Internal</span>
+                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(59,130,246,0.15)", color: "#93c5fd", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999, border: "1px solid rgba(59,130,246,0.3)" }}>↔ Internal</span>
                         : t.reversalLinked || t.excludeFromTotals
-                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#fef3c7", color: "#92400e", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>⟳ Adjusted</span>
+                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(201,168,76,0.15)", color: "#C9A84C", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999, border: "1px solid rgba(201,168,76,0.3)" }}>⟳ Adjusted</span>
                         : t.category === "Uncategorised"
-                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#f3f4f6", color: "#6b7280", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>? Review</span>
-                        : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#dcfce7", color: "#166534", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999 }}>✓ Verified</span>}
+                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(74,85,104,0.3)", color: "#8A9BB5", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999, border: "1px solid #1E2A3A" }}>? Review</span>
+                        : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(0,212,160,0.15)", color: "#00D4A0", fontSize: "0.7rem", fontWeight: 600, padding: "2px 8px", borderRadius: 999, border: "1px solid rgba(0,212,160,0.3)" }}>✓ Verified</span>}
                     </td>
                     <td style={{ padding: "8px 12px", textAlign: "center" }} onClick={e => { e.stopPropagation(); toggleRow(i); }}>
                       <input type="checkbox" checked={checkedRows.has(i)} onChange={() => toggleRow(i)} style={{ cursor: "pointer" }} />
@@ -474,14 +474,14 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
           </div>
 
           {/* Running total */}
-          <div style={{ marginTop: 12, padding: "12px 16px", background: checkedRows.size > 0 ? "#faf5ff" : "#f8fafc", borderRadius: 10, border: `1px solid ${checkedRows.size > 0 ? "#ddd6fe" : "#e2e8f0"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.82rem", color: "#64748b" }}>
+          <div style={{ marginTop: 12, padding: "12px 16px", background: checkedRows.size > 0 ? "rgba(201,168,76,0.08)" : "#111820", borderRadius: 10, border: `1px solid ${checkedRows.size > 0 ? "rgba(201,168,76,0.3)" : "#1E2A3A"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "0.82rem", color: "#8A9BB5" }}>
               {checkedRows.size === 0
                 ? "Click rows to flag business expenses"
                 : `${checkedRows.size} transaction${checkedRows.size !== 1 ? "s" : ""} selected`}
             </span>
             {checkedRows.size > 0 && (
-              <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "#6d28d9" }}>
+              <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "#C9A84C" }}>
                 Selected total: {fmt(selectedTotal)} · Est. VAT: {fmt(selectedVATTotal)}
               </span>
             )}
@@ -500,23 +500,22 @@ function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError 
     <div
       className="export-toolbar-inner"
       style={{
-        background:   "#ffffff",
-        borderRadius: 14,
-        border:       "1px solid #e8e4f8",
-        borderLeft:   "4px solid #6c5ce7",
-        boxShadow:    "0 2px 12px rgba(108,92,231,0.07), 0 1px 4px rgba(0,0,0,0.04)",
+        background:   "#0D1117",
+        borderRadius: 12,
+        border:       "1px solid #1E2A3A",
+        boxShadow:    "0 4px 24px rgba(0,0,0,0.3)",
         padding:      "10px 18px 10px 20px",
       }}
     >
       {/* Label */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
           <polyline points="7 10 12 15 17 10"/>
           <line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
-        <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#1e293b" }}>Export Your Results</span>
-        <span className="export-toolbar-label-sub" style={{ fontSize: "0.8rem", color: "#94a3b8", fontWeight: 400 }}>— download your full statement report</span>
+        <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#F5F0E8" }}>Export Your Results</span>
+        <span className="export-toolbar-label-sub" style={{ fontSize: "0.8rem", color: "#8A9BB5", fontWeight: 400 }}>— download your full statement report</span>
       </div>
 
       {/* Buttons */}
@@ -524,22 +523,22 @@ function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError 
         <button
           onClick={onPrint}
           style={{
-            background:   "linear-gradient(135deg, #1e3a5f 0%, #1e293b 100%)",
-            color:        "#fff",
+            background:   "#1a2744",
+            color:        "#93c5fd",
             fontWeight:   700,
             fontSize:     "0.88rem",
             padding:      "9px 20px",
             borderRadius: 11,
-            border:       "none",
+            border:       "1px solid rgba(59,130,246,0.5)",
             cursor:       "pointer",
-            boxShadow:    "0 4px 14px rgba(30,58,95,0.32)",
+            boxShadow:    "0 4px 14px rgba(59,130,246,0.15)",
             display:      "flex",
             alignItems:   "center",
             gap:          7,
             transition:   "transform 0.15s ease, box-shadow 0.2s ease",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(30,58,95,0.5)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(30,58,95,0.32)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(59,130,246,0.3)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(59,130,246,0.15)"; }}
         >
           <span style={{ fontSize: "1rem" }}>📄</span> Download Report
         </button>
@@ -548,23 +547,23 @@ function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError 
           onClick={onDownload}
           disabled={downloading}
           style={{
-            background:  "linear-gradient(135deg, #00b894 0%, #00907a 100%)",
-            color:       "#fff",
+            background:  "#1a3322",
+            color:       "#86efac",
             fontWeight:  700,
             fontSize:    "0.88rem",
             padding:     "9px 20px",
             borderRadius: 11,
-            border:      "none",
+            border:      "1px solid rgba(34,197,94,0.5)",
             cursor:      downloading ? "not-allowed" : "pointer",
             opacity:     downloading ? 0.6 : 1,
-            boxShadow:   "0 4px 14px rgba(0,184,148,0.32)",
+            boxShadow:   "0 4px 14px rgba(34,197,94,0.1)",
             display:     "flex",
             alignItems:  "center",
             gap:         7,
             transition:  "transform 0.15s ease, box-shadow 0.2s ease",
           }}
-          onMouseEnter={(e) => { if (!downloading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(0,184,148,0.5)"; } }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,184,148,0.32)"; }}
+          onMouseEnter={(e) => { if (!downloading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(34,197,94,0.25)"; } }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(34,197,94,0.1)"; }}
         >
           {downloading ? (
             <>
@@ -582,30 +581,30 @@ function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError 
         <button
           onClick={onCSV}
           style={{
-            background:   "linear-gradient(135deg, #0984e3 0%, #0652b4 100%)",
-            color:        "#fff",
+            background:   "#1a2744",
+            color:        "#93c5fd",
             fontWeight:   700,
             fontSize:     "0.88rem",
             padding:      "9px 20px",
             borderRadius: 11,
-            border:       "none",
+            border:       "1px solid rgba(59,130,246,0.5)",
             cursor:       "pointer",
-            boxShadow:    "0 4px 14px rgba(9,132,227,0.32)",
+            boxShadow:    "0 4px 14px rgba(59,130,246,0.15)",
             display:      "flex",
             alignItems:   "center",
             gap:          7,
             transition:   "transform 0.15s ease, box-shadow 0.2s ease",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(9,132,227,0.5)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(9,132,227,0.32)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(59,130,246,0.3)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(59,130,246,0.15)"; }}
         >
           <span style={{ fontSize: "1rem" }}>📄</span> Download CSV
         </button>
       </div>
 
       {downloadError && (
-        <div className="w-full flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.875rem", color: "#EF4444", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, padding: "12px 16px", width: "100%" }}>
+          <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
           {downloadError}
@@ -620,10 +619,10 @@ function DebugPanel({ debug }) {
   const [open, setOpen] = useState(false);
 
   const confidenceColor = {
-    high:   { bg: "#dcfce7", text: "#15803d", border: "#86efac" },
-    medium: { bg: "#fef9c3", text: "#854d0e", border: "#fde047" },
-    low:    { bg: "#fee2e2", text: "#b91c1c", border: "#fca5a5" },
-  }[debug.confidence] ?? { bg: "#f1f5f9", text: "#475569", border: "#cbd5e1" };
+    high:   { bg: "rgba(0,212,160,0.15)", text: "#00D4A0", border: "rgba(0,212,160,0.3)" },
+    medium: { bg: "rgba(201,168,76,0.15)", text: "#C9A84C",  border: "rgba(201,168,76,0.3)" },
+    low:    { bg: "rgba(239,68,68,0.15)", text: "#EF4444",   border: "rgba(239,68,68,0.3)" },
+  }[debug.confidence] ?? { bg: "#111820", text: "#8A9BB5", border: "#1E2A3A" };
 
   return (
     <div
@@ -683,7 +682,7 @@ function DebugPanel({ debug }) {
           </div>
 
           {/* Warnings */}
-          <div style={{ color: "#64748b", fontSize: "0.72rem", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div style={{ color: "#8A9BB5", fontSize: "0.72rem", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Warnings ({debug.warnings?.length ?? 0})
           </div>
           {!debug.warnings?.length ? (
@@ -819,8 +818,8 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
     name: `Week ${i+1}`,
     total,
     fill: activeWeek != null
-      ? (i === activeWeek ? "#6c5ce7" : "#ddd6fe")
-      : (i === maxWeekIdx ? "#6c5ce7" : "#ddd6fe"),
+      ? (i === activeWeek ? "#C9A84C" : "#1E2A3A")
+      : (i === maxWeekIdx ? "#C9A84C" : "#1E2A3A"),
   }));
 
   // ── Computed alerts ──
@@ -845,31 +844,31 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   const scoreColor = score >= 80 ? "#10b981" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
   const scoreLabel = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention";
 
-  const ALERT_BORDER = { danger: "#ef4444", warning: "#f59e0b", info: "#3b82f6" };
-  const ALERT_BG     = { danger: "#fff1f1", warning: "#fffbeb", info: "#eff6ff" };
-  const ALERT_RING   = { danger: "#fecaca", warning: "#fde68a", info: "#bfdbfe" };
+  const ALERT_BORDER = { danger: "#EF4444", warning: "#C9A84C", info: "#3b82f6" };
+  const ALERT_BG     = { danger: "rgba(239,68,68,0.1)", warning: "rgba(201,168,76,0.1)", info: "rgba(59,130,246,0.1)" };
+  const ALERT_RING   = { danger: "rgba(239,68,68,0.3)", warning: "rgba(201,168,76,0.3)", info: "rgba(59,130,246,0.3)" };
 
   const sectionLabel = (text) => (
-    <p style={{ margin: "0 0 14px", fontSize: "0.62rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>{text}</p>
+    <p style={{ margin: "0 0 14px", fontSize: "0.62rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em" }}>{text}</p>
   );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
       {/* ── HEADER ── */}
-      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, border: "1px solid #f1f5f9" }}>
+      <div style={{ background: "#0D1117", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, border: "1px solid #1E2A3A" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#1e293b" }}>✨ Your Money, Explained</h2>
-            <span style={{ fontSize: "0.62rem", fontWeight: 700, background: "linear-gradient(135deg,#6c5ce7 0%,#a29bfe 100%)", color: "#fff", padding: "3px 10px", borderRadius: 20, letterSpacing: "0.02em", whiteSpace: "nowrap", flexShrink: 0 }}>StatementFlow AI</span>
+            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#F5F0E8" }}>✨ Your Money, Explained</h2>
+            <span style={{ fontSize: "0.62rem", fontWeight: 700, background: "linear-gradient(135deg,#C9A84C,#E8C97A)", color: "#080C14", padding: "3px 10px", borderRadius: 20, letterSpacing: "0.02em", whiteSpace: "nowrap", flexShrink: 0 }}>StatementFlow AI</span>
           </div>
-          <p style={{ margin: 0, fontSize: "0.82rem", color: "#64748b" }}>Here's what stood out this month</p>
+          <p style={{ margin: 0, fontSize: "0.82rem", color: "#8A9BB5" }}>Here's what stood out this month</p>
         </div>
         {score > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
             <div style={{ textAlign: "right" }}>
               <p style={{ margin: 0, fontSize: "0.62rem", fontWeight: 700, color: scoreColor, textTransform: "uppercase", letterSpacing: "0.05em" }}>Score</p>
-              <p style={{ margin: 0, fontSize: "0.72rem", fontWeight: 600, color: "#64748b" }}>{scoreLabel}</p>
+              <p style={{ margin: 0, fontSize: "0.72rem", fontWeight: 600, color: "#8A9BB5" }}>{scoreLabel}</p>
             </div>
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${scoreColor}44`, flexShrink: 0 }}>
               <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{score}</span>
@@ -883,58 +882,58 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
 
         {/* Card A — Spending Personality with "Why?" toggle (Upgrade 4) */}
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ flex: 1, borderRadius: showWhy ? "12px 12px 0 0" : 12, boxShadow: "0 2px 16px rgba(0,0,0,0.12)", padding: 24, background: personality.gradient, minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+          <div style={{ flex: 1, borderRadius: showWhy ? "12px 12px 0 0" : 12, boxShadow: "0 4px 24px rgba(0,0,0,0.4)", padding: 24, background: "linear-gradient(135deg, #0f1a0a, #111820)", border: "1px solid rgba(201,168,76,0.2)", minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -24, right: -24, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
             <div style={{ position: "absolute", bottom: -28, left: -12, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-            <p style={{ margin: "0 0 8px", fontSize: "0.62rem", fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Spending Personality</p>
+            <p style={{ margin: "0 0 8px", fontSize: "0.62rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em" }}>Spending Personality</p>
             <div style={{ fontSize: "3rem", lineHeight: 1, marginBottom: 10 }}>{personality.emoji}</div>
-            <p style={{ margin: "0 0 4px", fontSize: "1.22rem", fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{personality.name}</p>
+            <p style={{ margin: "0 0 4px", fontSize: "1.22rem", fontWeight: 800, color: "#F5F0E8", lineHeight: 1.2 }}>{personality.name}</p>
             <button
               onClick={() => setShowWhy(v => !v)}
-              style={{ display: "inline-block", background: "none", border: "none", padding: "0 0 8px", cursor: "pointer", fontSize: "0.75rem", color: "rgba(255,255,255,0.72)", textAlign: "left" }}
+              style={{ display: "inline-block", background: "none", border: "none", padding: "0 0 8px", cursor: "pointer", fontSize: "0.75rem", color: "#C9A84C", textAlign: "left" }}
             >
               {showWhy ? "Close ✕" : "Why? →"}
             </button>
-            <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.78)", lineHeight: 1.45 }}>{personality.desc}</p>
+            <p style={{ margin: 0, fontSize: "0.8rem", color: "#8A9BB5", lineHeight: 1.45 }}>{personality.desc}</p>
           </div>
           {showWhy && (
-            <div style={{ background: "#f8f7ff", borderTop: "1px solid #ede9fe", borderRadius: "0 0 12px 12px", padding: "14px 20px", boxShadow: "0 4px 12px rgba(108,92,231,0.08)" }}>
-              <p style={{ margin: 0, fontSize: "0.82rem", color: "#334155", lineHeight: 1.6 }}>{whyText}</p>
+            <div style={{ background: "#111820", borderTop: "1px solid rgba(201,168,76,0.2)", borderRadius: "0 0 12px 12px", padding: "14px 20px", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
+              <p style={{ margin: 0, fontSize: "0.82rem", color: "#8A9BB5", lineHeight: 1.6 }}>{whyText}</p>
             </div>
           )}
         </div>
 
         {/* Card B — Money Moments */}
-        <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: 24, border: "1px solid #f1f5f9", height: "100%", boxSizing: "border-box" }}>
+        <div style={{ background: "#0D1117", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24, border: "1px solid #1E2A3A", height: "100%", boxSizing: "border-box" }}>
           {sectionLabel("Money Moments")}
           <div style={{ display: "flex", flexDirection: "column" }}>
             {busiestDay && (
-              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
-                <span style={{ fontSize: "1.4rem", flexShrink: 0, lineHeight: 1 }}>📅</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid #1E2A3A" }}>
+                <span style={{ fontSize: "1.4rem", flexShrink: 0, lineHeight: 1, color: "#C9A84C" }}>📅</span>
                 <div>
-                  <p style={{ margin: "0 0 2px", fontSize: "0.72rem", color: "#94a3b8" }}>Busiest spend day</p>
-                  <p style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "#1e293b" }}>{busiestDay}s</p>
+                  <p style={{ margin: "0 0 2px", fontSize: "0.72rem", color: "#8A9BB5" }}>Busiest spend day</p>
+                  <p style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "#F5F0E8" }}>{busiestDay}s</p>
                 </div>
               </div>
             )}
             {biggestDebit && (
-              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
-                <span style={{ fontSize: "1.4rem", flexShrink: 0, lineHeight: 1 }}>💸</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid #1E2A3A" }}>
+                <span style={{ fontSize: "1.4rem", flexShrink: 0, lineHeight: 1, color: "#C9A84C" }}>💸</span>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ margin: "0 0 2px", fontSize: "0.72rem", color: "#94a3b8" }}>Biggest single transaction</p>
-                  <p style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "#1e293b" }}>
+                  <p style={{ margin: "0 0 2px", fontSize: "0.72rem", color: "#8A9BB5" }}>Biggest single transaction</p>
+                  <p style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "#F5F0E8" }}>
                     {fmt(Math.abs(biggestDebit.amount))}
-                    <span style={{ fontSize: "0.8rem", fontWeight: 400, color: "#64748b" }}> · {biggestDebit.description.length > 22 ? biggestDebit.description.slice(0,22)+"…" : biggestDebit.description}</span>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 400, color: "#8A9BB5" }}> · {biggestDebit.description.length > 22 ? biggestDebit.description.slice(0,22)+"…" : biggestDebit.description}</span>
                   </p>
                 </div>
               </div>
             )}
             {heaviestWeekLabel && (
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0 0" }}>
-                <span style={{ fontSize: "1.4rem", flexShrink: 0, lineHeight: 1 }}>📆</span>
+                <span style={{ fontSize: "1.4rem", flexShrink: 0, lineHeight: 1, color: "#C9A84C" }}>📆</span>
                 <div>
-                  <p style={{ margin: "0 0 2px", fontSize: "0.72rem", color: "#94a3b8" }}>Heaviest week</p>
-                  <p style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "#1e293b" }}>{heaviestWeekLabel}</p>
+                  <p style={{ margin: "0 0 2px", fontSize: "0.72rem", color: "#8A9BB5" }}>Heaviest week</p>
+                  <p style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "#F5F0E8" }}>{heaviestWeekLabel}</p>
                 </div>
               </div>
             )}
@@ -943,25 +942,25 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
       </div>
 
       {/* ── ROW 2: Top Merchants ── */}
-      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: 24, border: "1px solid #f1f5f9" }}>
+      <div style={{ background: "#0D1117", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24, border: "1px solid #1E2A3A" }}>
         {sectionLabel("Where Your Money Actually Went")}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {top5Merchants.length === 0 && (
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "#94a3b8" }}>No spending data available.</p>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: "#8A9BB5" }}>No spending data available.</p>
           )}
           {top5Merchants.map((m, i) => {
             const barPct = (m.total / maxMerchantTotal) * 100;
             return (
-              <div key={m.name} style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: "#fafafa" }}>
-                <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${barPct}%`, background: i === 0 ? "#f3f0ff" : "#f8fafc", borderRadius: 8, zIndex: 0 }} />
+              <div key={m.name} style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: "#111820" }}>
+                <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${barPct}%`, background: i === 0 ? "rgba(201,168,76,0.12)" : "rgba(201,168,76,0.05)", borderRadius: 8, zIndex: 0 }} />
                 <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 10, padding: "10px 14px" }}>
                   <span style={{ fontSize: "1.1rem", flexShrink: 0, lineHeight: 1 }}>{RANK_EMOJI[i]}</span>
-                  <span style={{ flex: 1, fontSize: "0.86rem", fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+                  <span style={{ flex: 1, fontSize: "0.86rem", fontWeight: 600, color: "#F5F0E8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
                   {isRecurring(m.name) && (
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, background: "#ede9fe", color: "#6d28d9", padding: "2px 7px", borderRadius: 10, whiteSpace: "nowrap", flexShrink: 0 }}>🔄 Regular</span>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, background: "rgba(201,168,76,0.15)", color: "#C9A84C", padding: "2px 7px", borderRadius: 10, whiteSpace: "nowrap", flexShrink: 0, border: "1px solid rgba(201,168,76,0.3)" }}>🔄 Regular</span>
                   )}
-                  <span style={{ fontSize: "0.75rem", color: "#94a3b8", whiteSpace: "nowrap", flexShrink: 0 }}>{m.count} txn{m.count !== 1 ? "s" : ""}</span>
-                  <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "#1e293b", whiteSpace: "nowrap", flexShrink: 0, minWidth: 72, textAlign: "right" }}>{fmt(m.total)}</span>
+                  <span style={{ fontSize: "0.75rem", color: "#8A9BB5", whiteSpace: "nowrap", flexShrink: 0 }}>{m.count} txn{m.count !== 1 ? "s" : ""}</span>
+                  <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "#C9A84C", whiteSpace: "nowrap", flexShrink: 0, minWidth: 72, textAlign: "right" }}>{fmt(m.total)}</span>
                 </div>
               </div>
             );
@@ -973,14 +972,14 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
       <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 14 }}>
 
         {/* Card D — Spending Rhythm (Upgrade 2) */}
-        <div className={alerts.length === 0 ? "md:col-span-2" : ""} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: 24, border: "1px solid #f1f5f9" }}>
+        <div className={alerts.length === 0 ? "md:col-span-2" : ""} style={{ background: "#0D1117", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24, border: "1px solid #1E2A3A" }}>
           {sectionLabel("Spending Rhythm")}
-          <p style={{ margin: "0 0 8px", fontSize: "0.82rem", color: "#64748b" }}>
+          <p style={{ margin: "0 0 8px", fontSize: "0.82rem", color: "#8A9BB5" }}>
             {onWeekClick ? "Tap a bar to filter transactions by week" : "When you spent most"}
           </p>
           <ResponsiveContainer width="100%" height={120}>
             <BarChart data={weekBarData} barSize={38} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#8A9BB5" }} />
               <YAxis hide />
               <Bar
                 dataKey="total"
@@ -992,7 +991,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <p style={{ margin: "6px 0 0", fontSize: "0.73rem", fontWeight: 600, color: "#6c5ce7", textAlign: "center" }}>
+          <p style={{ margin: "6px 0 0", fontSize: "0.73rem", fontWeight: 600, color: "#C9A84C", textAlign: "center" }}>
             {activeWeek != null
               ? `Showing Week ${activeWeek + 1} — click bar again to clear`
               : `Week ${maxWeekIdx + 1} was your biggest spending week`}
@@ -1001,12 +1000,12 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
 
         {/* Card E — Key Alerts */}
         {alerts.length > 0 && (
-          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 12px rgba(0,0,0,0.07)", padding: 24, border: "1px solid #f1f5f9" }}>
+          <div style={{ background: "#0D1117", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24, border: "1px solid #1E2A3A" }}>
             {sectionLabel("Key Alerts")}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {alerts.map((a, i) => (
                 <div key={i} style={{ padding: "10px 14px", borderRadius: 8, background: ALERT_BG[a.type], borderTop: `1px solid ${ALERT_RING[a.type]}`, borderRight: `1px solid ${ALERT_RING[a.type]}`, borderBottom: `1px solid ${ALERT_RING[a.type]}`, borderLeft: `4px solid ${ALERT_BORDER[a.type]}` }}>
-                  <p style={{ margin: 0, fontSize: "0.83rem", fontWeight: 600, color: "#1e293b", lineHeight: 1.45 }}>{a.icon} {a.text}</p>
+                  <p style={{ margin: 0, fontSize: "0.83rem", fontWeight: 600, color: a.type === "danger" ? "#EF4444" : a.type === "warning" ? "#C9A84C" : "#8A9BB5", lineHeight: 1.45 }}>{a.icon} {a.text}</p>
                 </div>
               ))}
             </div>
@@ -1527,7 +1526,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const todayStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="space-y-6" style={{ transition: "background 0.4s ease", background: accountantView ? "#f0f4ff" : "transparent", borderRadius: 20, padding: accountantView ? "0 0 24px" : undefined, paddingTop: 16 }}>
+    <div className="space-y-6" style={{ transition: "background 0.4s ease", background: "#080C14", borderRadius: 20, padding: accountantView ? "0 0 24px" : undefined, paddingTop: 16 }}>
 
       {/* ── PRINT STYLES ── */}
       <style>{`
@@ -1542,7 +1541,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           .transaction-table-section { display: none !important; }
           .no-print { display: none !important; }
           .print-report { display: none !important; }
-          body { background: #fff !important; }
+          body { background: #080C14 !important; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           @page { margin: 20mm; }
           .print-header { display: block !important; }
@@ -1558,10 +1557,10 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {/* ── PRINT HEADER (hidden on screen, shown when printing) ── */}
       <div className="print-header" style={{ display: "none" }}>
-        <h1 style={{ color: "#6d28d9", fontSize: "24px", margin: 0, fontWeight: 900 }}>StatementFlow</h1>
-        <h2 style={{ fontSize: "18px", margin: "8px 0", fontWeight: 700, color: "#1e293b" }}>Financial Statement Report</h2>
-        <p style={{ color: "#666", margin: "4px 0" }}>{bankStr} · {periodStr || "—"}</p>
-        <p style={{ color: "#666", margin: "4px 0" }}>Prepared: {todayStr}</p>
+        <h1 style={{ color: "#C9A84C", fontSize: "24px", margin: 0, fontWeight: 900 }}>StatementFlow</h1>
+        <h2 style={{ fontSize: "18px", margin: "8px 0", fontWeight: 700, color: "#F5F0E8" }}>Financial Statement Report</h2>
+        <p style={{ color: "#8A9BB5", margin: "4px 0" }}>{bankStr} · {periodStr || "—"}</p>
+        <p style={{ color: "#8A9BB5", margin: "4px 0" }}>Prepared: {todayStr}</p>
         <p style={{ color: "#999", fontSize: "12px", margin: "8px 0 0 0" }}>Generated by StatementFlow · statementflow.app</p>
       </div>
 
@@ -1644,7 +1643,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         <div
           style={{
             position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
-            zIndex: 9999, background: "#1e293b", color: "#fff",
+            zIndex: 9999, background: "#0D1117", color: "#F5F0E8", border: "1px solid rgba(201,168,76,0.3)",
             padding: "12px 24px", borderRadius: 12, fontSize: "0.9rem", fontWeight: 600,
             boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
             display: "flex", alignItems: "center", gap: 10,
@@ -1658,14 +1657,14 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {/* ── STATEMENT HEADING ── */}
       <div style={{ marginBottom: 12 }}>
-        <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em" }}>
+        <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: "#F5F0E8", letterSpacing: "-0.02em" }}>
           {demoMode ? "Example Statement" : "Your Statement"}
         </h2>
-        <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
+        <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#8A9BB5" }}>
           {dateRange ?? ""}
           {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
           {!demoMode && validation && typeof validation.confidence === "number" && (
-            <span style={{ marginLeft: 6, color: "#cbd5e1" }}>· Parsed with {validation.confidence}% confidence</span>
+            <span style={{ marginLeft: 6, color: "#4A5568" }}>· Parsed with {validation.confidence}% confidence</span>
           )}
         </p>
       </div>
@@ -1679,7 +1678,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Total Money In"
           value={fmt(income)}
           sub={`${incomeCount} credit${incomeCount !== 1 ? "s" : ""}`}
-          gradient="linear-gradient(135deg, #00b894 0%, #00cec9 100%)"
+          gradient="linear-gradient(135deg, #0a1f15, #0d2a1c)"
+          border="1px solid rgba(0,212,160,0.3)"
+          numColor="#00D4A0"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
           loaded={loaded}
           delay={100}
@@ -1695,7 +1696,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               ? `Excl. ${fmt(internalTransferTotal)} internal transfers`
               : `${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`
           }
-          gradient="linear-gradient(135deg, #e17055 0%, #d63031 100%)"
+          gradient="linear-gradient(135deg, #1f0a0a, #2a0d0d)"
+          border="1px solid rgba(239,68,68,0.3)"
+          numColor="#EF4444"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
           loaded={loaded}
           delay={200}
@@ -1706,8 +1709,10 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         <StatCard
           label="Net Balance"
           value={fmt(net)}
-          sub={net >= 0 ? "✓ Positive cash flow" : <><span style={{ color: "#f97316" }}>⚠</span> Negative cash flow</>}
-          gradient="linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)"
+          sub={net >= 0 ? "✓ Positive cash flow" : <><span style={{ color: "#EF4444" }}>⚠</span> Negative cash flow</>}
+          gradient="#0D1117"
+          border="1px solid #1E2A3A"
+          numColor={net >= 0 ? "#00D4A0" : "#EF4444"}
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
           loaded={loaded}
           delay={300}
@@ -1720,7 +1725,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Transactions"
           value={`${transactions.length}`}
           sub={`${incomeCount} in · ${expenseCount} out`}
-          gradient="linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)"
+          gradient="linear-gradient(135deg, #0f0a1f, #150d2a)"
+          border="1px solid rgba(201,168,76,0.3)"
+          numColor="#C9A84C"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
           loaded={loaded}
           delay={400}
@@ -1731,23 +1738,24 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── VIEW TOGGLE ── */}
-      <div className="view-toggle view-toggle-full" style={{ background: "#f3f4f6", borderRadius: "999px", padding: "4px", position: "relative", cursor: "pointer" }}>
+      <div className="view-toggle view-toggle-full" style={{ background: "#0D1117", borderRadius: "999px", padding: "4px", position: "relative", cursor: "pointer", border: "1px solid #1E2A3A" }}>
         {/* Sliding pill */}
         <div style={{
           position: "absolute",
           top: "4px",
           bottom: "4px",
           width: "calc(50% - 4px)",
-          background: accountantView ? "linear-gradient(135deg, #1e3a5f, #2563eb)" : "white",
+          background: accountantView ? "linear-gradient(135deg, #C9A84C, #E8C97A)" : "rgba(201,168,76,0.05)",
           borderRadius: "999px",
-          boxShadow: accountantView ? "0 2px 8px rgba(37,99,235,0.4)" : "0 1px 4px rgba(0,0,0,0.12)",
+          boxShadow: accountantView ? "0 2px 8px rgba(201,168,76,0.4)" : "none",
+          borderBottom: accountantView ? "none" : "2px solid #C9A84C",
           transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, box-shadow 0.3s ease",
           transform: accountantView ? "translateX(calc(100% + 4px))" : "translateX(0)",
         }} />
-        <div onClick={() => setAccountantView(false)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 400 : 600, color: accountantView ? "#6b7280" : "#6d28d9", transition: "color 0.3s ease", userSelect: "none" }}>
+        <div onClick={() => setAccountantView(false)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 400 : 600, color: accountantView ? "#8A9BB5" : "#C9A84C", transition: "color 0.3s ease", userSelect: "none" }}>
           👤 Personal
         </div>
-        <div onClick={() => setAccountantView(true)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "white" : "#6b7280", transition: "color 0.3s ease", userSelect: "none" }}>
+        <div onClick={() => setAccountantView(true)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "#080C14" : "#8A9BB5", transition: "color 0.3s ease", userSelect: "none" }}>
           📊 Audit-Ready
         </div>
       </div>
@@ -1790,11 +1798,11 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       <div ref={chartsRef} className="spending-breakdown grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
 
         {/* Donut chart */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6" style={{ borderRadius: 16 }}>
-          <h3 className="text-lg font-bold text-slate-800">Spending Breakdown</h3>
-          <p className="text-xs text-slate-400 mt-0.5 mb-4">Expenses by category</p>
+        <div style={{ background: "#0D1117", borderRadius: 16, border: "1px solid #1E2A3A", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24 }}>
+          <h3 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#F5F0E8", margin: 0 }}>Spending Breakdown</h3>
+          <p style={{ fontSize: "0.75rem", color: "#8A9BB5", marginTop: 2, marginBottom: 16 }}>Expenses by category</p>
           {pieData.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No expense data</div>
+            <div style={{ height: 192, display: "flex", alignItems: "center", justifyContent: "center", color: "#8A9BB5", fontSize: "0.875rem" }}>No expense data</div>
           ) : (
             <div className="flex flex-col lg:flex-row gap-4 items-start">
               {/* Chart */}
@@ -1823,7 +1831,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                           if (!cx || !cy) return null;
                           return (
                             <g>
-                              <text x={cx} y={cy - 8} textAnchor="middle" fill="#94a3b8" fontSize={10} fontFamily="inherit">Net</text>
+                              <text x={cx} y={cy - 8} textAnchor="middle" fill="#8A9BB5" fontSize={10} fontFamily="inherit">Net</text>
                               <text
                                 x={cx} y={cy + 10}
                                 textAnchor="middle"
@@ -1853,24 +1861,24 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         </div>
 
         {/* Bar chart */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6" style={{ borderRadius: 16 }}>
-          <h3 className="text-lg font-bold text-slate-800">Top Merchants</h3>
-          <p className="text-xs text-slate-400 mt-0.5 mb-4">Top 8 by total spend</p>
+        <div style={{ background: "#0D1117", borderRadius: 16, border: "1px solid #1E2A3A", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24 }}>
+          <h3 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#F5F0E8", margin: 0 }}>Top Merchants</h3>
+          <p style={{ fontSize: "0.75rem", color: "#8A9BB5", marginTop: 2, marginBottom: 16 }}>Top 8 by total spend</p>
           {barData.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No data</div>
+            <div style={{ height: 192, display: "flex", alignItems: "center", justifyContent: "center", color: "#8A9BB5", fontSize: "0.875rem" }}>No data</div>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={barData} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" tickFormatter={fmtShort} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1E2A3A" />
+                <XAxis type="number" tickFormatter={fmtShort} tick={{ fontSize: 11, fill: "#8A9BB5" }} axisLine={false} tickLine={false} />
                 <YAxis
                   type="category" dataKey="name" width={110}
-                  tick={{ fontSize: 11, fill: "#475569" }} axisLine={false} tickLine={false}
+                  tick={{ fontSize: 11, fill: "#F5F0E8" }} axisLine={false} tickLine={false}
                   tickFormatter={(v) => v.length > 14 ? v.slice(0, 14) + "…" : v}
                 />
-                <ReTooltip content={<BarTooltip />} cursor={{ fill: "#f8fafc" }} />
-                <Bar dataKey="expense" name="Expense" fill="#e17055" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
-                <Bar dataKey="income"  name="Income"  fill="#00b894" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
+                <ReTooltip content={<BarTooltip />} cursor={{ fill: "rgba(201,168,76,0.05)" }} />
+                <Bar dataKey="expense" name="Expense" fill="#EF4444" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
+                <Bar dataKey="income"  name="Income"  fill="#00D4A0" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -1879,18 +1887,18 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {/* ── CATEGORY BREAKDOWN ── */}
       <div
-        className="category-grid bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
-        style={{ ...sectionStyle(450), borderRadius: 16 }}
+        className="category-grid"
+        style={{ ...sectionStyle(450), borderRadius: 16, background: "#0D1117", border: "1px solid #1E2A3A", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24 }}
       >
-        <div className="flex items-center justify-between mb-6">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Spending by Category</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Click a category to filter the transaction table</p>
+            <h3 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#F5F0E8", margin: 0 }}>Spending by Category</h3>
+            <p style={{ fontSize: "0.75rem", color: "#8A9BB5", marginTop: 2 }}>Click a category to filter the transaction table</p>
           </div>
           {filterCat !== "All" && (
             <button
               onClick={() => setFilter("All")}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+              style={{ fontSize: "0.75rem", fontWeight: 600, color: "#C9A84C", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", padding: "6px 12px", borderRadius: 8, cursor: "pointer", transition: "all 0.2s ease" }}
             >
               ✕ Clear filter ({filterCat === "__TRANSFERS__" ? "Transfers In & Out" : filterCat})
             </button>
@@ -1908,39 +1916,35 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                 <button
                   key="__TRANSFERS__"
                   onClick={() => setFilter(isActive ? "All" : "Transfers In & Out")}
-                  className={`group relative text-left p-4 rounded-xl border transition-all hover:shadow-md ${
-                    isActive
-                      ? "border-blue-400 ring-2 ring-blue-200 bg-blue-50/50"
-                      : "border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200"
-                  }`}
-                  style={{ borderRadius: 12 }}
+                  className="group relative text-left"
+                  style={{ borderRadius: 12, padding: 16, background: "#0D1117", border: isActive ? "1px solid rgba(201,168,76,0.5)" : "1px solid #1E2A3A", transition: "all 0.2s ease", cursor: "pointer", boxShadow: isActive ? "0 0 0 2px rgba(201,168,76,0.2)" : "none" }}
                 >
-                  <div className="absolute left-0 top-3 bottom-3 w-1 rounded-full" style={{ backgroundColor: "#6366f1" }} />
-                  <div className="pl-3">
-                    <div className="flex items-center gap-1.5 mb-2">
+                  <div style={{ position: "absolute", left: 0, top: 12, bottom: 12, width: 4, borderRadius: "0 4px 4px 0", backgroundColor: "#C9A84C" }} />
+                  <div style={{ paddingLeft: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                       <span style={{ fontSize: "1.05rem" }}>🔄</span>
-                      <p className="text-sm font-semibold text-slate-700">Transfers In &amp; Out</p>
+                      <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#F5F0E8", margin: 0 }}>Transfers In &amp; Out</p>
                     </div>
                     {/* Sent row */}
-                    <div className="flex items-center justify-between mb-1">
-                      <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>↑ Sent</span>
-                      <div className="text-right">
-                        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#dc2626" }}>{fmt(sentAmt)}</span>
-                        <span style={{ fontSize: "0.7rem", color: "#94a3b8", marginLeft: 4 }}>{sentCnt} txn{sentCnt !== 1 ? "s" : ""}</span>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontSize: "0.78rem", color: "#8A9BB5" }}>↑ Sent</span>
+                      <div style={{ textAlign: "right" }}>
+                        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#EF4444" }}>{fmt(sentAmt)}</span>
+                        <span style={{ fontSize: "0.7rem", color: "#8A9BB5", marginLeft: 4 }}>{sentCnt} txn{sentCnt !== 1 ? "s" : ""}</span>
                       </div>
                     </div>
                     {/* Received row */}
-                    <div className="flex items-center justify-between mb-2">
-                      <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>↓ Received</span>
-                      <div className="text-right">
-                        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#059669" }}>{fmt(recvAmt)}</span>
-                        <span style={{ fontSize: "0.7rem", color: "#94a3b8", marginLeft: 4 }}>{recvCnt} txn{recvCnt !== 1 ? "s" : ""}</span>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ fontSize: "0.78rem", color: "#8A9BB5" }}>↓ Received</span>
+                      <div style={{ textAlign: "right" }}>
+                        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#00D4A0" }}>{fmt(recvAmt)}</span>
+                        <span style={{ fontSize: "0.7rem", color: "#8A9BB5", marginLeft: 4 }}>{recvCnt} txn{recvCnt !== 1 ? "s" : ""}</span>
                       </div>
                     </div>
                     {/* Net */}
-                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 6, display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>Net</span>
-                      <span style={{ fontSize: "0.82rem", fontWeight: 700, color: netXfer >= 0 ? "#059669" : "#dc2626" }}>
+                    <div style={{ borderTop: "1px solid #1E2A3A", paddingTop: 6, display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "0.75rem", color: "#8A9BB5", fontWeight: 600 }}>Net</span>
+                      <span style={{ fontSize: "0.82rem", fontWeight: 700, color: netXfer >= 0 ? "#00D4A0" : "#EF4444" }}>
                         {netXfer >= 0 ? "+" : ""}{fmt(netXfer)}
                       </span>
                     </div>
@@ -1959,45 +1963,42 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               <button
                 key={name}
                 onClick={() => setFilter(isActive ? "All" : name)}
-                className={`group relative text-left p-4 rounded-xl border transition-all hover:shadow-md ${
-                  isActive
-                    ? "border-blue-400 ring-2 ring-blue-200 bg-blue-50/50"
-                    : "border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200"
-                }`}
-                style={{ borderRadius: 12 }}
+                className="group relative text-left"
+                style={{ borderRadius: 12, padding: 16, background: "#0D1117", border: isActive ? "1px solid rgba(201,168,76,0.5)" : "1px solid #1E2A3A", transition: "all 0.2s ease", cursor: "pointer", boxShadow: isActive ? "0 0 0 2px rgba(201,168,76,0.2)" : "none" }}
               >
-                <div className="absolute left-0 top-3 bottom-3 w-1 rounded-full" style={{ backgroundColor: hex }} />
-                <div className="pl-3">
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                <div style={{ position: "absolute", left: 0, top: 12, bottom: 12, width: 4, borderRadius: "0 4px 4px 0", backgroundColor: hex }} />
+                <div style={{ paddingLeft: 12 }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                       <span style={{ fontSize: "1.05rem", flexShrink: 0 }}>{catEmoji(name)}</span>
-                      <p className="text-sm font-semibold text-slate-700 truncate">{name}</p>
+                      <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#F5F0E8", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</p>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                       <div className="relative">
-                        <span className="text-slate-300 hover:text-slate-500 text-xs cursor-default" onClick={(e) => e.stopPropagation()}>ℹ</span>
+                        <span style={{ color: "#4A5568", fontSize: "0.75rem", cursor: "default" }} onClick={(e) => e.stopPropagation()}>ℹ</span>
                         <div
-                          className="pointer-events-none absolute z-20 bottom-full right-0 mb-2 w-48 rounded-lg bg-slate-800 px-3 py-2 text-xs text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                          style={{ transform: "translateX(20%)" }}
+                          className="pointer-events-none absolute z-20 bottom-full right-0 mb-2 w-48 rounded-lg px-3 py-2 text-xs text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                          style={{ transform: "translateX(20%)", background: "#111820", border: "1px solid #1E2A3A" }}
                         >
                           {tip}
-                          <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-800" />
+                          <div style={{ position: "absolute", top: "100%", right: 16, borderWidth: 4, borderStyle: "solid", borderColor: "transparent", borderTopColor: "#111820" }} />
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-white px-1.5 py-0.5 rounded-full" style={{ backgroundColor: hex, minWidth: "2.8rem", textAlign: "center" }}>
+                      <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#fff", backgroundColor: hex, borderRadius: 999, padding: "2px 6px", minWidth: "2.8rem", textAlign: "center" }}>
                         {pct.toFixed(1)}%
                       </span>
                     </div>
                   </div>
-                  <p className="text-xl font-extrabold text-slate-800 leading-none mb-2">{fmt(total)}</p>
-                  <p className="text-xs text-slate-400 mb-2.5">{count} transaction{count !== 1 ? "s" : ""}</p>
-                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <p style={{ fontSize: "1.25rem", fontWeight: 800, color: "#F5F0E8", lineHeight: 1, marginBottom: 8 }}>{fmt(total)}</p>
+                  <p style={{ fontSize: "0.75rem", color: "#8A9BB5", marginBottom: 10 }}>{count} transaction{count !== 1 ? "s" : ""}</p>
+                  <div style={{ height: 8, background: "#1E2A3A", borderRadius: 999, overflow: "hidden" }}>
                     <div
-                      className="h-full rounded-full"
                       style={{
-                        width:           barsVisible ? `${Math.min(pct, 100)}%` : "0%",
-                        backgroundColor: hex,
-                        transition:      `width 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) ${idx * 55}ms`,
+                        height: "100%",
+                        width:  barsVisible ? `${Math.min(pct, 100)}%` : "0%",
+                        background: "#C9A84C",
+                        borderRadius: 999,
+                        transition: `width 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) ${idx * 55}ms`,
                       }}
                     />
                   </div>
@@ -2016,30 +2017,30 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
             onClick={() => setTxExpanded(v => !v)}
             style={{
               display: "flex", alignItems: "center", gap: 10,
-              background: txExpanded ? "linear-gradient(135deg,#6c5ce7,#a29bfe)" : "#f8fafc",
-              color: txExpanded ? "#fff" : "#1e293b",
+              background: txExpanded ? "linear-gradient(135deg, #C9A84C, #E8C97A, #C9A84C)" : "#0D1117",
+              color: txExpanded ? "#080C14" : "#F5F0E8",
               fontWeight: 700, fontSize: "0.95rem",
-              padding: "11px 20px", borderRadius: 12, border: "1px solid #e2e8f0",
+              padding: "11px 20px", borderRadius: 50, border: txExpanded ? "none" : "1px solid #1E2A3A",
               cursor: "pointer", transition: "all 0.2s ease",
-              boxShadow: txExpanded ? "0 4px 14px rgba(108,92,231,0.3)" : "none",
+              boxShadow: txExpanded ? "0 8px 30px rgba(201,168,76,0.45)" : "none",
             }}
           >
             <span>{txExpanded ? "▲" : "📋"}</span>
             <span>{txExpanded ? "Hide Transactions" : `View Transactions (${transactions.length})`}</span>
           </button>
           {!txExpanded && (
-            <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>Full list available in your Excel export</span>
+            <span style={{ fontSize: "0.78rem", color: "#8A9BB5" }}>Full list available in your Excel export</span>
           )}
         </div>
 
         {/* Week filter pill (Upgrade 2) */}
         {weekFilter !== null && weekRanges && (
           <div style={{ marginTop: 10, marginBottom: 2 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#6c5ce7", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 600 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,168,76,0.15)", color: "#C9A84C", padding: "6px 14px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 600, border: "1px solid rgba(201,168,76,0.3)" }}>
               📅 Showing Week {weekFilter + 1} ({weekRanges[weekFilter].label})
               <button
                 onClick={() => { setWeekFilter(null); setPage(1); }}
-                style={{ background: "none", border: "none", color: "rgba(255,255,255,0.82)", cursor: "pointer", padding: 0, fontSize: "1rem", lineHeight: 1, fontWeight: 700 }}
+                style={{ background: "none", border: "none", color: "rgba(201,168,76,0.7)", cursor: "pointer", padding: 0, fontSize: "1rem", lineHeight: 1, fontWeight: 700 }}
               >✕</button>
             </span>
           </div>
@@ -2053,25 +2054,24 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         }}
       >
       <div
-        className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
-        style={{ borderRadius: 16 }}
+        style={{ background: "#0D1117", borderRadius: 16, border: "1px solid #1E2A3A", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", overflow: "hidden" }}
       >
         {/* Filter bar */}
-        <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap bg-white">
+        <div style={{ padding: "16px 24px", borderBottom: "1px solid #1E2A3A", display: "flex", flexDirection: "column", gap: 12, background: "#0D1117" }} className="sm:flex-row sm:items-center flex-wrap">
           <div>
-            <h3 className="text-lg font-bold text-slate-800">
+            <h3 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#F5F0E8", margin: 0 }}>
               Transactions
               {filterCat !== "All" && (
-                <span className="ml-2 text-sm font-normal text-slate-400">· filtered by {filterCat === "__TRANSFERS__" ? "Transfers In & Out" : filterCat}</span>
+                <span style={{ marginLeft: 8, fontSize: "0.875rem", fontWeight: 400, color: "#8A9BB5" }}>· filtered by {filterCat === "__TRANSFERS__" ? "Transfers In & Out" : filterCat}</span>
               )}
             </h3>
-            <p className="text-xs text-slate-400">{sorted.length} result{sorted.length !== 1 ? "s" : ""}</p>
+            <p style={{ fontSize: "0.75rem", color: "#8A9BB5", margin: "2px 0 0" }}>{sorted.length} result{sorted.length !== 1 ? "s" : ""}</p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
             {/* Search */}
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#4A5568" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -2079,14 +2079,14 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                 placeholder="Search transactions…"
                 value={search}
                 onChange={(e) => { const v = e.target.value; triggerRowAnim(); setSearch(v); setPage(1); }}
-                className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-44 sm:w-52 bg-slate-50"
+                style={{ paddingLeft: 36, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: "0.875rem", border: "1px solid #1E2A3A", borderRadius: 12, background: "#111820", color: "#F5F0E8", outline: "none", width: 176 }}
               />
             </div>
             {/* Category filter */}
             <select
               value={filterCat === "__TRANSFERS__" ? "Transfers In & Out" : filterCat}
               onChange={(e) => { const v = e.target.value; setFilter(v); }}
-              className="text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-700"
+              style={{ fontSize: "0.875rem", border: "1px solid #1E2A3A", borderRadius: 12, padding: "8px 12px", background: "#111820", color: "#F5F0E8", outline: "none" }}
             >
               {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -2094,7 +2094,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
             <select
               value={filterType}
               onChange={(e) => { const v = e.target.value; triggerRowAnim(); setFilterType(v); setPage(1); }}
-              className="text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-700"
+              style={{ fontSize: "0.875rem", border: "1px solid #1E2A3A", borderRadius: 12, padding: "8px 12px", background: "#111820", color: "#F5F0E8", outline: "none" }}
             >
               <option value="All">All types</option>
               <option value="Income">Income only</option>
@@ -2107,17 +2107,17 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
-              <tr className="bg-slate-50 border-b-2 border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
-                <th className="px-5 py-3.5 text-left font-bold cursor-pointer hover:text-slate-700 select-none whitespace-nowrap" onClick={() => toggleSort("date")}>
+              <tr style={{ background: "#111820", borderBottom: "2px solid #1E2A3A", color: "#8A9BB5", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <th style={{ padding: "14px 20px", textAlign: "left", fontWeight: 700, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }} onClick={() => toggleSort("date")}>
                   Date <SortIcon col="date" />
                 </th>
-                <th className="px-5 py-3.5 text-left font-bold cursor-pointer hover:text-slate-700 select-none" onClick={() => toggleSort("description")}>
+                <th style={{ padding: "14px 20px", textAlign: "left", fontWeight: 700, cursor: "pointer", userSelect: "none" }} onClick={() => toggleSort("description")}>
                   Description <SortIcon col="description" />
                 </th>
-                <th className="px-5 py-3.5 text-left font-bold cursor-pointer hover:text-slate-700 select-none tx-col-category" onClick={() => toggleSort("category")}>
+                <th style={{ padding: "14px 20px", textAlign: "left", fontWeight: 700, cursor: "pointer", userSelect: "none" }} className="tx-col-category" onClick={() => toggleSort("category")}>
                   Category <SortIcon col="category" />
                 </th>
-                <th className="px-5 py-3.5 text-right font-bold cursor-pointer hover:text-slate-700 select-none" onClick={() => toggleSort("amount")}>
+                <th style={{ padding: "14px 20px", textAlign: "right", fontWeight: 700, cursor: "pointer", userSelect: "none" }} onClick={() => toggleSort("amount")}>
                   Amount <SortIcon col="amount" />
                 </th>
               </tr>
@@ -2125,60 +2125,65 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
             <tbody style={{ opacity: rowsHiding ? 0 : 1, transition: "opacity 0.15s ease" }}>
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-5 py-14 text-center text-slate-400">
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="text-3xl">🔍</span>
-                      <p className="font-medium">No transactions match your filters</p>
+                  <td colSpan={4} style={{ padding: "56px 20px", textAlign: "center", color: "#8A9BB5" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: "1.875rem" }}>🔍</span>
+                      <p style={{ fontWeight: 500, margin: 0 }}>No transactions match your filters</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 paginated.map((t, i) => {
                   const isIncome = t.amount >= 0;
-                  const rowBg    = i % 2 === 0 ? "bg-white" : "bg-slate-50/50";
+                  const rowBg    = i % 2 === 0 ? "#0D1117" : "#111820";
                   const txKey    = `${t.date}||${t.description}||${t.amount}`;
                   const displayCat = localCategories[txKey] || t.category || UNKNOWN_CAT;
                   const hex      = catHex(displayCat);
                   return (
                     <tr
                       key={`${rowFadeKey}-${i}`}
-                      className={`${rowBg} hover:bg-blue-50/40 transition-colors`}
                       style={{
-                        borderBottom: "1px solid #f1f5f9",
+                        background: rowBg,
+                        borderBottom: "1px solid #1E2A3A",
                         animation: `rowFadeIn 0.3s ease forwards ${Math.min(i, 14) * 30}ms`,
                         opacity: 0,
+                        transition: "background 0.15s ease",
                       }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#111820"}
+                      onMouseLeave={e => e.currentTarget.style.background = rowBg}
                     >
                       {/* Date cell with coloured left border */}
                       <td
-                        className="py-3.5 text-slate-500 whitespace-nowrap font-mono text-xs"
                         style={{
-                          paddingLeft:  "1.25rem",
-                          paddingRight: "1.25rem",
-                          borderLeft:   `3px solid ${hex}`,
+                          padding: "14px 20px",
+                          color: "#8A9BB5",
+                          whiteSpace: "nowrap",
+                          fontFamily: "monospace",
+                          fontSize: "0.75rem",
+                          borderLeft: `3px solid ${hex}`,
                         }}
                       >
                         {t.date}
                       </td>
                       {/* Description with coloured category dot */}
-                      <td className="px-5 py-3.5 text-slate-700 max-w-[240px]">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: hex }} />
-                          <span className="truncate block">{t.description}</span>
+                      <td style={{ padding: "14px 20px", color: "#F5F0E8", maxWidth: 240 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, backgroundColor: hex }} />
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{t.description}</span>
                           {subscriptionMerchants.has(t.description) && (
                             <span title="Recurring transaction" style={{ fontSize: "0.7rem", flexShrink: 0, opacity: 0.75 }}>🔄</span>
                           )}
                         </div>
                       </td>
                       {/* Category badge + edit */}
-                      <td className="px-5 py-3.5 tx-col-category">
+                      <td style={{ padding: "14px 20px" }} className="tx-col-category">
                         {editingTx === txKey ? (
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <select
                               autoFocus
                               defaultValue={displayCat}
                               disabled={catSaving === txKey}
-                              style={{ fontSize: "0.78rem", border: "1px solid #a29bfe", borderRadius: 8, padding: "3px 6px", color: "#1e293b", background: "#fff", cursor: "pointer" }}
+                              style={{ fontSize: "0.78rem", border: "1px solid rgba(201,168,76,0.4)", borderRadius: 8, padding: "3px 6px", color: "#F5F0E8", background: "#111820", cursor: "pointer" }}
                               onChange={async (e) => {
                                 const newCat = e.target.value;
                                 setCatSaving(txKey);
@@ -2207,9 +2212,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                               <button
                                 onClick={() => setEditingTx(txKey)}
                                 title="Change category"
-                                style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: "0.8rem", padding: "2px 4px", borderRadius: 4, lineHeight: 1, flexShrink: 0 }}
-                                onMouseEnter={e => e.currentTarget.style.color = "#6c63ff"}
-                                onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}
+                                style={{ background: "none", border: "none", cursor: "pointer", color: "#4A5568", fontSize: "0.8rem", padding: "2px 4px", borderRadius: 4, lineHeight: 1, flexShrink: 0 }}
+                                onMouseEnter={e => e.currentTarget.style.color = "#C9A84C"}
+                                onMouseLeave={e => e.currentTarget.style.color = "#4A5568"}
                               >
                                 ✏️
                               </button>
@@ -2218,7 +2223,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                         )}
                       </td>
                       {/* Amount */}
-                      <td className={`px-5 py-3.5 text-right font-bold whitespace-nowrap text-base ${isIncome ? "text-emerald-600" : "text-red-500"}`}>
+                      <td style={{ padding: "14px 20px", textAlign: "right", fontWeight: 700, whiteSpace: "nowrap", fontSize: "1rem", color: isIncome ? "#00D4A0" : "#EF4444" }}>
                         {isIncome ? "+" : ""}{fmt(t.amount)}
                       </td>
                     </tr>
@@ -2231,15 +2236,15 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500 bg-slate-50/60">
-            <span className="text-xs text-slate-400">
+          <div style={{ padding: "16px 24px", borderTop: "1px solid #1E2A3A", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.875rem", color: "#8A9BB5", background: "#111820" }}>
+            <span style={{ fontSize: "0.75rem", color: "#8A9BB5" }}>
               Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, sorted.length)} of {sorted.length}
             </span>
-            <div className="flex items-center gap-1.5">
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+                style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #1E2A3A", background: "#0D1117", color: "#8A9BB5", cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.4 : 1, fontSize: "0.75rem", fontWeight: 500, transition: "all 0.15s ease" }}
               >
                 ← Prev
               </button>
@@ -2253,12 +2258,13 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`w-8 h-8 rounded-lg text-xs font-semibold border transition-colors ${
-                      p === page
-                        ? "text-white border-transparent"
-                        : "border-slate-200 hover:bg-white text-slate-600"
-                    }`}
-                    style={p === page ? { background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)" } : {}}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8, fontSize: "0.75rem", fontWeight: 600,
+                      border: p === page ? "none" : "1px solid #1E2A3A",
+                      background: p === page ? "#C9A84C" : "#0D1117",
+                      color: p === page ? "#080C14" : "#8A9BB5",
+                      cursor: "pointer", transition: "all 0.15s ease",
+                    }}
                   >
                     {p}
                   </button>
@@ -2267,7 +2273,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+                style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #1E2A3A", background: "#0D1117", color: "#8A9BB5", cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.4 : 1, fontSize: "0.75rem", fontWeight: 500, transition: "all 0.15s ease" }}
               >
                 Next →
               </button>

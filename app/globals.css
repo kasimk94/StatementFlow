@@ -492,8 +492,9 @@ img, video { max-width: 100%; height: auto; }
 .recon-banner {
   display: flex;
   gap: 24px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: #0D1117;
+  border: 1px solid #1E2A3A;
+  border-left: 4px solid #00D4A0;
   border-radius: 12px;
   padding: 16px 24px;
   align-items: center;
@@ -604,7 +605,7 @@ img, video { max-width: 100%; height: auto; }
   }
   .pl-grid > div:first-child {
     padding-bottom: 20px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid #1E2A3A;
   }
 
   /* ── Dashboard: VAT stacked ── */

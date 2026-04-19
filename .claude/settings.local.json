@@ -36,7 +36,8 @@
       "Bash(find C:/Users/Lenovo/Desktop/bank-converter/node_modules/prisma -name config*)",
       "Bash(\"C:/Users/Lenovo/Desktop/bank-converter/.gitignore\")",
       "Bash(npm list:*)",
-      "Bash(find C:/Users/Lenovo/Desktop/bank-converter/app/api -name *.js -o -name *.ts)"
+      "Bash(find C:/Users/Lenovo/Desktop/bank-converter/app/api -name *.js -o -name *.ts)",
+      "Bash(grep -n \"background.*#f[0-9a-f]\\\\{3,5\\\\}\\\\b\\\\|color.*#[0-9a-f]\\\\{3,6\\\\}.*slate\\\\|\"\"#f0fdf4\"\"\\\\|\"\"#dcfce7\"\"\\\\|\"\"#fef3c7\"\"\\\\|\"\"#dbeafe\"\"\\\\|\"\"#f3f4f6\"\"\\\\|\"\"#faf5ff\"\"\\\\|\"\"#ede9fe\"\"\\\\|bg-blue-50\\\\|bg-red-50\" /c/Users/Lenovo/Desktop/bank-converter/components/Dashboard.js)"
     ]
   }
 }
