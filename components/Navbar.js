@@ -169,7 +169,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
   const pillStyle = {
     // Positioning — 16px gap from top edge for floating effect
     position:            "fixed",
-    top:                 16,
+    top:                 20,
     left:                "50%",
     transform:           "translateX(-50%)",
     zIndex:              99999,
@@ -185,7 +185,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
                            ? "1px solid rgba(201,168,76,0.4)"
                            : "1px solid rgba(201,168,76,0.2)",
     borderRadius:        50,
-    padding:             "8px 8px 8px 20px",
+    padding:             "10px 12px 10px 20px",
     display:             "flex",
     alignItems:          "center",
     gap:                 32,
