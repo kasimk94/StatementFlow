@@ -1835,6 +1835,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                           if (!cx || !cy) return null;
                           return (
                             <g>
+                              <circle cx={cx} cy={cy} r={58} fill="#080C14" />
                               <text x={cx} y={cy - 8} textAnchor="middle" fill="#8A9BB5" fontSize={10} fontFamily="inherit">Net</text>
                               <text
                                 x={cx} y={cy + 10}
@@ -1881,7 +1882,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                   tickFormatter={(v) => v.length > 14 ? v.slice(0, 14) + "…" : v}
                 />
                 <ReTooltip content={<BarTooltip />} cursor={{ fill: "rgba(201,168,76,0.05)" }} />
-                <Bar dataKey="expense" name="Expense" fill="#EF4444" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
+                <Bar dataKey="expense" name="Expense" fill="#C9A84C" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
                 <Bar dataKey="income"  name="Income"  fill="#00D4A0" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
               </BarChart>
             </ResponsiveContainer>

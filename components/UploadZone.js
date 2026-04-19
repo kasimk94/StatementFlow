@@ -4,7 +4,7 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 
 // ─── Loading steps ────────────────────────────────────────────────────────────
-const IC = "#6c5ce7";
+const IC = "#C9A84C";
 
 // Icons indexed 0-3 by progress phase
 const STEP_ICONS = [
@@ -107,7 +107,7 @@ function LoadingOverlay({ progress, isComplete }) {
     <div
       className="absolute inset-0 flex flex-col items-center justify-center"
       style={{
-        background:   "linear-gradient(160deg, #ffffff 0%, #f0f4ff 100%)",
+        background:   "#0D1117",
         animation:    "uz-fade-in 0.3s ease forwards",
         zIndex:       10,
         paddingTop:   "40px",
@@ -141,7 +141,7 @@ function LoadingOverlay({ progress, isComplete }) {
           width="160" height="160" viewBox="0 0 100 100"
           style={{ overflow: "visible" }}
         >
-          <circle cx="50" cy="50" r={R} fill="none" stroke="#e2e8f0" strokeWidth="5.5" />
+          <circle cx="50" cy="50" r={R} fill="none" stroke="#1E2A3A" strokeWidth="5.5" />
           <circle
             cx="50" cy="50" r={R}
             fill="none"
@@ -158,7 +158,7 @@ function LoadingOverlay({ progress, isComplete }) {
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-            <span style={{ fontSize: "2.4rem", fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            <span style={{ fontSize: "2.4rem", fontWeight: 800, color: "#F5F0E8", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               {progress}
             </span>
             <span style={{ fontSize: "1rem", fontWeight: 600, color: "#94a3b8", lineHeight: 1 }}>
@@ -172,7 +172,7 @@ function LoadingOverlay({ progress, isComplete }) {
       <p
         key={`label-${stepIdx}-${isComplete}`}
         style={{
-          color: "#2d3436", fontSize: "0.8rem", fontWeight: 600,
+          color: "#F5F0E8", fontSize: "0.8rem", fontWeight: 600,
           letterSpacing: "0.01em", marginTop: 16, textAlign: "center",
           animation: "uz-text-in 0.3s ease forwards",
         }}
@@ -197,7 +197,7 @@ function LoadingOverlay({ progress, isComplete }) {
         </div>
       )}
 
-      <p style={{ color: "#94a3b8", fontSize: "0.68rem", textAlign: "center", marginTop: 18, paddingInline: 20, lineHeight: 1.4 }}>
+      <p style={{ color: "#8A9BB5", fontSize: "0.68rem", textAlign: "center", marginTop: 18, paddingInline: 20, lineHeight: 1.4 }}>
         🔒 Your data is never stored or shared
       </p>
     </div>
@@ -286,18 +286,18 @@ export default function UploadZone({ onFile, loading, apiDone = false, onAnimati
 
   // ── Gradient border colours based on state ──
   const borderGrad = isDragReject
-    ? "linear-gradient(135deg,#e17055,#d63031)"
+    ? "linear-gradient(135deg,#EF4444,#dc2626)"
     : isDragActive
-    ? "linear-gradient(135deg,#00d4ff,#6c5ce7,#00b894)"
-    : "linear-gradient(135deg,#6c5ce7,#00d4ff,#00b894)";
+    ? "linear-gradient(135deg,#C9A84C,#E8C97A,#00D4A0)"
+    : "linear-gradient(135deg,#C9A84C,#E8C97A,#C9A84C)";
 
   const borderGlow = isDragReject
-    ? "0 0 28px rgba(214,48,49,0.45), 0 4px 20px rgba(0,0,0,0.08)"
+    ? "0 0 28px rgba(239,68,68,0.35), 0 4px 20px rgba(0,0,0,0.3)"
     : isDragActive
-    ? "0 0 40px rgba(108,92,231,0.55), 0 0 70px rgba(0,212,255,0.3), 0 4px 20px rgba(0,0,0,0.06)"
-    : "0 0 18px rgba(108,92,231,0.14), 0 0 40px rgba(0,212,255,0.08), 0 4px 16px rgba(0,0,0,0.05)";
+    ? "0 0 60px rgba(201,168,76,0.3), 0 4px 20px rgba(0,0,0,0.4)"
+    : "0 0 40px rgba(201,168,76,0.08), 0 4px 16px rgba(0,0,0,0.3)";
 
-  const innerBg = isDragReject ? "#fff5f5" : isDragActive ? "#f0f0ff" : "#f8faff";
+  const innerBg = isDragReject ? "rgba(239,68,68,0.06)" : isDragActive ? "rgba(201,168,76,0.06)" : "#0D1117";
 
   return (
     <>
@@ -344,10 +344,10 @@ export default function UploadZone({ onFile, loading, apiDone = false, onAnimati
             {!loading && isDragActive && !isDragReject && (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
                 <CloudUploadIcon size={72} color="#6c5ce7" fast />
-                <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "#6c5ce7" }}>
+                <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "#C9A84C" }}>
                   Drop it here!
                 </p>
-                <p style={{ margin: 0, fontSize: "0.875rem", color: "#a29bfe" }}>
+                <p style={{ margin: 0, fontSize: "0.875rem", color: "#E8C97A" }}>
                   Release to upload your PDF
                 </p>
               </div>
@@ -374,10 +374,10 @@ export default function UploadZone({ onFile, loading, apiDone = false, onAnimati
 
                 {/* Copy */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "#1e293b" }}>
+                  <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#F5F0E8" }}>
                     Drag & drop your PDF here
                   </p>
-                  <p style={{ margin: 0, fontSize: "0.875rem", color: "#94a3b8" }}>
+                  <p style={{ margin: 0, fontSize: "0.875rem", color: "#4A5568" }}>
                     or
                   </p>
                 </div>
@@ -386,27 +386,28 @@ export default function UploadZone({ onFile, loading, apiDone = false, onAnimati
                 <button
                   onClick={(e) => { e.stopPropagation(); open(); }}
                   style={{
-                    background:    "linear-gradient(135deg, #6c5ce7 0%, #00d4ff 100%)",
-                    color:         "#fff",
-                    fontWeight:    700,
+                    background:    "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)",
+                    color:         "#080C14",
+                    fontWeight:    600,
                     fontSize:      "0.95rem",
                     padding:       "11px 30px",
-                    borderRadius:  12,
+                    borderRadius:  50,
                     border:        "none",
                     cursor:        "pointer",
-                    boxShadow:     "0 6px 20px rgba(108,92,231,0.32)",
+                    boxShadow:     "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)",
                     transition:    "transform 0.15s ease, box-shadow 0.2s ease",
                     display:       "flex",
                     alignItems:    "center",
                     gap:           8,
+                    letterSpacing: "-0.01em",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 12px 28px rgba(108,92,231,0.48)";
+                    e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,168,76,0.45), 0 0 0 4px rgba(201,168,76,0.15)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(108,92,231,0.32)";
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.1)";
                   }}
                 >
                   {/* Folder icon */}
@@ -433,8 +434,8 @@ export default function UploadZone({ onFile, loading, apiDone = false, onAnimati
           <div
             style={{
               marginTop: 12,
-              background: "#fffbeb",
-              border: "1.5px solid #f59e0b",
+              background: "rgba(201,168,76,0.08)",
+              border: "1px solid rgba(201,168,76,0.3)",
               borderRadius: 12,
               padding: "14px 16px",
               display: "flex",
@@ -445,10 +446,10 @@ export default function UploadZone({ onFile, loading, apiDone = false, onAnimati
           >
             <span style={{ fontSize: "1.2rem", lineHeight: 1.3, flexShrink: 0 }}>📄</span>
             <div>
-              <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#92400e" }}>
+              <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#C9A84C" }}>
                 Scanned PDF detected
               </p>
-              <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#b45309", lineHeight: 1.5 }}>
+              <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#8A9BB5", lineHeight: 1.5 }}>
                 This looks like a scanned PDF — we can&apos;t read image-based statements yet.
                 Please download your statement directly from your bank&apos;s app or website as a
                 digital PDF.
@@ -458,7 +459,7 @@ export default function UploadZone({ onFile, loading, apiDone = false, onAnimati
         )}
 
         {/* ── Supporting text ── */}
-        <p style={{ marginTop: 10, fontSize: "0.77rem", color: "#94a3b8", textAlign: "center", letterSpacing: "0.01em" }}>
+        <p style={{ marginTop: 10, fontSize: "0.77rem", color: "#8A9BB5", textAlign: "center", letterSpacing: "0.01em" }}>
           Supports PDF files up to 10MB
         </p>
 
