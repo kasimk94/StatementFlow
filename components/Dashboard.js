@@ -147,7 +147,7 @@ function CategoryBadge({ name }) {
 }
 
 // Dark-gold themed stat card
-function StatCard({ label, value, sub, gradient, border, numColor, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge }) {
+function StatCard({ label, value, sub, gradient, border, shadow, numColor, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge }) {
   const _counted = useCountUp(
     countTarget ?? 0,
     1500,
@@ -167,7 +167,7 @@ function StatCard({ label, value, sub, gradient, border, numColor, icon, loaded,
         background: gradient,
         border: border || "1px solid #1E2A3A",
         borderRadius: 16,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
+        boxShadow: shadow || "0 0 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
         opacity:    loaded ? 1 : 0,
         transform:  loaded ? "translateY(0)" : "translateY(24px)",
         transition: `opacity 0.5s ease-out ${delay}ms, transform 0.5s ease-out ${delay}ms`,
@@ -859,7 +859,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
       <div style={{ background: "#0D1117", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, border: "1px solid #1E2A3A" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#F5F0E8" }}>✨ Your Money, Explained</h2>
+            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600, color: "#F5F0E8", borderLeft: "3px solid #C9A84C", paddingLeft: 12 }}>✨ Your Money, Explained</h2>
             <span style={{ fontSize: "0.62rem", fontWeight: 700, background: "linear-gradient(135deg,#C9A84C,#E8C97A)", color: "#080C14", padding: "3px 10px", borderRadius: 20, letterSpacing: "0.02em", whiteSpace: "nowrap", flexShrink: 0 }}>StatementFlow AI</span>
           </div>
           <p style={{ margin: 0, fontSize: "0.82rem", color: "#8A9BB5" }}>Here's what stood out this month</p>
@@ -882,12 +882,12 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
 
         {/* Card A — Spending Personality with "Why?" toggle (Upgrade 4) */}
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ flex: 1, borderRadius: showWhy ? "12px 12px 0 0" : 12, boxShadow: "0 4px 24px rgba(0,0,0,0.4)", padding: 24, background: "linear-gradient(135deg, #0f1a0a, #111820)", border: "1px solid rgba(201,168,76,0.2)", minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+          <div style={{ flex: 1, borderRadius: showWhy ? "12px 12px 0 0" : 12, boxShadow: "0 0 60px rgba(201,168,76,0.04), 0 4px 24px rgba(0,0,0,0.4)", padding: 24, background: "linear-gradient(135deg, #0a1206 0%, #111820 100%)", border: "1px solid rgba(201,168,76,0.2)", minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -24, right: -24, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
             <div style={{ position: "absolute", bottom: -28, left: -12, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
             <p style={{ margin: "0 0 8px", fontSize: "0.62rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em" }}>Spending Personality</p>
             <div style={{ fontSize: "3rem", lineHeight: 1, marginBottom: 10 }}>{personality.emoji}</div>
-            <p style={{ margin: "0 0 4px", fontSize: "1.22rem", fontWeight: 800, color: "#F5F0E8", lineHeight: 1.2 }}>{personality.name}</p>
+            <p style={{ margin: "0 0 4px", fontSize: "1.5rem", fontWeight: 700, color: "#C9A84C", lineHeight: 1.2, letterSpacing: "-0.02em" }}>{personality.name}</p>
             <button
               onClick={() => setShowWhy(v => !v)}
               style={{ display: "inline-block", background: "none", border: "none", padding: "0 0 8px", cursor: "pointer", fontSize: "0.75rem", color: "#C9A84C", textAlign: "left" }}
@@ -951,16 +951,16 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
           {top5Merchants.map((m, i) => {
             const barPct = (m.total / maxMerchantTotal) * 100;
             return (
-              <div key={m.name} style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: "#111820" }}>
+              <div key={m.name} style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: "#111820", borderLeft: i === 0 ? "3px solid #C9A84C" : "none" }}>
                 <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${barPct}%`, background: i === 0 ? "rgba(201,168,76,0.12)" : "rgba(201,168,76,0.05)", borderRadius: 8, zIndex: 0 }} />
                 <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 10, padding: "10px 14px" }}>
                   <span style={{ fontSize: "1.1rem", flexShrink: 0, lineHeight: 1 }}>{RANK_EMOJI[i]}</span>
-                  <span style={{ flex: 1, fontSize: "0.86rem", fontWeight: 600, color: "#F5F0E8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+                  <span style={{ flex: 1, fontSize: "0.86rem", fontWeight: 500, color: "#F5F0E8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
                   {isRecurring(m.name) && (
                     <span style={{ fontSize: "0.65rem", fontWeight: 700, background: "rgba(201,168,76,0.15)", color: "#C9A84C", padding: "2px 7px", borderRadius: 10, whiteSpace: "nowrap", flexShrink: 0, border: "1px solid rgba(201,168,76,0.3)" }}>🔄 Regular</span>
                   )}
                   <span style={{ fontSize: "0.75rem", color: "#8A9BB5", whiteSpace: "nowrap", flexShrink: 0 }}>{m.count} txn{m.count !== 1 ? "s" : ""}</span>
-                  <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "#C9A84C", whiteSpace: "nowrap", flexShrink: 0, minWidth: 72, textAlign: "right" }}>{fmt(m.total)}</span>
+                  <span style={{ fontSize: "1rem", fontWeight: 700, color: "#C9A84C", whiteSpace: "nowrap", flexShrink: 0, minWidth: 72, textAlign: "right" }}>{fmt(m.total)}</span>
                 </div>
               </div>
             );
@@ -1678,8 +1678,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Total Money In"
           value={fmt(income)}
           sub={`${incomeCount} credit${incomeCount !== 1 ? "s" : ""}`}
-          gradient="linear-gradient(135deg, #0a1f15, #0d2a1c)"
-          border="1px solid rgba(0,212,160,0.3)"
+          gradient="linear-gradient(135deg, #061a10 0%, #0a2918 100%)"
+          border="1px solid rgba(0,212,160,0.25)"
+          shadow="0 0 40px rgba(0,212,160,0.06), inset 0 1px 0 rgba(0,212,160,0.1)"
           numColor="#00D4A0"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
           loaded={loaded}
@@ -1696,8 +1697,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               ? `Excl. ${fmt(internalTransferTotal)} internal transfers`
               : `${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`
           }
-          gradient="linear-gradient(135deg, #1f0a0a, #2a0d0d)"
-          border="1px solid rgba(239,68,68,0.3)"
+          gradient="linear-gradient(135deg, #1a0606 0%, #290a0a 100%)"
+          border="1px solid rgba(239,68,68,0.25)"
+          shadow="0 0 40px rgba(239,68,68,0.06), inset 0 1px 0 rgba(239,68,68,0.1)"
           numColor="#EF4444"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
           loaded={loaded}
@@ -1710,8 +1712,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Net Balance"
           value={fmt(net)}
           sub={net >= 0 ? "✓ Positive cash flow" : <><span style={{ color: "#EF4444" }}>⚠</span> Negative cash flow</>}
-          gradient="#0D1117"
-          border="1px solid #1E2A3A"
+          gradient="linear-gradient(135deg, #0D1117 0%, #111820 100%)"
+          border="1px solid rgba(201,168,76,0.25)"
+          shadow="0 0 40px rgba(201,168,76,0.06), inset 0 1px 0 rgba(201,168,76,0.1)"
           numColor={net >= 0 ? "#00D4A0" : "#EF4444"}
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
           loaded={loaded}
@@ -1725,9 +1728,10 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Transactions"
           value={`${transactions.length}`}
           sub={`${incomeCount} in · ${expenseCount} out`}
-          gradient="linear-gradient(135deg, #0f0a1f, #150d2a)"
-          border="1px solid rgba(201,168,76,0.3)"
-          numColor="#C9A84C"
+          gradient="linear-gradient(135deg, #0a0d1a 0%, #0d1122 100%)"
+          border="1px solid rgba(99,102,241,0.25)"
+          shadow="0 0 40px rgba(99,102,241,0.06), inset 0 1px 0 rgba(99,102,241,0.1)"
+          numColor="#818CF8"
           icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
           loaded={loaded}
           delay={400}
@@ -1795,7 +1799,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── CHARTS ── */}
-      <div ref={chartsRef} className="spending-breakdown grid grid-cols-1 lg:grid-cols-2 gap-6" style={sectionStyle(350)}>
+      <div ref={chartsRef} className="spending-breakdown grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ ...sectionStyle(350), borderTop: "1px solid #1E2A3A", paddingTop: 24 }}>
 
         {/* Donut chart */}
         <div style={{ background: "#0D1117", borderRadius: 16, border: "1px solid #1E2A3A", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24 }}>
@@ -1888,7 +1892,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       {/* ── CATEGORY BREAKDOWN ── */}
       <div
         className="category-grid"
-        style={{ ...sectionStyle(450), borderRadius: 16, background: "#0D1117", border: "1px solid #1E2A3A", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24 }}
+        style={{ ...sectionStyle(450), borderRadius: 16, background: "#0D1117", border: "1px solid #1E2A3A", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24, marginTop: 0 }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div>
@@ -1964,7 +1968,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                 key={name}
                 onClick={() => setFilter(isActive ? "All" : name)}
                 className="group relative text-left"
-                style={{ borderRadius: 12, padding: 16, background: "#0D1117", border: isActive ? "1px solid rgba(201,168,76,0.5)" : "1px solid #1E2A3A", transition: "all 0.2s ease", cursor: "pointer", boxShadow: isActive ? "0 0 0 2px rgba(201,168,76,0.2)" : "none" }}
+                style={{ borderRadius: 12, padding: 20, background: "#0D1117", border: isActive ? "1px solid rgba(201,168,76,0.5)" : "1px solid #1E2A3A", transition: "all 0.2s ease", cursor: "pointer", boxShadow: isActive ? "0 0 0 2px rgba(201,168,76,0.2)" : "none" }}
+                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = "rgba(201,168,76,0.3)"; e.currentTarget.style.transform = "translateY(-2px)"; } }}
+                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = "#1E2A3A"; e.currentTarget.style.transform = "translateY(0)"; } }}
               >
                 <div style={{ position: "absolute", left: 0, top: 12, bottom: 12, width: 4, borderRadius: "0 4px 4px 0", backgroundColor: hex }} />
                 <div style={{ paddingLeft: 12 }}>
@@ -1989,14 +1995,14 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                       </span>
                     </div>
                   </div>
-                  <p style={{ fontSize: "1.25rem", fontWeight: 800, color: "#F5F0E8", lineHeight: 1, marginBottom: 8 }}>{fmt(total)}</p>
+                  <p style={{ fontSize: "1.3rem", fontWeight: 700, color: "#F5F0E8", lineHeight: 1, marginBottom: 8 }}>{fmt(total)}</p>
                   <p style={{ fontSize: "0.75rem", color: "#8A9BB5", marginBottom: 10 }}>{count} transaction{count !== 1 ? "s" : ""}</p>
-                  <div style={{ height: 8, background: "#1E2A3A", borderRadius: 999, overflow: "hidden" }}>
+                  <div style={{ height: 3, background: "#1E2A3A", borderRadius: 999, overflow: "hidden" }}>
                     <div
                       style={{
                         height: "100%",
                         width:  barsVisible ? `${Math.min(pct, 100)}%` : "0%",
-                        background: "#C9A84C",
+                        background: "linear-gradient(90deg, #C9A84C, #E8C97A)",
                         borderRadius: 999,
                         transition: `width 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) ${idx * 55}ms`,
                       }}
@@ -2107,7 +2113,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
-              <tr style={{ background: "#111820", borderBottom: "2px solid #1E2A3A", color: "#8A9BB5", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <tr style={{ background: "#111820", borderBottom: "2px solid #1E2A3A", color: "#8A9BB5", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 <th style={{ padding: "14px 20px", textAlign: "left", fontWeight: 700, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }} onClick={() => toggleSort("date")}>
                   Date <SortIcon col="date" />
                 </th>
@@ -2144,7 +2150,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                       key={`${rowFadeKey}-${i}`}
                       style={{
                         background: rowBg,
-                        borderBottom: "1px solid #1E2A3A",
+                        borderBottom: "1px solid rgba(30,42,58,0.5)",
                         animation: `rowFadeIn 0.3s ease forwards ${Math.min(i, 14) * 30}ms`,
                         opacity: 0,
                         transition: "background 0.15s ease",
@@ -2166,7 +2172,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                         {t.date}
                       </td>
                       {/* Description with coloured category dot */}
-                      <td style={{ padding: "14px 20px", color: "#F5F0E8", maxWidth: 240 }}>
+                      <td style={{ padding: "14px 20px", color: "#F5F0E8", fontWeight: 500, maxWidth: 240 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, backgroundColor: hex }} />
                           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{t.description}</span>
@@ -2223,7 +2229,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                         )}
                       </td>
                       {/* Amount */}
-                      <td style={{ padding: "14px 20px", textAlign: "right", fontWeight: 700, whiteSpace: "nowrap", fontSize: "1rem", color: isIncome ? "#00D4A0" : "#EF4444" }}>
+                      <td style={{ padding: "14px 20px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap", fontSize: "0.95rem", color: isIncome ? "#00D4A0" : "#EF4444" }}>
                         {isIncome ? "+" : ""}{fmt(t.amount)}
                       </td>
                     </tr>
