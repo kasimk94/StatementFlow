@@ -177,21 +177,19 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
     // Sizing — auto, NOT 100%
     width:               "auto",
     whiteSpace:          "nowrap",
-    // Visual pill — background is always dark, never gold
-    background:          scrolled ? "rgba(8,12,20,0.97)" : "rgba(8,12,20,0.9)",
-    backdropFilter:      "blur(24px)",
-    WebkitBackdropFilter:"blur(24px)",
+    // Visual pill — frosted glass
+    background:          "rgba(8,12,20,0.6)",
+    backdropFilter:      "blur(24px) saturate(180%)",
+    WebkitBackdropFilter:"blur(24px) saturate(180%)",
     border:              scrolled
                            ? "1px solid rgba(201,168,76,0.4)"
-                           : "1px solid rgba(201,168,76,0.25)",
+                           : "1px solid rgba(201,168,76,0.2)",
     borderRadius:        50,
     padding:             "8px 8px 8px 20px",
     display:             "flex",
     alignItems:          "center",
     gap:                 32,
-    boxShadow:           scrolled
-                           ? "0 8px 40px rgba(0,0,0,0.6)"
-                           : "0 8px 32px rgba(0,0,0,0.5)",
+    boxShadow:           "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)",
     // Mount fade
     opacity:             mounted ? 1 : 0,
     transition:          "opacity 0.35s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, border-radius 0.2s ease",

@@ -145,9 +145,10 @@ h1, h2, h3 {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Smooth scroll ─────────────────────────────────────────────────────────── */
+/* ── Smooth scroll + navbar offset ────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 80px;
 }
 
 /* ── Section scroll-reveal ─────────────────────────────────────────────────── */
