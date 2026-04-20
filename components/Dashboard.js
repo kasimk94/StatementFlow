@@ -1874,6 +1874,12 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={barData} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 8 }}>
+                <defs>
+                  <linearGradient id="goldBarGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#C9A84C" />
+                    <stop offset="100%" stopColor="#E8C97A" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1E2A3A" />
                 <XAxis type="number" tickFormatter={fmtShort} tick={{ fontSize: 11, fill: "#8A9BB5" }} axisLine={false} tickLine={false} />
                 <YAxis
@@ -1882,7 +1888,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                   tickFormatter={(v) => v.length > 14 ? v.slice(0, 14) + "…" : v}
                 />
                 <ReTooltip content={<BarTooltip />} cursor={{ fill: "rgba(201,168,76,0.05)" }} />
-                <Bar dataKey="expense" name="Expense" fill="#C9A84C" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
+                <Bar dataKey="expense" name="Expense" fill="url(#goldBarGrad)" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
                 <Bar dataKey="income"  name="Income"  fill="#00D4A0" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
               </BarChart>
             </ResponsiveContainer>
@@ -2019,7 +2025,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       {/* ── TRANSACTIONS TABLE ── */}
       <div ref={txTableRef} className="transaction-table-section" style={sectionStyle(550)}>
         {/* Collapse toggle */}
-        <div className="tx-toggle-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: txExpanded ? 12 : 0 }}>
+        <div className="tx-toggle-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginTop: 20, marginBottom: txExpanded ? 12 : 0 }}>
           <button
             onClick={() => setTxExpanded(v => !v)}
             style={{

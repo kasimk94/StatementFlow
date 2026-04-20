@@ -724,12 +724,51 @@ export async function POST(req) {
     console.log(`=== TOTAL API COST THIS REQUEST: $${totalCost.toFixed(4)} ===`);
     console.log("=== CONVERSION SUCCESS ===", transactions.length, "transactions");
 
-    // ── Increment upload count for logged-in users ─────────────────────────
+    // ── Increment upload count + save statement for logged-in users ───────
+    let statementId = null;
     if (session?.user?.id) {
       await prisma.user.update({
         where: { id: session.user.id },
         data: { uploadCount: { increment: 1 } },
       });
+
+      // Derive date range from transactions
+      const dates = transactions
+        .map(t => t.dateFormatted || t.date)
+        .filter(Boolean)
+        .sort();
+      const dateFrom = dates[0] || null;
+      const dateTo   = dates[dates.length - 1] || null;
+
+      try {
+        const saved = await prisma.statement.create({
+          data: {
+            userId:           session.user.id,
+            bankName:         (bankDetected || bankName) ?? null,
+            dateFrom,
+            dateTo,
+            totalIn:          totalIncome,
+            totalOut:         totalExpenses,
+            netBalance,
+            transactionCount: transactions.length,
+            rawData:          {
+              transactions, totalIncome, totalExpenses, netBalance,
+              startBalance: parseOpeningBalance ?? pdfSummary.startBalance,
+              endBalance:   parseClosingBalance ?? pdfSummary.endBalance,
+              transactionCount: transactions.length,
+              confidence: parseConfidence,
+              bank: bankDetected || bankName,
+              trueSpending, trueIncome, overdraftLimit, liquidity,
+              internalTransferTotal, reversalsCount,
+              categoryBreakdown: categories,
+              vatSummary, realIncome, realSpending, validation,
+            },
+          },
+        });
+        statementId = saved.id;
+      } catch (e) {
+        console.warn("Statement save failed (non-fatal):", e.message);
+      }
     }
 
     return NextResponse.json({
@@ -755,6 +794,7 @@ export async function POST(req) {
       realIncome,
       realSpending,
       validation,
+      statementId,
     });
   } catch (err) {
     console.error("=== CONVERSION FAILED ===", err.message, err.stack);

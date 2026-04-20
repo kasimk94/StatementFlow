@@ -233,9 +233,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
           {onUploadAnother ? (
             <button
               onClick={onUploadAnother}
-              style={{ background: "transparent", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 50, padding: "7px 18px", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", letterSpacing: "-0.01em", transition: "all 0.2s ease" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.7)"; e.currentTarget.style.background = "rgba(201,168,76,0.05)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.35)"; e.currentTarget.style.background = "transparent"; }}
+              className="ntry"
             >
               Upload another
             </button>
@@ -291,7 +289,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
           )}
           <div style={{ padding: "8px 6px 0" }}>
             {onUploadAnother ? (
-              <button style={{ width: "100%", borderRadius: 50, fontSize: "0.9rem", fontWeight: 600, padding: "13px", background: "transparent", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.35)", cursor: "pointer" }}
+              <button className="ntry" style={{ width: "100%", borderRadius: 14, fontSize: "0.95rem", padding: "13px" }}
                 onClick={() => { setMenuOpen(false); onUploadAnother(); }}>Upload another</button>
             ) : (
               <button className="ntry" style={{ width: "100%", borderRadius: 14, fontSize: "0.95rem", padding: "13px" }}
