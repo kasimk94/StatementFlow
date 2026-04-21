@@ -93,7 +93,7 @@ function DonutChart({ pct }) {
         </defs>
         <circle
           cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={stroke}
+          fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={stroke}
         />
         <circle
           cx={size / 2} cy={size / 2} r={r}
@@ -133,27 +133,29 @@ function HealthScore({ score, incomeNum }) {
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: 6,
+      display: 'inline-flex', flexDirection: 'column',
       background: 'rgba(201,168,76,0.06)',
       border: '1px solid rgba(201,168,76,0.2)',
-      borderRadius: 16, padding: 20,
+      borderRadius: 16, padding: 24,
+      alignSelf: 'flex-start',
     }}>
       <span style={{
-        fontSize: '0.62rem', fontWeight: 700, color: '#8A9BB5',
-        letterSpacing: '0.1em', textTransform: 'uppercase',
+        fontSize: '0.7rem', fontWeight: 700, color: '#8A9BB5',
+        letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6,
       }}>
         Budget Health
       </span>
       <span style={{
-        fontSize: '2.5rem', fontWeight: 800, color: '#C9A84C',
-        lineHeight: 1, letterSpacing: '-0.04em',
+        fontSize: '2.5rem', fontWeight: 800,
+        color: notStarted ? '#8A9BB5' : '#C9A84C',
+        lineHeight: 1, letterSpacing: '-0.04em', marginBottom: 4,
       }}>
         {notStarted ? '—' : score}
       </span>
-      <span style={{ fontSize: '0.82rem', fontWeight: 600, color, lineHeight: 1.3 }}>
+      <span style={{ fontSize: '0.85rem', fontWeight: 600, color, lineHeight: 1.2 }}>
         {label}
       </span>
-      <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginTop: 6 }}>
+      <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginTop: 12 }}>
         <div style={{
           width: barWidth + '%', height: '100%',
           background: notStarted ? 'transparent' : color,
