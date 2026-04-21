@@ -80,7 +80,10 @@ function DonutChart({ pct }) {
   const isOver = pct > 100;
 
   return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+    <div style={{
+      position: 'relative', width: size, height: size, flexShrink: 0,
+      filter: 'drop-shadow(0 0 20px rgba(201,168,76,0.2))',
+    }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <defs>
           <linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -90,7 +93,7 @@ function DonutChart({ pct }) {
         </defs>
         <circle
           cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke}
+          fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={stroke}
         />
         <circle
           cx={size / 2} cy={size / 2} r={r}
@@ -109,11 +112,11 @@ function DonutChart({ pct }) {
       }}>
         <span style={{
           color: isOver ? '#EF4444' : '#F5F0E8',
-          fontSize: '2.5rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em',
+          fontSize: '2.8rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em',
         }}>
           {Math.round(pct)}%
         </span>
-        <span style={{ color: '#8A9BB5', fontSize: '0.72rem', marginTop: 4 }}>allocated</span>
+        <span style={{ color: '#8A9BB5', fontSize: '0.85rem', marginTop: 5 }}>allocated</span>
       </div>
     </div>
   );
@@ -130,29 +133,31 @@ function HealthScore({ score, incomeNum }) {
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: 6,
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.07)',
-      borderRadius: 14, padding: '18px 20px', minWidth: 130,
+      display: 'flex', flexDirection: 'column', gap: 8,
+      background: 'rgba(201,168,76,0.06)',
+      border: '1px solid rgba(201,168,76,0.2)',
+      borderRadius: 16, padding: 24,
+      minWidth: 150, flex: 1,
     }}>
       <span style={{
-        fontSize: '0.62rem', fontWeight: 700, color: '#8A9BB5',
+        fontSize: '0.65rem', fontWeight: 700, color: '#8A9BB5',
         letterSpacing: '0.1em', textTransform: 'uppercase',
       }}>
         Budget Health
       </span>
       <span style={{
-        fontSize: '2.8rem', fontWeight: 700, color: '#C9A84C',
+        fontSize: '3.5rem', fontWeight: 800, color: '#C9A84C',
         lineHeight: 1, letterSpacing: '-0.04em',
       }}>
         {notStarted ? '—' : score}
       </span>
-      <span style={{ fontSize: '0.85rem', fontWeight: 600, color }}>
+      <span style={{ fontSize: '0.9rem', fontWeight: 600, color }}>
         {label}
       </span>
-      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginTop: 2 }}>
+      <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginTop: 4 }}>
         <div style={{
-          width: barWidth + '%', height: '100%', background: color,
+          width: barWidth + '%', height: '100%',
+          background: notStarted ? 'transparent' : color,
           borderRadius: 999,
           transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
           boxShadow: notStarted ? 'none' : ('0 0 8px ' + color + '88'),
@@ -186,17 +191,19 @@ function EditableIncomeStat({ incomeNum, onSave }) {
       onClick={!editing ? startEdit : undefined}
       style={{
         flex: 1, textAlign: 'center', cursor: 'pointer',
-        padding: '12px 12px',
-        background: 'rgba(201,168,76,0.04)', borderRadius: 10,
+        padding: '16px 12px', borderRadius: 10,
         transition: 'background 150ms',
       }}
     >
-      <div style={{ fontSize: '0.68rem', color: '#8A9BB5', marginBottom: 4 }}>
+      <div style={{
+        fontSize: '0.75rem', color: '#8A9BB5', marginBottom: 6,
+        textTransform: 'uppercase', letterSpacing: '0.05em',
+      }}>
         💰 Monthly Income
       </div>
       {editing ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-          <span style={{ color: '#C9A84C', fontSize: '0.9rem', fontWeight: 700 }}>£</span>
+          <span style={{ color: '#C9A84C', fontSize: '1.1rem', fontWeight: 700 }}>£</span>
           <input
             ref={ref}
             type="number"
@@ -206,15 +213,15 @@ function EditableIncomeStat({ incomeNum, onSave }) {
             onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
             style={{
               background: 'transparent', border: 'none',
-              borderBottom: '1px solid #C9A84C',
-              color: '#C9A84C', fontSize: '0.95rem', fontWeight: 700,
-              outline: 'none', width: 64, textAlign: 'center', padding: '1px 0',
+              borderBottom: '2px solid #C9A84C',
+              color: '#C9A84C', fontSize: '1.2rem', fontWeight: 700,
+              outline: 'none', width: 80, textAlign: 'center', padding: '2px 0',
             }}
           />
         </div>
       ) : (
-        <div style={{
-          fontSize: '1.1rem', fontWeight: 700,
+        <div className="sf-income-val" style={{
+          fontSize: '1.3rem', fontWeight: 700,
           color: incomeNum > 0 ? '#C9A84C' : '#8A9BB5',
           letterSpacing: '-0.02em',
         }}>
@@ -260,63 +267,73 @@ function HeroCard({
     <div style={{
       background: '#0D1117',
       border: '1px solid rgba(201,168,76,0.15)',
-      borderRadius: 20, padding: 40, marginBottom: 32,
-      display: 'flex', gap: 32, flexWrap: 'wrap',
+      borderRadius: 20, padding: '40px 48px', marginBottom: 32,
     }}>
-      {/* Left ~60% */}
-      <div style={{ flex: '0 0 58%', minWidth: 280 }}>
-        {/* Donut + health score row */}
-        <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', marginBottom: 24 }}>
+      {/* Top row: Donut | Health Score | Summary rows */}
+      <div style={{ display: 'flex', gap: 36, alignItems: 'stretch', flexWrap: 'wrap' }}>
+        {/* Donut */}
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
           <DonutChart pct={allocPct} />
-          <HealthScore score={score} incomeNum={incomeNum} />
         </div>
-        {/* Mini stats row */}
-        <div style={{
-          display: 'flex', gap: 4,
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.05)',
-          borderRadius: 12, padding: 4,
-        }}>
-          <EditableIncomeStat incomeNum={incomeNum} onSave={onSetIncome} />
-          <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
-          <div style={{ flex: 1, textAlign: 'center', padding: '12px 12px', borderRadius: 10 }}>
-            <div style={{ fontSize: '0.68rem', color: '#8A9BB5', marginBottom: 4 }}>📊 Total Budgeted</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#C9A84C', letterSpacing: '-0.02em' }}>
-              {fmt(totalBudgeted)}
-            </div>
-          </div>
-          <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
-          <div style={{ flex: 1, textAlign: 'center', padding: '12px 12px', borderRadius: 10 }}>
-            <div style={{ fontSize: '0.68rem', color: '#8A9BB5', marginBottom: 4 }}>✅ Left to Allocate</div>
-            <div style={{
-              fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em',
-              color: incomeNum > 0 ? (isOver ? '#EF4444' : '#10B981') : '#8A9BB5',
-            }}>
-              {incomeNum > 0 ? fmt(Math.abs(remaining)) : '—'}
-            </div>
-          </div>
+
+        {/* Health score */}
+        <HealthScore score={score} incomeNum={incomeNum} />
+
+        {/* Summary rows + set income */}
+        <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <SummaryRow emoji="🏠" label="Fixed Costs"    budgeted={totalFixed}    incomeNum={incomeNum} />
+          <SummaryRow emoji="🔄" label="Variable Costs" budgeted={totalVariable} incomeNum={incomeNum} />
+          <SummaryRow emoji="💾" label="Savings"        budgeted={totalSavings}  incomeNum={incomeNum} />
+          {incomeNum === 0 && (
+            <button
+              onClick={onScrollToIncome}
+              style={{
+                marginTop: 16,
+                background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+                color: '#080C14', border: 'none', borderRadius: 12,
+                height: 48, fontWeight: 700, fontSize: '0.9rem',
+                cursor: 'pointer', width: '100%',
+              }}
+            >
+              Set Monthly Income
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Right ~40% */}
-      <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <SummaryRow emoji="🏠" label="Fixed Costs"    budgeted={totalFixed}    incomeNum={incomeNum} />
-        <SummaryRow emoji="🔄" label="Variable Costs" budgeted={totalVariable} incomeNum={incomeNum} />
-        <SummaryRow emoji="💾" label="Savings"        budgeted={totalSavings}  incomeNum={incomeNum} />
-        {incomeNum === 0 && (
-          <button
-            onClick={onScrollToIncome}
-            style={{
-              marginTop: 12,
-              background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
-              color: '#080C14', border: 'none', borderRadius: 50,
-              padding: '11px 22px', fontWeight: 700, fontSize: '0.875rem',
-              cursor: 'pointer', width: '100%',
-            }}
-          >
-            Set Monthly Income
-          </button>
-        )}
+      {/* Divider */}
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '28px 0' }} />
+
+      {/* Mini stats row */}
+      <div style={{ display: 'flex' }}>
+        <EditableIncomeStat incomeNum={incomeNum} onSave={onSetIncome} />
+        <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'stretch', margin: '0 4px' }} />
+        <div style={{ flex: 1, textAlign: 'center', padding: '16px 12px' }}>
+          <div style={{
+            fontSize: '0.75rem', color: '#8A9BB5', marginBottom: 6,
+            textTransform: 'uppercase', letterSpacing: '0.05em',
+          }}>
+            📊 Total Budgeted
+          </div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#C9A84C', letterSpacing: '-0.02em' }}>
+            {fmt(totalBudgeted)}
+          </div>
+        </div>
+        <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'stretch', margin: '0 4px' }} />
+        <div style={{ flex: 1, textAlign: 'center', padding: '16px 12px' }}>
+          <div style={{
+            fontSize: '0.75rem', color: '#8A9BB5', marginBottom: 6,
+            textTransform: 'uppercase', letterSpacing: '0.05em',
+          }}>
+            ✅ Left to Allocate
+          </div>
+          <div style={{
+            fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.02em',
+            color: incomeNum > 0 ? (isOver ? '#EF4444' : '#10B981') : '#8A9BB5',
+          }}>
+            {incomeNum > 0 ? fmt(Math.abs(remaining)) : '—'}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -427,7 +444,7 @@ function CategoryCard({ cat, budget, actual, hasStatements, onChange }) {
   const actualNum = Number(actual) || 0;
 
   const fillPct = Math.min((budgetNum / max) * 100, 100);
-  const sliderBg = `linear-gradient(to right, #C9A84C 0%, #E8C97A ${fillPct}%, rgba(255,255,255,0.08) ${fillPct}%, rgba(255,255,255,0.08) 100%)`;
+  const sliderBg = `linear-gradient(to right, #C9A84C 0%, #C9A84C ${fillPct}%, rgba(255,255,255,0.08) ${fillPct}%, rgba(255,255,255,0.08) 100%)`;
 
   const hasBudget = budgetNum > 0;
   const hasActual = hasStatements && actualNum > 0;
@@ -1004,13 +1021,15 @@ export default function BudgetPage() {
     return (
       <DashboardLayout title="Budget">
         <style>{`@keyframes sf-pulse{0%,100%{opacity:1}50%{opacity:0.35}}`}</style>
+        {/* Hero skeleton — full width */}
+        <div style={{
+          height: 300, background: '#0D1117',
+          border: '1px solid rgba(201,168,76,0.08)',
+          borderRadius: 20, marginBottom: 32,
+          animation: 'sf-pulse 1.6s ease-in-out infinite',
+        }} />
+        {/* Content skeleton — constrained */}
         <div style={{ maxWidth: 860, margin: '0 auto' }}>
-          <div style={{
-            height: 268, background: '#0D1117',
-            border: '1px solid rgba(201,168,76,0.08)',
-            borderRadius: 20, marginBottom: 32,
-            animation: 'sf-pulse 1.6s ease-in-out infinite',
-          }} />
           {[0, 1, 2, 3, 4, 5].map(i => (
             <div key={i} style={{
               height: 96, background: '#0D1117',
@@ -1032,6 +1051,7 @@ export default function BudgetPage() {
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
         input[type=number] { -moz-appearance: textfield; }
+        .sf-income-val:hover { text-decoration: underline; text-underline-offset: 3px; }
 
         .sf-slider {
           -webkit-appearance: none;
@@ -1085,19 +1105,21 @@ export default function BudgetPage() {
         }
       `}</style>
 
-      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+      {/* Hero — full width of content area */}
+      <HeroCard
+        incomeNum={incomeNum}
+        totalBudgeted={totalBudgeted}
+        totalFixed={totalFixed}
+        totalVariable={totalVariable}
+        totalSavings={totalSavings}
+        allocPct={allocPct}
+        score={score}
+        onSetIncome={handleSetIncome}
+        onScrollToIncome={scrollToIncomePrompt}
+      />
 
-        <HeroCard
-          incomeNum={incomeNum}
-          totalBudgeted={totalBudgeted}
-          totalFixed={totalFixed}
-          totalVariable={totalVariable}
-          totalSavings={totalSavings}
-          allocPct={allocPct}
-          score={score}
-          onSetIncome={handleSetIncome}
-          onScrollToIncome={scrollToIncomePrompt}
-        />
+      {/* Constrained content */}
+      <div style={{ maxWidth: 860, margin: '0 auto' }}>
 
         {incomeNum === 0 && (
           <div ref={incomePromptRef} style={{ marginTop: 24 }}>
