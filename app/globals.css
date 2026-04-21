@@ -757,3 +757,13 @@ img, video { max-width: 100%; height: auto; }
     min-height: 180px !important;
   }
 }
+
+/* ── Global table row hover — prevent white flash from Tailwind base ── */
+tr:hover {
+  background: rgba(201,168,76,0.06) !important;
+  color: #F5F0E8 !important;
+}
+tr:hover td {
+  background: transparent !important;
+  color: #F5F0E8 !important;
+}
