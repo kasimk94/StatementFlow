@@ -6,25 +6,31 @@ import DashboardLayout from '@/components/DashboardLayout';
 // ─── Category definitions ─────────────────────────────────────────────────────
 
 const FIXED = [
-  { id: 'housing',   label: 'Housing / Rent',      color: '#b45309' },
-  { id: 'utilities', label: 'Utilities',            color: '#475569' },
-  { id: 'internet',  label: 'Internet & Mobile',    color: '#2563eb' },
-  { id: 'council',   label: 'Council Tax',          color: '#4f46e5' },
-  { id: 'insurance', label: 'Insurance',            color: '#0d9488' },
-  { id: 'loans',     label: 'Loan / Credit Card',   color: '#dc2626' },
-  { id: 'childcare', label: 'Childcare',            color: '#7c3aed' },
+  { id: 'housing',   emoji: '🏠', label: 'Housing / Rent',    max: 3000 },
+  { id: 'utilities', emoji: '⚡', label: 'Utilities',          max: 500  },
+  { id: 'internet',  emoji: '📱', label: 'Internet & Mobile',  max: 200  },
+  { id: 'council',   emoji: '🏛️', label: 'Council Tax',        max: 500  },
+  { id: 'insurance', emoji: '🛡️', label: 'Insurance',          max: 500  },
+  { id: 'loans',     emoji: '💳', label: 'Loan / Credit Card', max: 2000 },
+  { id: 'childcare', emoji: '👶', label: 'Childcare',          max: 2000 },
 ];
 
 const VARIABLE = [
-  { id: 'groceries',     label: 'Groceries',            color: '#16a34a' },
-  { id: 'eating_out',    label: 'Eating Out & Takeaway', color: '#ea580c' },
-  { id: 'transport',     label: 'Transport',             color: '#2563eb' },
-  { id: 'fuel',          label: 'Fuel',                  color: '#ca8a04' },
-  { id: 'shopping',      label: 'Shopping',              color: '#db2777' },
-  { id: 'entertainment', label: 'Entertainment',         color: '#7c3aed' },
-  { id: 'subscriptions', label: 'Subscriptions',         color: '#a855f7' },
-  { id: 'personal_care', label: 'Personal Care',         color: '#ec4899' },
-  { id: 'savings',       label: 'Savings',               color: '#059669' },
+  { id: 'groceries',     emoji: '🛒', label: 'Groceries',             max: 800  },
+  { id: 'eating_out',    emoji: '🍔', label: 'Eating Out & Takeaway', max: 600  },
+  { id: 'transport',     emoji: '🚗', label: 'Transport',             max: 500  },
+  { id: 'fuel',          emoji: '⛽', label: 'Fuel',                  max: 400  },
+  { id: 'shopping',      emoji: '🛍️', label: 'Shopping',              max: 600  },
+  { id: 'entertainment', emoji: '🎬', label: 'Entertainment',         max: 400  },
+  { id: 'subscriptions', emoji: '📺', label: 'Subscriptions',         max: 200  },
+  { id: 'personal_care', emoji: '💆', label: 'Personal Care',         max: 300  },
+  { id: 'savings',       emoji: '💰', label: 'Savings',               max: 2000 },
+];
+
+const PICKER_EMOJIS = [
+  '🏠','🛒','🚗','🍔','🎬','📱','💊','✈️','🐾','🎓',
+  '💻','🎮','🏋️','☕','🌊','🎵','👕','💄','🏥','📚',
+  '🎁','🍷','🐕','🚴',
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -40,351 +46,526 @@ function fmtFull(n) {
 }
 
 function sectionTotal(cats, budgets) {
-  return cats.reduce((s, c) => s + (parseFloat(budgets[c.id]) || 0), 0);
+  return cats.reduce((s, c) => s + (Number(budgets[c.id]) || 0), 0);
 }
 
-// ─── Progress ring ────────────────────────────────────────────────────────────
+function calcHealthScore(incomeNum, allCats, budgets, totalBudgeted) {
+  let score = 0;
+  if (incomeNum > 0) score += 20;
+  const filled = allCats.filter(c => (Number(budgets[c.id]) || 0) > 0).length;
+  score += Math.min(filled, 12) * 5;
+  if (incomeNum > 0) {
+    const pct = (totalBudgeted / incomeNum) * 100;
+    if (pct >= 70 && pct <= 100) score += 20;
+    else if (pct >= 50 && pct < 70) score += 10;
+  }
+  return Math.min(score, 100);
+}
 
-function ProgressRing({ pct, size, stroke, color }) {
+function scoreInfo(s) {
+  if (s >= 71) return { label: 'Good', color: '#10B981' };
+  if (s >= 41) return { label: 'Fair', color: '#F59E0B' };
+  return { label: 'Needs Work', color: '#EF4444' };
+}
+
+// ─── Donut arc chart ──────────────────────────────────────────────────────────
+
+function DonutChart({ pct }) {
+  const size = 200;
+  const stroke = 18;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (Math.min(pct, 100) / 100) * circ;
+  const capped = Math.min(pct, 100);
+  const offset = circ - (capped / 100) * circ;
+  const isOver = pct > 100;
+
   return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
-      <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke}
-      />
-      <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none" stroke={color} strokeWidth={stroke}
-        strokeDasharray={circ} strokeDashoffset={offset}
-        strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1)' }}
-      />
-    </svg>
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <defs>
+          <linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#C9A84C" />
+            <stop offset="100%" stopColor="#E8C97A" />
+          </linearGradient>
+        </defs>
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none"
+          stroke={isOver ? '#EF4444' : 'url(#donutGrad)'}
+          strokeWidth={stroke}
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }}
+        />
+      </svg>
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{
+          color: isOver ? '#EF4444' : '#F5F0E8',
+          fontSize: '2.2rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em',
+        }}>
+          {Math.round(pct)}%
+        </span>
+        <span style={{ color: '#8A9BB5', fontSize: '0.72rem', marginTop: 4 }}>allocated</span>
+      </div>
+    </div>
   );
 }
 
-// ─── Income card ─────────────────────────────────────────────────────────────
+// ─── Health score ─────────────────────────────────────────────────────────────
 
-function IncomeCard({ income, onSave }) {
+function HealthScore({ score }) {
+  const { label, color } = scoreInfo(score);
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 6,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.07)',
+      borderRadius: 14, padding: '18px 20px', minWidth: 130,
+    }}>
+      <span style={{
+        fontSize: '0.62rem', fontWeight: 700, color: '#8A9BB5',
+        letterSpacing: '0.1em', textTransform: 'uppercase',
+      }}>
+        Budget Health
+      </span>
+      <span style={{
+        fontSize: '2.8rem', fontWeight: 700, color: '#C9A84C',
+        lineHeight: 1, letterSpacing: '-0.04em',
+      }}>
+        {score}
+      </span>
+      <span style={{ fontSize: '0.85rem', fontWeight: 600, color }}>
+        {label}
+      </span>
+      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginTop: 2 }}>
+        <div style={{
+          width: score + '%', height: '100%', background: color,
+          borderRadius: 999,
+          transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: '0 0 8px ' + color + '88',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Editable income stat ─────────────────────────────────────────────────────
+
+function EditableIncomeStat({ incomeNum, onSave }) {
   const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(income);
-  const inputRef = useRef(null);
-
-  useEffect(() => { setVal(income); }, [income]);
+  const [draft, setDraft] = useState('');
+  const ref = useRef(null);
 
   function startEdit() {
+    setDraft(incomeNum > 0 ? String(incomeNum) : '');
     setEditing(true);
-    setTimeout(() => inputRef.current && inputRef.current.focus(), 0);
+    setTimeout(() => ref.current && ref.current.focus(), 0);
   }
 
   function commit() {
     setEditing(false);
-    onSave(val);
+    const n = parseFloat(draft);
+    if (!isNaN(n) && n > 0) onSave(n);
   }
 
-  const num = parseFloat(val) || 0;
-
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, rgba(0,212,160,0.06) 0%, rgba(0,212,160,0.02) 100%)',
-      border: '1px solid rgba(0,212,160,0.18)',
-      borderRadius: 16, padding: '24px 28px', flex: 1, minWidth: 0, position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{
-        position: 'absolute', top: -40, right: -40, width: 120, height: 120,
-        background: 'radial-gradient(circle, rgba(0,212,160,0.12) 0%, transparent 70%)',
-        borderRadius: '50%', pointerEvents: 'none',
-      }} />
-      <div style={{
-        fontSize: '0.72rem', fontWeight: 600, color: '#00D4A0',
-        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12,
-      }}>
-        Monthly Income
+    <div
+      onClick={!editing ? startEdit : undefined}
+      style={{
+        flex: 1, textAlign: 'center', cursor: 'pointer',
+        padding: '10px 8px',
+        background: 'rgba(201,168,76,0.04)', borderRadius: 10,
+        transition: 'background 150ms',
+      }}
+    >
+      <div style={{ fontSize: '0.68rem', color: '#8A9BB5', marginBottom: 4 }}>
+        💰 Monthly Income
       </div>
       {editing ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ color: '#8A9BB5', fontSize: '1.4rem', fontWeight: 300 }}>£</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+          <span style={{ color: '#C9A84C', fontSize: '0.9rem', fontWeight: 700 }}>£</span>
           <input
-            ref={inputRef}
+            ref={ref}
             type="number"
-            value={val}
-            onChange={e => setVal(e.target.value)}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
             onBlur={commit}
-            onKeyDown={e => { if (e.key === 'Enter') commit(); }}
-            placeholder="0"
+            onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
             style={{
               background: 'transparent', border: 'none',
-              borderBottom: '2px solid #C9A84C',
-              color: '#F5F0E8', fontSize: '2rem', fontWeight: 700,
-              letterSpacing: '-0.03em', outline: 'none', width: '100%', padding: '2px 0',
+              borderBottom: '1px solid #C9A84C',
+              color: '#C9A84C', fontSize: '0.95rem', fontWeight: 700,
+              outline: 'none', width: 64, textAlign: 'center', padding: '1px 0',
             }}
           />
         </div>
       ) : (
-        <div>
-          {num > 0 ? (
-            <div
-              onClick={startEdit}
-              title="Click to edit"
-              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 4 }}
-            >
-              <span style={{ color: '#F5F0E8', fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
-                {fmt(num)}
-              </span>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                style={{ flexShrink: 0, opacity: 0.5 }}>
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-            </div>
-          ) : (
-            <div
-              onClick={startEdit}
-              style={{
-                display: 'inline-flex', alignItems: 'center',
-                background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)',
-                color: '#C9A84C', padding: '8px 16px', borderRadius: 8,
-                fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
-                marginBottom: 4, transition: 'all 150ms ease',
-              }}
-            >
-              Click to set income
-            </div>
-          )}
+        <div style={{
+          fontSize: '1rem', fontWeight: 700,
+          color: incomeNum > 0 ? '#C9A84C' : '#8A9BB5',
+          letterSpacing: '-0.02em',
+        }}>
+          {incomeNum > 0 ? fmt(incomeNum) : 'Not set'}
         </div>
       )}
     </div>
   );
 }
 
-// ─── Budgeted card ────────────────────────────────────────────────────────────
+// ─── Right-side summary row ───────────────────────────────────────────────────
 
-function BudgetedCard({ totalBudgeted, incomeNum }) {
-  const allocPct = incomeNum > 0 ? Math.round((totalBudgeted / incomeNum) * 100) : 0;
-  const ringColor = allocPct > 100 ? '#EF4444' : allocPct > 80 ? '#F59E0B' : '#C9A84C';
+function SummaryRow({ emoji, label, budgeted, incomeNum }) {
+  const pct = budgeted > 0 && incomeNum > 0 ? Math.min((budgeted / incomeNum) * 100, 100) : 0;
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+        <span style={{ color: '#8A9BB5', fontSize: '0.85rem' }}>{emoji} {label}</span>
+        <span style={{ color: '#F5F0E8', fontSize: '0.95rem', fontWeight: 600 }}>{fmt(budgeted)}</span>
+      </div>
+      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden' }}>
+        <div style={{
+          width: pct + '%', height: '100%',
+          background: 'linear-gradient(90deg, #C9A84C, #E8C97A)',
+          borderRadius: 999,
+          transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Hero card ────────────────────────────────────────────────────────────────
+
+function HeroCard({
+  incomeNum, totalBudgeted, totalFixed, totalVariable, totalSavings,
+  allocPct, score, onSetIncome, onScrollToIncome,
+}) {
+  const remaining = incomeNum - totalBudgeted;
+  const isOver = remaining < 0;
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(201,168,76,0.07) 0%, rgba(201,168,76,0.02) 100%)',
-      border: '1px solid rgba(201,168,76,0.18)',
-      borderRadius: 16, padding: '24px 28px', flex: 1, minWidth: 0, position: 'relative', overflow: 'hidden',
+      background: '#0D1117',
+      border: '1px solid rgba(201,168,76,0.15)',
+      borderRadius: 20, padding: 32, marginBottom: 32,
+      display: 'flex', gap: 32, flexWrap: 'wrap',
     }}>
-      <div style={{
-        position: 'absolute', top: -40, right: -40, width: 120, height: 120,
-        background: 'radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%)',
-        borderRadius: '50%', pointerEvents: 'none',
-      }} />
-      <div style={{
-        fontSize: '0.72rem', fontWeight: 600, color: '#C9A84C',
-        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12,
-      }}>
-        Budgeted This Month
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <div style={{ color: '#F5F0E8', fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
-            {fmt(totalBudgeted)}
-          </div>
-          <div style={{ color: '#8A9BB5', fontSize: '0.8rem', marginTop: 6 }}>
-            {incomeNum > 0 ? allocPct + '% of income allocated' : 'Set income to see %'}
-          </div>
+      {/* Left ~60% */}
+      <div style={{ flex: '0 0 58%', minWidth: 280 }}>
+        {/* Donut + health score row */}
+        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 24 }}>
+          <DonutChart pct={allocPct} />
+          <HealthScore score={score} />
         </div>
-        {incomeNum > 0 ? (
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <ProgressRing pct={allocPct} size={68} stroke={5} color={ringColor} />
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.75rem', fontWeight: 700, color: ringColor,
-            }}>
-              {allocPct}%
+        {/* Mini stats row */}
+        <div style={{
+          display: 'flex', gap: 4,
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.05)',
+          borderRadius: 12, padding: 4,
+        }}>
+          <EditableIncomeStat incomeNum={incomeNum} onSave={onSetIncome} />
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
+          <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', borderRadius: 10 }}>
+            <div style={{ fontSize: '0.68rem', color: '#8A9BB5', marginBottom: 4 }}>📊 Total Budgeted</div>
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#C9A84C', letterSpacing: '-0.02em' }}>
+              {fmt(totalBudgeted)}
             </div>
           </div>
-        ) : (
-          <span style={{ color: 'rgba(138,155,181,0.4)', fontSize: '2rem', fontWeight: 300 }}>—</span>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
+          <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', borderRadius: 10 }}>
+            <div style={{ fontSize: '0.68rem', color: '#8A9BB5', marginBottom: 4 }}>✅ Left to Allocate</div>
+            <div style={{
+              fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.02em',
+              color: incomeNum > 0 ? (isOver ? '#EF4444' : '#10B981') : '#8A9BB5',
+            }}>
+              {incomeNum > 0 ? fmt(Math.abs(remaining)) : '—'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right ~40% */}
+      <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <SummaryRow emoji="🏠" label="Fixed Costs"    budgeted={totalFixed}    incomeNum={incomeNum} />
+        <SummaryRow emoji="🔄" label="Variable Costs" budgeted={totalVariable} incomeNum={incomeNum} />
+        <SummaryRow emoji="💾" label="Savings"        budgeted={totalSavings}  incomeNum={incomeNum} />
+        {incomeNum === 0 && (
+          <button
+            onClick={onScrollToIncome}
+            style={{
+              marginTop: 12,
+              background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+              color: '#080C14', border: 'none', borderRadius: 50,
+              padding: '11px 22px', fontWeight: 700, fontSize: '0.875rem',
+              cursor: 'pointer', width: '100%',
+            }}
+          >
+            Set Monthly Income
+          </button>
         )}
       </div>
     </div>
   );
 }
 
-// ─── Remaining card ───────────────────────────────────────────────────────────
+// ─── Income prompt card ───────────────────────────────────────────────────────
 
-function RemainingCard({ remaining, incomeNum }) {
-  const isPositive = remaining >= 0;
-  const color = isPositive ? '#00D4A0' : '#EF4444';
-  const borderColor = isPositive ? 'rgba(0,212,160,0.18)' : 'rgba(239,68,68,0.18)';
-  const bgGrad = isPositive
-    ? 'linear-gradient(135deg, rgba(0,212,160,0.06) 0%, rgba(0,212,160,0.02) 100%)'
-    : 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(239,68,68,0.02) 100%)';
-  const glowColor = isPositive ? 'rgba(0,212,160,0.12)' : 'rgba(239,68,68,0.1)';
+function IncomePromptCard({ onSet }) {
+  const [val, setVal] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (inputRef.current) inputRef.current.focus();
+  }, []);
+
+  function commit() {
+    const n = parseFloat(val);
+    if (n > 0) onSet(n);
+  }
 
   return (
     <div style={{
-      background: bgGrad, border: '1px solid ' + borderColor,
-      borderRadius: 16, padding: '24px 28px', flex: 1, minWidth: 0, position: 'relative', overflow: 'hidden',
+      background: 'rgba(201,168,76,0.06)',
+      border: '1px solid rgba(201,168,76,0.3)',
+      borderRadius: 16, padding: 24, marginBottom: 32,
     }}>
-      <div style={{
-        position: 'absolute', top: -40, right: -40, width: 120, height: 120,
-        background: 'radial-gradient(circle, ' + glowColor + ' 0%, transparent 70%)',
-        borderRadius: '50%', pointerEvents: 'none',
-      }} />
-      <div style={{
-        fontSize: '0.72rem', fontWeight: 600, color: color,
-        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12,
-      }}>
-        Left to Allocate
+      <div style={{ color: '#F5F0E8', fontSize: '1.1rem', fontWeight: 600, marginBottom: 6 }}>
+        First, what&apos;s your monthly take-home pay?
       </div>
-      {incomeNum > 0 ? (
-        <div>
-          <div style={{ color: color, fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
-            {fmt(Math.abs(remaining))}
-          </div>
-          <div style={{ color: '#8A9BB5', fontSize: '0.8rem', marginTop: 6 }}>
-            {isPositive ? 'available to allocate' : 'over your income'}
-          </div>
-        </div>
-      ) : (
-        <span style={{ color: 'rgba(138,155,181,0.4)', fontSize: '2rem', fontWeight: 300 }}>—</span>
-      )}
-    </div>
-  );
-}
-
-// ─── Category row ─────────────────────────────────────────────────────────────
-
-function CategoryRow({ cat, budget, actual, hasStatements, onChange, onBlur }) {
-  const [focused, setFocused] = useState(false);
-  const budgetNum = parseFloat(budget) || 0;
-  const actualNum = actual || 0;
-  const hasBudget = budgetNum > 0;
-  const pct = hasBudget ? Math.min((actualNum / budgetNum) * 100, 100) : 0;
-  const rawPct = hasBudget ? (actualNum / budgetNum) * 100 : 0;
-  const isOver = rawPct > 100;
-  const isWarn = rawPct >= 70 && rawPct <= 100;
-  const barColor = isOver ? '#EF4444' : isWarn ? '#F59E0B' : '#00D4A0';
-  const inputBorder = (isOver && hasBudget)
-    ? 'rgba(239,68,68,0.5)'
-    : focused ? 'rgba(201,168,76,0.5)' : 'rgba(201,168,76,0.25)';
-
-  return (
-    <div style={{
-      background: '#0D1117',
-      border: '1px solid ' + (focused ? 'rgba(201,168,76,0.25)' : 'rgba(201,168,76,0.1)'),
-      borderRadius: 12, padding: '20px', marginBottom: 6,
-      transition: 'border-color 150ms ease',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        {/* Left */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-          <div style={{
-            width: 9, height: 9, borderRadius: '50%',
-            background: cat.color, flexShrink: 0,
-            boxShadow: '0 0 6px ' + cat.color + '66',
-          }} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{
-              color: '#F5F0E8', fontSize: '0.95rem', fontWeight: 500,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {cat.label}
-            </div>
-            {hasStatements && actualNum > 0 && (
-              <div style={{ color: '#8A9BB5', fontSize: '0.72rem', marginTop: 2 }}>
-                Spent {fmtFull(actualNum)} last statement
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Right — input */}
+      <div style={{ color: '#8A9BB5', fontSize: '0.85rem', marginBottom: 20 }}>
+        This helps us show how balanced your budget is
+      </div>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <div style={{
           display: 'flex', alignItems: 'center',
-          background: 'rgba(201,168,76,0.06)',
-          border: '1px solid ' + inputBorder,
-          borderRadius: 10,
-          boxShadow: focused ? '0 0 0 2px rgba(201,168,76,0.2)' : 'none',
-          transition: 'all 150ms ease', flexShrink: 0,
-          width: 140, overflow: 'hidden',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(201,168,76,0.3)',
+          borderRadius: 12, padding: '0 16px', flex: 1,
         }}>
-          <span style={{
-            color: '#C9A84C', fontSize: '0.9rem', fontWeight: 600,
-            paddingLeft: 12, paddingRight: 4, userSelect: 'none',
-          }}>£</span>
+          <span style={{ color: '#C9A84C', fontSize: '1.4rem', fontWeight: 300, marginRight: 6 }}>£</span>
           <input
+            ref={inputRef}
             type="number"
-            value={budget}
-            onChange={e => onChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => { setFocused(false); onBlur(); }}
-            placeholder="0"
+            value={val}
+            onChange={e => setVal(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') commit(); }}
+            placeholder="e.g. 2800"
             style={{
               background: 'transparent', border: 'none', outline: 'none',
-              color: '#F5F0E8', fontSize: '1rem', fontWeight: 500,
-              flex: 1, padding: '10px 12px 10px 0', textAlign: 'right',
+              color: '#F5F0E8', fontSize: '1.4rem', fontWeight: 600,
+              padding: '14px 0', width: '100%',
             }}
           />
         </div>
+        <button
+          onClick={commit}
+          style={{
+            background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+            color: '#080C14', border: 'none', borderRadius: 12,
+            padding: '14px 24px', fontWeight: 700, fontSize: '0.95rem',
+            cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+          }}
+        >
+          Set Income →
+        </button>
       </div>
-      {/* Progress bar — only when budget set */}
-      {hasBudget && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{
-              width: pct + '%', height: '100%', background: barColor, borderRadius: 999,
-              transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
-              boxShadow: '0 0 8px ' + barColor + '55',
-            }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-            <span style={{ color: isOver ? '#EF4444' : '#8A9BB5', fontSize: '0.72rem' }}>
-              {hasStatements && actualNum > 0
-                ? (isOver ? fmtFull(actualNum - budgetNum) + ' over budget' : fmtFull(actualNum) + ' spent')
-                : 'No statement data yet'}
-            </span>
-            <span style={{ color: '#8A9BB5', fontSize: '0.72rem' }}>{fmt(budgetNum)}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 // ─── Section header ───────────────────────────────────────────────────────────
 
-function SectionHeader({ title, cats, budgets }) {
+function SectionHeader({ emoji, title, cats, budgets, incomeNum }) {
   const total = sectionTotal(cats, budgets);
+  const remaining = incomeNum > 0 ? incomeNum - total : null;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, marginTop: 28 }}>
-      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#8A9BB5', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-        {title}
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '14px 0 12px',
+      borderBottom: '1px solid rgba(201,168,76,0.2)',
+      marginBottom: 12,
+    }}>
+      <span style={{ color: '#F5F0E8', fontSize: '1rem', fontWeight: 600 }}>
+        {emoji} {title}
       </span>
-      <span style={{ fontSize: '0.78rem', color: total > 0 ? '#C9A84C' : '#8A9BB5', fontWeight: 600 }}>
-        {fmt(total)} / month
+      <span style={{ color: '#8A9BB5', fontSize: '0.8rem' }}>
+        {fmt(total)} budgeted
+        {remaining !== null && (
+          <span style={{ color: remaining >= 0 ? '#10B981' : '#EF4444', marginLeft: 6 }}>
+            · {fmt(Math.abs(remaining))} {remaining >= 0 ? 'remaining' : 'over'}
+          </span>
+        )}
       </span>
     </div>
   );
 }
 
-// ─── Add category ─────────────────────────────────────────────────────────────
+// ─── Category card (with slider) ──────────────────────────────────────────────
 
-function AddCategoryButton({ onAdd }) {
+function CategoryCard({ cat, budget, actual, hasStatements, onChange }) {
+  const [editingAmount, setEditingAmount] = useState(false);
+  const [draftAmount, setDraftAmount] = useState('');
+  const amountRef = useRef(null);
+
+  const max = cat.max || 1000;
+  const budgetNum = Number(budget) || 0;
+  const actualNum = Number(actual) || 0;
+
+  const fillPct = Math.min((budgetNum / max) * 100, 100);
+  const sliderBg = `linear-gradient(to right, #C9A84C 0%, #E8C97A ${fillPct}%, rgba(255,255,255,0.08) ${fillPct}%, rgba(255,255,255,0.08) 100%)`;
+
+  const hasBudget = budgetNum > 0;
+  const hasActual = hasStatements && actualNum > 0;
+  const spendPct = hasBudget && hasActual ? Math.min((actualNum / budgetNum) * 100, 100) : 0;
+  const rawPct = hasBudget && hasActual ? (actualNum / budgetNum) * 100 : 0;
+  const isOver = rawPct > 100;
+  const isWarn = rawPct >= 70 && rawPct <= 100;
+  const barColor = isOver ? '#EF4444' : isWarn ? '#F59E0B' : '#10B981';
+  const pillText = isOver ? 'Over budget ✗' : isWarn ? 'On track' : 'Under budget ✓';
+  const pillColor = isOver ? '#EF4444' : isWarn ? '#F59E0B' : '#10B981';
+
+  function startEdit() {
+    setDraftAmount(budgetNum > 0 ? String(budgetNum) : '');
+    setEditingAmount(true);
+    setTimeout(() => amountRef.current && amountRef.current.focus(), 0);
+  }
+
+  function commitAmount() {
+    setEditingAmount(false);
+    const n = parseFloat(draftAmount);
+    if (!isNaN(n) && n >= 0) {
+      onChange(Math.min(n, max));
+    }
+  }
+
+  return (
+    <div style={{
+      background: '#0D1117',
+      border: '1px solid rgba(201,168,76,0.1)',
+      borderRadius: 16, padding: '20px 24px', marginBottom: 8,
+      transition: 'border-color 150ms ease',
+    }}>
+      {/* Top row: emoji + name | £amount */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ color: '#F5F0E8', fontSize: '0.95rem', fontWeight: 500 }}>
+          {cat.emoji} {cat.label}
+        </span>
+        {editingAmount ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ color: '#C9A84C', fontWeight: 700, fontSize: '1.1rem' }}>£</span>
+            <input
+              ref={amountRef}
+              type="number"
+              value={draftAmount}
+              onChange={e => setDraftAmount(e.target.value)}
+              onBlur={commitAmount}
+              onKeyDown={e => {
+                if (e.key === 'Enter') commitAmount();
+                if (e.key === 'Escape') setEditingAmount(false);
+              }}
+              style={{
+                background: 'transparent', border: 'none',
+                borderBottom: '2px solid #C9A84C',
+                color: '#F5F0E8', fontSize: '1.15rem', fontWeight: 700,
+                outline: 'none', width: 80, textAlign: 'right', padding: '2px 0',
+              }}
+            />
+          </div>
+        ) : (
+          <span
+            onClick={startEdit}
+            title="Click to type a value"
+            style={{
+              color: budgetNum > 0 ? '#C9A84C' : '#8A9BB5',
+              fontSize: '1.2rem', fontWeight: 700,
+              letterSpacing: '-0.02em', cursor: 'pointer',
+            }}
+          >
+            {fmt(budgetNum)}
+          </span>
+        )}
+      </div>
+
+      {/* Slider */}
+      <input
+        type="range"
+        min={0}
+        max={max}
+        step={10}
+        value={budgetNum}
+        onChange={e => onChange(Number(e.target.value))}
+        className="sf-slider"
+        style={{ background: sliderBg }}
+      />
+
+      {/* Actuals row */}
+      {hasActual && hasBudget && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginBottom: 6 }}>
+            <div style={{
+              width: spendPct + '%', height: '100%', background: barColor,
+              borderRadius: 999,
+              transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
+              boxShadow: '0 0 6px ' + barColor + '66',
+            }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: '#8A9BB5', fontSize: '0.72rem' }}>
+              Spent last month: {fmtFull(actualNum)}
+            </span>
+            <span style={{
+              fontSize: '0.7rem', fontWeight: 600, color: pillColor,
+              background: pillColor + '1A', padding: '2px 9px',
+              borderRadius: 999, border: '1px solid ' + pillColor + '44',
+            }}>
+              {pillText}
+            </span>
+          </div>
+        </div>
+      )}
+      {hasActual && !hasBudget && (
+        <div style={{ marginTop: 10 }}>
+          <span style={{ color: '#8A9BB5', fontSize: '0.72rem' }}>
+            Spent last month: {fmtFull(actualNum)} — drag slider to set a budget
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Add category form ────────────────────────────────────────────────────────
+
+function AddCategoryForm({ onAdd }) {
   const [open, setOpen] = useState(false);
+  const [selectedEmoji, setSelectedEmoji] = useState('🏷️');
   const [label, setLabel] = useState('');
-  const inputRef = useRef(null);
+  const [maxVal, setMaxVal] = useState('500');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const labelRef = useRef(null);
 
   useEffect(() => {
-    if (open && inputRef.current) inputRef.current.focus();
+    if (open && labelRef.current) labelRef.current.focus();
   }, [open]);
 
   function submit() {
     const trimmed = label.trim();
-    if (trimmed) onAdd(trimmed);
+    if (!trimmed) return;
+    onAdd({ emoji: selectedEmoji, label: trimmed, max: parseInt(maxVal) || 500 });
+    setSelectedEmoji('🏷️');
     setLabel('');
+    setMaxVal('500');
     setOpen(false);
+    setPickerOpen(false);
   }
 
   if (!open) {
@@ -392,79 +573,161 @@ function AddCategoryButton({ onAdd }) {
       <button
         onClick={() => setOpen(true)}
         style={{
-          background: 'none', border: 'none', color: '#C9A84C',
-          fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '8px 4px', opacity: 0.7, transition: 'opacity 150ms ease',
+          background: 'none',
+          border: '1px dashed rgba(201,168,76,0.25)',
+          color: '#C9A84C', fontSize: '0.82rem', fontWeight: 600,
+          cursor: 'pointer', borderRadius: 12, padding: '11px 16px',
+          width: '100%', marginTop: 4,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          opacity: 0.7, transition: 'opacity 150ms, border-color 150ms',
         }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '0.7'; }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.25)'; }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        Add category
+        + Add category
       </button>
     );
   }
 
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0' }}>
-      <input
-        ref={inputRef}
-        value={label}
-        onChange={e => setLabel(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') setOpen(false); }}
-        placeholder="Category name…"
-        style={{
-          flex: 1, background: '#0D1117',
-          border: '1px solid rgba(201,168,76,0.3)',
-          borderRadius: 8, padding: '8px 12px',
-          color: '#F5F0E8', fontSize: '0.875rem', outline: 'none',
-        }}
-      />
-      <button onClick={submit} style={{
-        background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
-        color: '#080C14', border: 'none', borderRadius: 8,
-        padding: '8px 14px', fontWeight: 700, cursor: 'pointer', fontSize: '0.82rem',
-      }}>Add</button>
-      <button onClick={() => setOpen(false)} style={{
-        background: 'transparent', border: 'none', color: '#8A9BB5',
-        cursor: 'pointer', padding: '8px 6px', fontSize: '0.82rem',
-      }}>Cancel</button>
+    <div style={{
+      background: '#0D1117', border: '1px solid rgba(201,168,76,0.2)',
+      borderRadius: 14, padding: 16, marginTop: 4,
+    }}>
+      {/* Emoji picker toggle */}
+      <div style={{ marginBottom: 12 }}>
+        <button
+          onClick={() => setPickerOpen(p => !p)}
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8, padding: '6px 12px',
+            cursor: 'pointer', fontSize: '1.2rem', color: '#F5F0E8',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          {selectedEmoji}
+          <span style={{ fontSize: '0.65rem', color: '#8A9BB5' }}>▼</span>
+        </button>
+        {pickerOpen && (
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8,
+            background: '#080C14', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 10, padding: 10, maxWidth: 310,
+          }}>
+            {PICKER_EMOJIS.map(e => (
+              <button
+                key={e}
+                onClick={() => { setSelectedEmoji(e); setPickerOpen(false); }}
+                style={{
+                  background: e === selectedEmoji ? 'rgba(201,168,76,0.2)' : 'transparent',
+                  border: 'none', cursor: 'pointer',
+                  fontSize: '1.2rem', padding: 5, borderRadius: 6,
+                }}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Name + max + buttons */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          ref={labelRef}
+          value={label}
+          onChange={e => setLabel(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') setOpen(false); }}
+          placeholder="Category name…"
+          style={{
+            flex: 1, background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(201,168,76,0.25)',
+            borderRadius: 8, padding: '9px 12px',
+            color: '#F5F0E8', fontSize: '0.875rem', outline: 'none',
+          }}
+        />
+        <input
+          type="number"
+          value={maxVal}
+          onChange={e => setMaxVal(e.target.value)}
+          placeholder="Max £"
+          title="Slider max value (£)"
+          style={{
+            width: 80, background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(201,168,76,0.25)',
+            borderRadius: 8, padding: '9px 10px',
+            color: '#F5F0E8', fontSize: '0.875rem', outline: 'none',
+          }}
+        />
+        <button
+          onClick={submit}
+          style={{
+            background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+            color: '#080C14', border: 'none', borderRadius: 8,
+            padding: '9px 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem',
+          }}
+        >
+          Add
+        </button>
+        <button
+          onClick={() => setOpen(false)}
+          style={{
+            background: 'transparent', border: 'none',
+            color: '#8A9BB5', cursor: 'pointer', padding: '9px 6px', fontSize: '1rem',
+          }}
+        >
+          ✕
+        </button>
+      </div>
     </div>
   );
 }
 
-// ─── Floating save ────────────────────────────────────────────────────────────
+// ─── Floating save bar ────────────────────────────────────────────────────────
 
-function FloatingSave({ visible, onSave }) {
+function FloatingSaveBar({ visible, onSave, onDiscard }) {
   return (
     <div style={{
-      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
-      transform: visible ? 'translateY(0) scale(1)' : 'translateY(80px) scale(0.9)',
-      opacity: visible ? 1 : 0,
-      transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-      pointerEvents: visible ? 'auto' : 'none',
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9998,
+      background: '#0D1117',
+      borderTop: '1px solid rgba(201,168,76,0.2)',
+      padding: '16px 32px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      transform: visible ? 'translateY(0)' : 'translateY(100%)',
+      transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+      boxShadow: '0 -8px 32px rgba(0,0,0,0.35)',
     }}>
-      <button
-        onClick={onSave}
-        style={{
-          background: 'linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)',
-          color: '#080C14', border: 'none', borderRadius: 50,
-          padding: '13px 28px', fontSize: '0.95rem', fontWeight: 700,
-          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-          boxShadow: '0 8px 32px rgba(201,168,76,0.45), 0 0 0 1px rgba(201,168,76,0.2)',
-        }}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20,6 9,17 4,12" />
-        </svg>
-        Save changes
-      </button>
+      <span style={{ color: '#8A9BB5', fontSize: '0.875rem' }}>
+        You have unsaved changes
+      </span>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button
+          onClick={onDiscard}
+          style={{
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: '#8A9BB5', borderRadius: 10,
+            padding: '9px 20px', fontWeight: 600,
+            cursor: 'pointer', fontSize: '0.875rem',
+            transition: 'border-color 150ms, color 150ms',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; e.currentTarget.style.color = '#F5F0E8'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#8A9BB5'; }}
+        >
+          Discard
+        </button>
+        <button
+          onClick={onSave}
+          style={{
+            background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+            color: '#080C14', border: 'none', borderRadius: 10,
+            padding: '9px 24px', fontWeight: 700,
+            cursor: 'pointer', fontSize: '0.875rem',
+          }}
+        >
+          Save Budget
+        </button>
+      </div>
     </div>
   );
 }
@@ -474,21 +737,68 @@ function FloatingSave({ visible, onSave }) {
 function Toast({ show }) {
   return (
     <div style={{
-      position: 'fixed', bottom: 88, right: 24, zIndex: 9998,
-      background: '#0D1117', border: '1px solid rgba(0,212,160,0.3)',
+      position: 'fixed', top: 24, right: 24, zIndex: 9999,
+      background: '#0D1117',
+      border: '1px solid rgba(201,168,76,0.3)',
       borderRadius: 12, padding: '12px 20px',
       display: 'flex', alignItems: 'center', gap: 8,
       boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-      transform: show ? 'translateY(0)' : 'translateY(16px)',
+      transform: show ? 'translateY(0)' : 'translateY(-20px)',
       opacity: show ? 1 : 0,
       transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
       pointerEvents: 'none',
     }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00D4A0"
-        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="20,6 9,17 4,12" />
       </svg>
       <span style={{ color: '#F5F0E8', fontSize: '0.875rem', fontWeight: 600 }}>Budget saved ✓</span>
+    </div>
+  );
+}
+
+// ─── Tips card ────────────────────────────────────────────────────────────────
+
+function TipsCard() {
+  const [open, setOpen] = useState(false);
+  const tips = [
+    'The 50/30/20 rule: 50% needs, 30% wants, 20% savings',
+    'Your housing costs should ideally be under 35% of take-home pay',
+    'Small subscriptions add up — review them monthly',
+  ];
+  return (
+    <div style={{
+      background: 'rgba(201,168,76,0.04)',
+      border: '1px solid rgba(201,168,76,0.15)',
+      borderRadius: 16, overflow: 'hidden',
+      marginTop: 32, marginBottom: 80,
+    }}>
+      <button
+        onClick={() => setOpen(p => !p)}
+        style={{
+          width: '100%', background: 'none', border: 'none',
+          cursor: 'pointer', padding: '16px 20px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          color: '#F5F0E8',
+        }}
+      >
+        <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>💡 Budget Tips</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="#8A9BB5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.25s' }}>
+          <polyline points="6,9 12,15 18,9" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {tips.map((tip, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ color: '#C9A84C', fontWeight: 700, flexShrink: 0, marginTop: 1 }}>·</span>
+              <span style={{ color: '#8A9BB5', fontSize: '0.875rem', lineHeight: 1.55 }}>{tip}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -505,12 +815,16 @@ export default function BudgetPage() {
   const [unsaved,        setUnsaved]        = useState(false);
   const [showToast,      setShowToast]      = useState(false);
   const [loading,        setLoading]        = useState(true);
-  const isFirstLoad = useRef(true);
 
-  function buildActuals(catBreakdown) {
-    if (!catBreakdown) return;
+  const isFirstLoad    = useRef(true);
+  const suppressUnsaved = useRef(false);
+  const savedStateRef  = useRef(null);
+  const incomePromptRef = useRef(null);
+
+  function buildActuals(cb) {
+    if (!cb) return;
     const map = {};
-    const m = (key, id) => { if (catBreakdown[key]) map[id] = catBreakdown[key].total || 0; };
+    const m = (key, id) => { if (cb[key]) map[id] = cb[key].total || 0; };
     m('Groceries',               'groceries');
     m('Eating Out',              'eating_out');
     m('Travel & Transport',      'transport');
@@ -524,97 +838,175 @@ export default function BudgetPage() {
   }
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('sf_budget');
-      if (saved) {
-        const b = JSON.parse(saved);
-        setIncome(b.income || '');
-        setBudgets(b.categories || {});
-        setCustomFixed(b.customFixed || []);
-        setCustomVariable(b.customVariable || []);
-      }
-    } catch (_) {}
+    async function load() {
+      let loaded = false;
+      try {
+        const res = await fetch('/api/budget');
+        if (res.ok) {
+          const { budget } = await res.json();
+          if (budget) {
+            const inc = budget.monthlyIncome ? String(budget.monthlyIncome) : '';
+            const cats = budget.categories || {};
+            const cf = cats._customFixed || [];
+            const cv = cats._customVariable || [];
+            const pureCats = { ...cats };
+            delete pureCats._customFixed;
+            delete pureCats._customVariable;
+            setIncome(inc);
+            setBudgets(pureCats);
+            setCustomFixed(cf);
+            setCustomVariable(cv);
+            savedStateRef.current = { income: inc, budgets: pureCats, customFixed: cf, customVariable: cv };
+            loaded = true;
+          }
+        }
+      } catch (_) {}
 
-    fetch('/api/statements')
-      .then(r => r.json())
-      .then(async ({ statements: list }) => {
+      if (!loaded) {
+        try {
+          const saved = localStorage.getItem('sf_budget');
+          if (saved) {
+            const b = JSON.parse(saved);
+            const inc = b.income || '';
+            const cats = b.categories || {};
+            const cf = b.customFixed || [];
+            const cv = b.customVariable || [];
+            setIncome(inc);
+            setBudgets(cats);
+            setCustomFixed(cf);
+            setCustomVariable(cv);
+            savedStateRef.current = { income: inc, budgets: cats, customFixed: cf, customVariable: cv };
+          }
+        } catch (_) {}
+      }
+
+      try {
+        const r2 = await fetch('/api/statements');
+        const { statements: list } = await r2.json();
         if (list && list.length > 0) {
           setHasStatements(true);
-          try {
-            const res = await fetch('/api/statements/' + list[0].id);
-            const { statement } = await res.json();
-            if (statement && statement.rawData && statement.rawData.categoryBreakdown) {
-              buildActuals(statement.rawData.categoryBreakdown);
-            }
-          } catch (_) {}
+          const r3 = await fetch('/api/statements/' + list[0].id);
+          const { statement } = await r3.json();
+          if (statement?.rawData?.categoryBreakdown) {
+            buildActuals(statement.rawData.categoryBreakdown);
+          }
         }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      } catch (_) {}
+
+      setLoading(false);
+    }
+    load();
   }, []);
 
   useEffect(() => {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
+    if (suppressUnsaved.current) return;
     setUnsaved(true);
   }, [budgets, income, customFixed, customVariable]);
 
-  const save = useCallback(() => {
+  const save = useCallback(async () => {
+    const categories = {
+      ...budgets,
+      _customFixed:    customFixed,
+      _customVariable: customVariable,
+    };
+    try {
+      await fetch('/api/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monthlyIncome: parseFloat(income) || null, categories }),
+      });
+    } catch (_) {}
     try {
       localStorage.setItem('sf_budget', JSON.stringify({
         income, categories: budgets, customFixed, customVariable,
       }));
     } catch (_) {}
+    savedStateRef.current = {
+      income,
+      budgets: { ...budgets },
+      customFixed: [...customFixed],
+      customVariable: [...customVariable],
+    };
     setUnsaved(false);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2200);
   }, [income, budgets, customFixed, customVariable]);
 
+  const discard = useCallback(() => {
+    suppressUnsaved.current = true;
+    const s = savedStateRef.current;
+    if (s) {
+      setIncome(s.income);
+      setBudgets({ ...s.budgets });
+      setCustomFixed([...s.customFixed]);
+      setCustomVariable([...s.customVariable]);
+    }
+    setUnsaved(false);
+    setTimeout(() => { suppressUnsaved.current = false; }, 200);
+  }, []);
+
   const allFixed    = useMemo(() => [...FIXED,    ...customFixed],    [customFixed]);
   const allVariable = useMemo(() => [...VARIABLE, ...customVariable], [customVariable]);
 
   const totalBudgeted = useMemo(() =>
-    [...allFixed, ...allVariable].reduce((s, c) => s + (parseFloat(budgets[c.id]) || 0), 0),
+    [...allFixed, ...allVariable].reduce((s, c) => s + (Number(budgets[c.id]) || 0), 0),
     [allFixed, allVariable, budgets]
   );
 
+  const totalFixed    = useMemo(() => sectionTotal(allFixed,    budgets), [allFixed,    budgets]);
+  const totalVariable = useMemo(() => sectionTotal(
+    allVariable.filter(c => c.id !== 'savings'), budgets
+  ), [allVariable, budgets]);
+  const totalSavings  = Number(budgets['savings']) || 0;
+
   const incomeNum = parseFloat(income) || 0;
-  const remaining = incomeNum - totalBudgeted;
+  const allocPct  = incomeNum > 0 ? Math.round((totalBudgeted / incomeNum) * 100) : 0;
+
+  const score = useMemo(() =>
+    calcHealthScore(incomeNum, [...allFixed, ...allVariable], budgets, totalBudgeted),
+    [incomeNum, allFixed, allVariable, budgets, totalBudgeted]
+  );
 
   function setBudgetFor(id, val) {
     setBudgets(prev => ({ ...prev, [id]: val }));
   }
 
-  function addCustom(section, label) {
-    const colors = ['#6366f1', '#14b8a6', '#f97316', '#84cc16', '#e879f9', '#22d3ee'];
-    const cat = {
-      id: 'custom_' + Date.now(),
-      label,
-      color: colors[Math.floor(Math.random() * colors.length)],
-    };
+  function handleSetIncome(val) {
+    setIncome(String(val));
+  }
+
+  function addCustom(section, { emoji, label, max }) {
+    const cat = { id: 'custom_' + Date.now(), emoji, label, max };
     if (section === 'fixed') setCustomFixed(p => [...p, cat]);
     else setCustomVariable(p => [...p, cat]);
+  }
+
+  function scrollToIncomePrompt() {
+    if (incomePromptRef.current) {
+      incomePromptRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const inp = incomePromptRef.current.querySelector('input');
+      if (inp) setTimeout(() => inp.focus(), 400);
+    }
   }
 
   if (loading) {
     return (
       <DashboardLayout title="Budget">
         <style>{`@keyframes sf-pulse{0%,100%{opacity:1}50%{opacity:0.35}}`}</style>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-            {[0, 1, 2].map(i => (
-              <div key={i} style={{
-                flex: 1, height: 130, background: '#0D1117',
-                border: '1px solid rgba(201,168,76,0.1)', borderRadius: 16,
-                animation: 'sf-pulse 1.6s ease-in-out infinite',
-                animationDelay: (i * 0.12) + 's',
-              }} />
-            ))}
-          </div>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          <div style={{
+            height: 268, background: '#0D1117',
+            border: '1px solid rgba(201,168,76,0.08)',
+            borderRadius: 20, marginBottom: 32,
+            animation: 'sf-pulse 1.6s ease-in-out infinite',
+          }} />
           {[0, 1, 2, 3, 4, 5].map(i => (
             <div key={i} style={{
-              height: 72, background: '#0D1117',
-              border: '1px solid rgba(201,168,76,0.08)', borderRadius: 12,
-              marginBottom: 6, animation: 'sf-pulse 1.6s ease-in-out infinite',
+              height: 96, background: '#0D1117',
+              border: '1px solid rgba(201,168,76,0.06)',
+              borderRadius: 16, marginBottom: 8,
+              animation: 'sf-pulse 1.6s ease-in-out infinite',
               animationDelay: (i * 0.08) + 's',
             }} />
           ))}
@@ -630,86 +1022,129 @@ export default function BudgetPage() {
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
         input[type=number] { -moz-appearance: textfield; }
+
+        .sf-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 100%;
+          height: 6px;
+          border-radius: 3px;
+          outline: none;
+          cursor: pointer;
+          border: none;
+          display: block;
+        }
+        .sf-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #C9A84C, #E8C97A);
+          cursor: pointer;
+          box-shadow: 0 0 8px rgba(201,168,76,0.55), 0 2px 4px rgba(0,0,0,0.3);
+          transition: box-shadow 0.15s, transform 0.15s;
+        }
+        .sf-slider::-webkit-slider-thumb:hover {
+          box-shadow: 0 0 18px rgba(201,168,76,0.75), 0 2px 4px rgba(0,0,0,0.3);
+          transform: scale(1.15);
+        }
+        .sf-slider::-webkit-slider-thumb:active {
+          transform: scale(1.25);
+        }
+        .sf-slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #C9A84C, #E8C97A);
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 0 8px rgba(201,168,76,0.55);
+        }
+        .sf-slider::-webkit-slider-runnable-track {
+          border-radius: 3px;
+          height: 6px;
+        }
+        .sf-slider::-moz-range-track {
+          height: 6px;
+          border-radius: 3px;
+          background: transparent;
+        }
       `}</style>
 
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ color: '#F5F0E8', fontSize: '1.8rem', fontWeight: 700, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-            Budget
-          </h1>
-          <p style={{ color: '#8A9BB5', margin: 0, fontSize: '0.9rem' }}>
-            Set monthly spending limits by category
-          </p>
-        </div>
+        <HeroCard
+          incomeNum={incomeNum}
+          totalBudgeted={totalBudgeted}
+          totalFixed={totalFixed}
+          totalVariable={totalVariable}
+          totalSavings={totalSavings}
+          allocPct={allocPct}
+          score={score}
+          onSetIncome={handleSetIncome}
+          onScrollToIncome={scrollToIncomePrompt}
+        />
 
-        {/* Summary cards */}
-        <div style={{ display: 'flex', gap: 14, marginBottom: 40, flexWrap: 'wrap' }}>
-          <IncomeCard income={income} onSave={v => setIncome(v)} />
-          <BudgetedCard totalBudgeted={totalBudgeted} incomeNum={incomeNum} />
-          <RemainingCard remaining={remaining} incomeNum={incomeNum} />
-        </div>
+        {incomeNum === 0 && (
+          <div ref={incomePromptRef}>
+            <IncomePromptCard onSet={handleSetIncome} />
+          </div>
+        )}
 
-        {/* No-statements notice */}
         {!hasStatements && (
           <div style={{
-            background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.12)',
-            borderRadius: 12, padding: '14px 20px', marginBottom: 24,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+            background: 'rgba(201,168,76,0.04)',
+            border: '1px solid rgba(201,168,76,0.12)',
+            borderRadius: 12, padding: '14px 20px', marginBottom: 28,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 12,
           }}>
             <span style={{ color: '#8A9BB5', fontSize: '0.875rem' }}>
-              Upload a statement to see your actual spend vs budget
+              Upload a bank statement to see your actual spend vs budget
             </span>
             <a href="/statements" style={{
               color: '#C9A84C', fontWeight: 600, fontSize: '0.82rem',
-              textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5,
+              textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4,
             }}>
-              Upload Statement
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12,5 19,12 12,19" />
-              </svg>
+              Upload Statement →
             </a>
           </div>
         )}
 
-        {/* Fixed Costs */}
-        <SectionHeader title="Fixed Costs" cats={allFixed} budgets={budgets} />
+        {/* Fixed costs */}
+        <SectionHeader emoji="🏠" title="Fixed Costs" cats={allFixed} budgets={budgets} incomeNum={incomeNum} />
         {allFixed.map(cat => (
-          <CategoryRow
+          <CategoryCard
             key={cat.id}
             cat={cat}
-            budget={budgets[cat.id] || ''}
+            budget={budgets[cat.id] || 0}
             actual={actuals[cat.id]}
             hasStatements={hasStatements}
             onChange={val => setBudgetFor(cat.id, val)}
-            onBlur={save}
           />
         ))}
-        <AddCategoryButton onAdd={label => addCustom('fixed', label)} />
+        <AddCategoryForm onAdd={item => addCustom('fixed', item)} />
 
-        {/* Variable Costs */}
         <div style={{ marginTop: 40 }} />
-        <SectionHeader title="Variable Costs" cats={allVariable} budgets={budgets} />
+
+        {/* Variable costs */}
+        <SectionHeader emoji="🔄" title="Variable Costs" cats={allVariable} budgets={budgets} incomeNum={incomeNum} />
         {allVariable.map(cat => (
-          <CategoryRow
+          <CategoryCard
             key={cat.id}
             cat={cat}
-            budget={budgets[cat.id] || ''}
+            budget={budgets[cat.id] || 0}
             actual={actuals[cat.id]}
             hasStatements={hasStatements}
             onChange={val => setBudgetFor(cat.id, val)}
-            onBlur={save}
           />
         ))}
-        <AddCategoryButton onAdd={label => addCustom('variable', label)} />
+        <AddCategoryForm onAdd={item => addCustom('variable', item)} />
 
-        <div style={{ height: 80 }} />
+        <TipsCard />
       </div>
 
-      <FloatingSave visible={unsaved} onSave={save} />
+      <FloatingSaveBar visible={unsaved} onSave={save} onDiscard={discard} />
       <Toast show={showToast} />
     </DashboardLayout>
   );
