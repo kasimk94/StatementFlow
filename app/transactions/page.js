@@ -184,8 +184,12 @@ export default function TransactionsPage() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
         }
+        .sf-tx-row:hover {
+          background: rgba(201,168,76,0.06) !important;
+        }
         .sf-tx-row:hover td {
-          background: rgba(201,168,76,0.03) !important;
+          background: rgba(201,168,76,0.06) !important;
+          color: #F5F0E8 !important;
         }
       `}</style>
 

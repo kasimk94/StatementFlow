@@ -232,7 +232,7 @@ export default function ReportsPage() {
             </div>
 
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={barData} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+              <BarChart data={barData} margin={{ top: 4, right: 8, left: -8, bottom: 0 }} barCategoryGap="20%" barGap={4}>
                 <defs>
                   <linearGradient id="spentGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#EF4444" />
@@ -264,8 +264,8 @@ export default function ReportsPage() {
                     color: '#F5F0E8',
                   }}
                 />
-                <Bar dataKey="income" name="Money In" fill="url(#incomeGrad)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                <Bar dataKey="spent" name="Money Out" fill="url(#spentGrad)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                <Bar dataKey="income" name="Money In" fill="url(#incomeGrad)" radius={[4, 4, 0, 0]} barSize={60} />
+                <Bar dataKey="spent" name="Money Out" fill="url(#spentGrad)" radius={[4, 4, 0, 0]} barSize={60} />
               </BarChart>
             </ResponsiveContainer>
           </div>
