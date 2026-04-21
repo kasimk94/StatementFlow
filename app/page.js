@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import UploadZone from "../components/UploadZone";
 import Dashboard from "../components/Dashboard";
 import Navbar from "../components/Navbar";
@@ -125,6 +126,7 @@ export default function Home() {
   const pendingDataRef = useRef(null);
 
   const { data: session } = useSession();
+  const router = useRouter();
 
   const handleCheckout = useCallback(async (plan) => {
     if (!session) { window.location.href = "/signup"; return; }
@@ -235,6 +237,15 @@ export default function Home() {
     const data = pendingDataRef.current;
     if (!data) return;
     pendingDataRef.current = null;
+    setLoading(false); setApiDone(false);
+
+    // Logged-in users with a saved statement → go straight to dashboard page
+    if (session && data.statementId) {
+      router.push(`/dashboard?statementId=${data.statementId}`);
+      return;
+    }
+
+    // Not logged in (or save failed) → show dashboard inline on this page
     setTransactions(data.transactions);
     setParseResult({
       confidence:           data.confidence,
@@ -254,7 +265,6 @@ export default function Home() {
       realSpending:         data.realSpending ?? null,
       validation:           data.validation ?? null,
     });
-    setLoading(false); setApiDone(false);
     window.scrollTo(0, 0);
   }
 

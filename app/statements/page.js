@@ -378,7 +378,7 @@ export default function StatementsPage() {
                 }}>
                   {/* View Dashboard */}
                   <Link
-                    href={`/dashboard?id=${id}`}
+                    href={`/dashboard?statementId=${id}`}
                     style={{
                       background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
                       color: "#080C14",
