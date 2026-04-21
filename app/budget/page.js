@@ -71,7 +71,7 @@ function scoreInfo(s) {
 // ─── Donut arc chart ──────────────────────────────────────────────────────────
 
 function DonutChart({ pct }) {
-  const size = 200;
+  const size = 220;
   const stroke = 18;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
@@ -109,7 +109,7 @@ function DonutChart({ pct }) {
       }}>
         <span style={{
           color: isOver ? '#EF4444' : '#F5F0E8',
-          fontSize: '2.2rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em',
+          fontSize: '2.5rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em',
         }}>
           {Math.round(pct)}%
         </span>
@@ -121,8 +121,13 @@ function DonutChart({ pct }) {
 
 // ─── Health score ─────────────────────────────────────────────────────────────
 
-function HealthScore({ score }) {
-  const { label, color } = scoreInfo(score);
+function HealthScore({ score, incomeNum }) {
+  const notStarted = incomeNum === 0;
+  const { label, color } = notStarted
+    ? { label: 'Set income to begin', color: '#8A9BB5' }
+    : scoreInfo(score);
+  const barWidth = notStarted ? 0 : score;
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 6,
@@ -140,17 +145,17 @@ function HealthScore({ score }) {
         fontSize: '2.8rem', fontWeight: 700, color: '#C9A84C',
         lineHeight: 1, letterSpacing: '-0.04em',
       }}>
-        {score}
+        {notStarted ? '—' : score}
       </span>
       <span style={{ fontSize: '0.85rem', fontWeight: 600, color }}>
         {label}
       </span>
       <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginTop: 2 }}>
         <div style={{
-          width: score + '%', height: '100%', background: color,
+          width: barWidth + '%', height: '100%', background: color,
           borderRadius: 999,
           transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
-          boxShadow: '0 0 8px ' + color + '88',
+          boxShadow: notStarted ? 'none' : ('0 0 8px ' + color + '88'),
         }} />
       </div>
     </div>
@@ -181,7 +186,7 @@ function EditableIncomeStat({ incomeNum, onSave }) {
       onClick={!editing ? startEdit : undefined}
       style={{
         flex: 1, textAlign: 'center', cursor: 'pointer',
-        padding: '10px 8px',
+        padding: '12px 12px',
         background: 'rgba(201,168,76,0.04)', borderRadius: 10,
         transition: 'background 150ms',
       }}
@@ -209,7 +214,7 @@ function EditableIncomeStat({ incomeNum, onSave }) {
         </div>
       ) : (
         <div style={{
-          fontSize: '1rem', fontWeight: 700,
+          fontSize: '1.1rem', fontWeight: 700,
           color: incomeNum > 0 ? '#C9A84C' : '#8A9BB5',
           letterSpacing: '-0.02em',
         }}>
@@ -255,15 +260,15 @@ function HeroCard({
     <div style={{
       background: '#0D1117',
       border: '1px solid rgba(201,168,76,0.15)',
-      borderRadius: 20, padding: 32, marginBottom: 32,
+      borderRadius: 20, padding: 40, marginBottom: 32,
       display: 'flex', gap: 32, flexWrap: 'wrap',
     }}>
       {/* Left ~60% */}
       <div style={{ flex: '0 0 58%', minWidth: 280 }}>
         {/* Donut + health score row */}
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', marginBottom: 24 }}>
           <DonutChart pct={allocPct} />
-          <HealthScore score={score} />
+          <HealthScore score={score} incomeNum={incomeNum} />
         </div>
         {/* Mini stats row */}
         <div style={{
@@ -274,17 +279,17 @@ function HeroCard({
         }}>
           <EditableIncomeStat incomeNum={incomeNum} onSave={onSetIncome} />
           <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
-          <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', borderRadius: 10 }}>
+          <div style={{ flex: 1, textAlign: 'center', padding: '12px 12px', borderRadius: 10 }}>
             <div style={{ fontSize: '0.68rem', color: '#8A9BB5', marginBottom: 4 }}>📊 Total Budgeted</div>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#C9A84C', letterSpacing: '-0.02em' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#C9A84C', letterSpacing: '-0.02em' }}>
               {fmt(totalBudgeted)}
             </div>
           </div>
           <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
-          <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', borderRadius: 10 }}>
+          <div style={{ flex: 1, textAlign: 'center', padding: '12px 12px', borderRadius: 10 }}>
             <div style={{ fontSize: '0.68rem', color: '#8A9BB5', marginBottom: 4 }}>✅ Left to Allocate</div>
             <div style={{
-              fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.02em',
+              fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em',
               color: incomeNum > 0 ? (isOver ? '#EF4444' : '#10B981') : '#8A9BB5',
             }}>
               {incomeNum > 0 ? fmt(Math.abs(remaining)) : '—'}
@@ -336,9 +341,9 @@ function IncomePromptCard({ onSet }) {
     <div style={{
       background: 'rgba(201,168,76,0.06)',
       border: '1px solid rgba(201,168,76,0.3)',
-      borderRadius: 16, padding: 24, marginBottom: 32,
+      borderRadius: 16, padding: 32, marginBottom: 32,
     }}>
-      <div style={{ color: '#F5F0E8', fontSize: '1.1rem', fontWeight: 600, marginBottom: 6 }}>
+      <div style={{ color: '#F5F0E8', fontSize: '1.2rem', fontWeight: 600, marginBottom: 6 }}>
         First, what&apos;s your monthly take-home pay?
       </div>
       <div style={{ color: '#8A9BB5', fontSize: '0.85rem', marginBottom: 20 }}>
@@ -371,7 +376,7 @@ function IncomePromptCard({ onSet }) {
           style={{
             background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
             color: '#080C14', border: 'none', borderRadius: 12,
-            padding: '14px 24px', fontWeight: 700, fontSize: '0.95rem',
+            padding: '14px 28px', fontWeight: 700, fontSize: '1rem',
             cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
           }}
         >
@@ -414,6 +419,7 @@ function SectionHeader({ emoji, title, cats, budgets, incomeNum }) {
 function CategoryCard({ cat, budget, actual, hasStatements, onChange }) {
   const [editingAmount, setEditingAmount] = useState(false);
   const [draftAmount, setDraftAmount] = useState('');
+  const [hovered, setHovered] = useState(false);
   const amountRef = useRef(null);
 
   const max = cat.max || 1000;
@@ -448,15 +454,19 @@ function CategoryCard({ cat, budget, actual, hasStatements, onChange }) {
   }
 
   return (
-    <div style={{
-      background: '#0D1117',
-      border: '1px solid rgba(201,168,76,0.1)',
-      borderRadius: 16, padding: '20px 24px', marginBottom: 8,
-      transition: 'border-color 150ms ease',
-    }}>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: '#0D1117',
+        border: '1px solid ' + (hovered ? 'rgba(201,168,76,0.3)' : 'rgba(201,168,76,0.1)'),
+        borderRadius: 16, padding: '20px 24px', marginBottom: 10,
+        transition: 'border-color 150ms ease',
+      }}
+    >
       {/* Top row: emoji + name | £amount */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <span style={{ color: '#F5F0E8', fontSize: '0.95rem', fontWeight: 500 }}>
+        <span style={{ color: '#F5F0E8', fontSize: '1rem', fontWeight: 500 }}>
           {cat.emoji} {cat.label}
         </span>
         {editingAmount ? (
@@ -486,7 +496,7 @@ function CategoryCard({ cat, budget, actual, hasStatements, onChange }) {
             title="Click to type a value"
             style={{
               color: budgetNum > 0 ? '#C9A84C' : '#8A9BB5',
-              fontSize: '1.2rem', fontWeight: 700,
+              fontSize: '1.1rem', fontWeight: 600,
               letterSpacing: '-0.02em', cursor: 'pointer',
             }}
           >
@@ -994,7 +1004,7 @@ export default function BudgetPage() {
     return (
       <DashboardLayout title="Budget">
         <style>{`@keyframes sf-pulse{0%,100%{opacity:1}50%{opacity:0.35}}`}</style>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto' }}>
           <div style={{
             height: 268, background: '#0D1117',
             border: '1px solid rgba(201,168,76,0.08)',
@@ -1027,51 +1037,55 @@ export default function BudgetPage() {
           -webkit-appearance: none;
           appearance: none;
           width: 100%;
-          height: 6px;
-          border-radius: 3px;
+          height: 8px;
+          border-radius: 4px;
           outline: none;
           cursor: pointer;
           border: none;
           display: block;
+          padding: 6px 0;
+          box-sizing: content-box;
         }
         .sf-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 20px;
-          height: 20px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
           background: linear-gradient(135deg, #C9A84C, #E8C97A);
-          cursor: pointer;
-          box-shadow: 0 0 8px rgba(201,168,76,0.55), 0 2px 4px rgba(0,0,0,0.3);
+          cursor: grab;
+          box-shadow: 0 0 0 4px rgba(201,168,76,0.3), 0 0 10px rgba(201,168,76,0.55), 0 2px 4px rgba(0,0,0,0.3);
           transition: box-shadow 0.15s, transform 0.15s;
         }
         .sf-slider::-webkit-slider-thumb:hover {
-          box-shadow: 0 0 18px rgba(201,168,76,0.75), 0 2px 4px rgba(0,0,0,0.3);
-          transform: scale(1.15);
+          box-shadow: 0 0 0 6px rgba(201,168,76,0.35), 0 0 20px rgba(201,168,76,0.75), 0 2px 4px rgba(0,0,0,0.3);
+          transform: scale(1.1);
         }
         .sf-slider::-webkit-slider-thumb:active {
-          transform: scale(1.25);
+          cursor: grabbing;
+          transform: scale(1.2);
+          box-shadow: 0 0 0 8px rgba(201,168,76,0.25), 0 0 24px rgba(201,168,76,0.8), 0 2px 4px rgba(0,0,0,0.3);
         }
         .sf-slider::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
           background: linear-gradient(135deg, #C9A84C, #E8C97A);
-          cursor: pointer;
+          cursor: grab;
           border: none;
-          box-shadow: 0 0 8px rgba(201,168,76,0.55);
+          box-shadow: 0 0 0 4px rgba(201,168,76,0.3), 0 0 10px rgba(201,168,76,0.55);
         }
         .sf-slider::-webkit-slider-runnable-track {
-          border-radius: 3px;
-          height: 6px;
+          border-radius: 4px;
+          height: 8px;
         }
         .sf-slider::-moz-range-track {
-          height: 6px;
-          border-radius: 3px;
+          height: 8px;
+          border-radius: 4px;
           background: transparent;
         }
       `}</style>
 
-      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto' }}>
 
         <HeroCard
           incomeNum={incomeNum}
@@ -1086,10 +1100,12 @@ export default function BudgetPage() {
         />
 
         {incomeNum === 0 && (
-          <div ref={incomePromptRef}>
+          <div ref={incomePromptRef} style={{ marginTop: 24 }}>
             <IncomePromptCard onSet={handleSetIncome} />
           </div>
         )}
+
+        <div style={{ marginTop: incomeNum === 0 ? 24 : 0 }} />
 
         {!hasStatements && (
           <div style={{
