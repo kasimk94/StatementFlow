@@ -71,8 +71,8 @@ function scoreInfo(s) {
 // ─── Donut arc chart ──────────────────────────────────────────────────────────
 
 function DonutChart({ pct }) {
-  const size = 220;
-  const stroke = 18;
+  const size = 180;
+  const stroke = 14;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const capped = Math.min(pct, 100);
@@ -82,7 +82,7 @@ function DonutChart({ pct }) {
   return (
     <div style={{
       position: 'relative', width: size, height: size, flexShrink: 0,
-      filter: 'drop-shadow(0 0 20px rgba(201,168,76,0.2))',
+      filter: 'drop-shadow(0 0 16px rgba(201,168,76,0.25))',
     }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <defs>
@@ -93,7 +93,7 @@ function DonutChart({ pct }) {
         </defs>
         <circle
           cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={stroke}
+          fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={stroke}
         />
         <circle
           cx={size / 2} cy={size / 2} r={r}
@@ -112,11 +112,11 @@ function DonutChart({ pct }) {
       }}>
         <span style={{
           color: isOver ? '#EF4444' : '#F5F0E8',
-          fontSize: '2.8rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em',
+          fontSize: '2.2rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em',
         }}>
           {Math.round(pct)}%
         </span>
-        <span style={{ color: '#8A9BB5', fontSize: '0.85rem', marginTop: 5 }}>allocated</span>
+        <span style={{ color: '#8A9BB5', fontSize: '0.78rem', marginTop: 4 }}>allocated</span>
       </div>
     </div>
   );
@@ -133,34 +133,33 @@ function HealthScore({ score, incomeNum }) {
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: 8,
+      display: 'flex', flexDirection: 'column', gap: 6,
       background: 'rgba(201,168,76,0.06)',
       border: '1px solid rgba(201,168,76,0.2)',
-      borderRadius: 16, padding: 24,
-      minWidth: 150, flex: 1,
+      borderRadius: 16, padding: 20,
     }}>
       <span style={{
-        fontSize: '0.65rem', fontWeight: 700, color: '#8A9BB5',
+        fontSize: '0.62rem', fontWeight: 700, color: '#8A9BB5',
         letterSpacing: '0.1em', textTransform: 'uppercase',
       }}>
         Budget Health
       </span>
       <span style={{
-        fontSize: '3.5rem', fontWeight: 800, color: '#C9A84C',
+        fontSize: '2.5rem', fontWeight: 800, color: '#C9A84C',
         lineHeight: 1, letterSpacing: '-0.04em',
       }}>
         {notStarted ? '—' : score}
       </span>
-      <span style={{ fontSize: '0.9rem', fontWeight: 600, color }}>
+      <span style={{ fontSize: '0.82rem', fontWeight: 600, color, lineHeight: 1.3 }}>
         {label}
       </span>
-      <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginTop: 4 }}>
+      <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginTop: 6 }}>
         <div style={{
           width: barWidth + '%', height: '100%',
           background: notStarted ? 'transparent' : color,
           borderRadius: 999,
           transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
-          boxShadow: notStarted ? 'none' : ('0 0 8px ' + color + '88'),
+          boxShadow: notStarted ? 'none' : ('0 0 6px ' + color + '88'),
         }} />
       </div>
     </div>
@@ -263,35 +262,60 @@ function HeroCard({
   const remaining = incomeNum - totalBudgeted;
   const isOver = remaining < 0;
 
+  const rightRows = [
+    { emoji: '🏠', label: 'Fixed Costs',    amount: totalFixed    },
+    { emoji: '🔄', label: 'Variable Costs', amount: totalVariable },
+    { emoji: '💾', label: 'Savings',        amount: totalSavings  },
+  ];
+
   return (
     <div style={{
       background: '#0D1117',
       border: '1px solid rgba(201,168,76,0.15)',
-      borderRadius: 20, padding: '40px 48px', marginBottom: 32,
+      borderRadius: 20, padding: '36px 48px', marginBottom: 32,
     }}>
-      {/* Top row: Donut | Health Score | Summary rows */}
-      <div style={{ display: 'flex', gap: 36, alignItems: 'stretch', flexWrap: 'wrap' }}>
-        {/* Donut */}
-        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+      {/* 3-column top row */}
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+
+        {/* Column 1 — Arc chart (200px) */}
+        <div style={{ width: 200, flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
           <DonutChart pct={allocPct} />
         </div>
 
-        {/* Health score */}
-        <HealthScore score={score} incomeNum={incomeNum} />
+        {/* Divider */}
+        <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.06)', margin: '0 32px' }} />
 
-        {/* Summary rows + set income */}
-        <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <SummaryRow emoji="🏠" label="Fixed Costs"    budgeted={totalFixed}    incomeNum={incomeNum} />
-          <SummaryRow emoji="🔄" label="Variable Costs" budgeted={totalVariable} incomeNum={incomeNum} />
-          <SummaryRow emoji="💾" label="Savings"        budgeted={totalSavings}  incomeNum={incomeNum} />
+        {/* Column 2 — Budget Health (180px) */}
+        <div style={{ width: 180, flexShrink: 0 }}>
+          <HealthScore score={score} incomeNum={incomeNum} />
+        </div>
+
+        {/* Divider */}
+        <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.06)', margin: '0 32px' }} />
+
+        {/* Column 3 — Stats + button (flex: 1) */}
+        <div style={{ flex: 1 }}>
+          {rightRows.map((row, i) => (
+            <div
+              key={row.label}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 0',
+                borderBottom: i < rightRows.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+              }}
+            >
+              <span style={{ color: '#8A9BB5', fontSize: '0.9rem' }}>{row.emoji} {row.label}</span>
+              <span style={{ color: '#C9A84C', fontSize: '0.9rem', fontWeight: 600 }}>{fmt(row.amount)}</span>
+            </div>
+          ))}
           {incomeNum === 0 && (
             <button
               onClick={onScrollToIncome}
               style={{
-                marginTop: 16,
+                marginTop: 14,
                 background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
-                color: '#080C14', border: 'none', borderRadius: 12,
-                height: 48, fontWeight: 700, fontSize: '0.9rem',
+                color: '#080C14', border: 'none', borderRadius: 10,
+                height: 44, fontWeight: 700, fontSize: '0.875rem',
                 cursor: 'pointer', width: '100%',
               }}
             >
@@ -301,34 +325,35 @@ function HeroCard({
         </div>
       </div>
 
-      {/* Divider */}
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '28px 0' }} />
-
       {/* Mini stats row */}
-      <div style={{ display: 'flex' }}>
+      <div style={{
+        display: 'flex',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        paddingTop: 20, marginTop: 28,
+      }}>
         <EditableIncomeStat incomeNum={incomeNum} onSave={onSetIncome} />
         <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'stretch', margin: '0 4px' }} />
-        <div style={{ flex: 1, textAlign: 'center', padding: '16px 12px' }}>
+        <div style={{ flex: 1, textAlign: 'center', padding: '8px 12px' }}>
           <div style={{
-            fontSize: '0.75rem', color: '#8A9BB5', marginBottom: 6,
+            fontSize: '0.7rem', color: '#8A9BB5', marginBottom: 5,
             textTransform: 'uppercase', letterSpacing: '0.05em',
           }}>
             📊 Total Budgeted
           </div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#C9A84C', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#C9A84C', letterSpacing: '-0.02em' }}>
             {fmt(totalBudgeted)}
           </div>
         </div>
         <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'stretch', margin: '0 4px' }} />
-        <div style={{ flex: 1, textAlign: 'center', padding: '16px 12px' }}>
+        <div style={{ flex: 1, textAlign: 'center', padding: '8px 12px' }}>
           <div style={{
-            fontSize: '0.75rem', color: '#8A9BB5', marginBottom: 6,
+            fontSize: '0.7rem', color: '#8A9BB5', marginBottom: 5,
             textTransform: 'uppercase', letterSpacing: '0.05em',
           }}>
             ✅ Left to Allocate
           </div>
           <div style={{
-            fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.02em',
+            fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em',
             color: incomeNum > 0 ? (isOver ? '#EF4444' : '#10B981') : '#8A9BB5',
           }}>
             {incomeNum > 0 ? fmt(Math.abs(remaining)) : '—'}
