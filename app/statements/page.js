@@ -377,9 +377,8 @@ export default function StatementsPage() {
                   marginTop: 4,
                 }}>
                   {/* View Dashboard */}
-                  <button
-                    onClick={() => handleViewDashboard(id)}
-                    disabled={viewingId === id}
+                  <Link
+                    href={`/dashboard?id=${id}`}
                     style={{
                       background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
                       color: "#080C14",
@@ -387,13 +386,13 @@ export default function StatementsPage() {
                       fontSize: "0.82rem",
                       padding: "8px 16px",
                       borderRadius: 8,
-                      border: "none",
-                      cursor: viewingId === id ? "default" : "pointer",
-                      opacity: viewingId === id ? 0.7 : 1,
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
                     }}
                   >
-                    {viewingId === id ? "Loading…" : "View Dashboard"}
-                  </button>
+                    View Dashboard
+                  </Link>
 
                   {/* Download Excel (placeholder) */}
                   <button
