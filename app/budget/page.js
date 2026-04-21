@@ -124,27 +124,37 @@ function IncomeCard({ income, onSave }) {
           />
         </div>
       ) : (
-        <div
-          onClick={startEdit}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 4 }}
-          title="Click to edit"
-        >
-          <span style={{ color: '#F5F0E8', fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
-            {num > 0 ? fmt(num) : <span style={{ color: '#8A9BB5' }}>Not set</span>}
-          </span>
-          {/* Pencil icon */}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5"
-            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            style={{ flexShrink: 0, opacity: 0.6 }}>
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-        </div>
-      )}
+        {num > 0 ? (
+          <div
+            onClick={startEdit}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 4 }}
+            title="Click to edit"
+          >
+            <span style={{ color: '#F5F0E8', fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
+              {fmt(num)}
+            </span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ flexShrink: 0, opacity: 0.5 }}>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </div>
+        ) : (
+          <div
+            onClick={startEdit}
+            style={{
+              display: 'inline-flex', alignItems: 'center',
+              background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)',
+              color: '#C9A84C', padding: '8px 16px', borderRadius: 8,
+              fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+              marginBottom: 4, transition: 'all 150ms ease',
+            }}
+          >
+            Click to set income
+          </div>
+        )}
 
-      <div style={{ color: '#8A9BB5', fontSize: '0.8rem', marginTop: 2 }}>
-        {editing ? 'Press Enter or click away to save' : 'Click to edit'}
-      </div>
     </div>
   );
 }
@@ -178,17 +188,20 @@ function BudgetedCard({ totalBudgeted, incomeNum }) {
             {incomeNum > 0 ? `${allocPct}% of income allocated` : 'Set income to see %'}
           </div>
         </div>
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <ProgressRing pct={allocPct} size={68} stroke={5} color={ringColor} />
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.75rem', fontWeight: 700, color: ringColor,
-            transform: 'none',
-          }}>
-            {allocPct}%
+        {incomeNum > 0 ? (
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <ProgressRing pct={allocPct} size={68} stroke={5} color={ringColor} />
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.75rem', fontWeight: 700, color: ringColor,
+            }}>
+              {allocPct}%
+            </div>
           </div>
-        </div>
+        ) : (
+          <span style={{ color: 'rgba(138,155,181,0.4)', fontSize: '2rem', fontWeight: 300 }}>—</span>
+        )}
       </div>
     </div>
   );
@@ -219,18 +232,18 @@ function RemainingCard({ remaining, incomeNum }) {
         Left to Allocate
       </div>
 
-      <div style={{ color: incomeNum > 0 ? color : '#8A9BB5', fontSize: '2rem',
-        fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
-        {incomeNum > 0 ? fmt(Math.abs(remaining)) : '—'}
-      </div>
-
-      <div style={{ color: '#8A9BB5', fontSize: '0.8rem', marginTop: 6 }}>
-        {incomeNum > 0
-          ? isPositive
-            ? 'available to allocate'
-            : 'over your income'
-          : 'Set income above to track'}
-      </div>
+      {incomeNum > 0 ? (
+        <>
+          <div style={{ color, fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            {fmt(Math.abs(remaining))}
+          </div>
+          <div style={{ color: '#8A9BB5', fontSize: '0.8rem', marginTop: 6 }}>
+            {isPositive ? 'available to allocate' : 'over your income'}
+          </div>
+        </>
+      ) : (
+        <span style={{ color: 'rgba(138,155,181,0.4)', fontSize: '2rem', fontWeight: 300 }}>—</span>
+      )}
     </div>
   );
 }
@@ -253,38 +266,43 @@ function CategoryCard({ cat, budget, actual, hasStatements, onChange, onBlur }) 
       background: '#0D1117',
       border: `1px solid ${focused ? 'rgba(201,168,76,0.25)' : 'rgba(201,168,76,0.1)'}`,
       borderRadius: 12,
-      padding: '14px 18px',
+      padding: '20px 20px',
       marginBottom: 6,
       transition: 'border-color 150ms ease',
     }}>
       {/* Main row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {/* Left — dot + name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
           <div style={{ width: 9, height: 9, borderRadius: '50%',
             background: cat.color, flexShrink: 0, boxShadow: `0 0 6px ${cat.color}66` }} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ color: '#F5F0E8', fontSize: '0.875rem', fontWeight: 500,
+            <div style={{ color: '#F5F0E8', fontSize: '0.95rem', fontWeight: 500,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {cat.label}
             </div>
             {hasStatements && actualNum > 0 && (
-              <div style={{ color: '#8A9BB5', fontSize: '0.72rem', marginTop: 1 }}>
+              <div style={{ color: '#8A9BB5', fontSize: '0.72rem', marginTop: 2 }}>
                 Spent {fmtFull(actualNum)} last statement
               </div>
             )}
           </div>
         </div>
 
-        {/* Right — pill input */}
+        {/* Right — input with £ prefix */}
         <div style={{
           display: 'flex', alignItems: 'center',
-          background: focused ? 'rgba(201,168,76,0.1)' : 'rgba(201,168,76,0.05)',
-          border: `1px solid ${isOver && hasBudget ? 'rgba(239,68,68,0.4)' : focused ? 'rgba(201,168,76,0.4)' : 'rgba(201,168,76,0.2)'}`,
-          borderRadius: 50, padding: '6px 14px 6px 12px',
+          background: 'rgba(201,168,76,0.06)',
+          border: `1px solid ${isOver && hasBudget ? 'rgba(239,68,68,0.5)' : focused ? 'rgba(201,168,76,0.5)' : 'rgba(201,168,76,0.25)'}`,
+          borderRadius: 10,
+          boxShadow: focused ? '0 0 0 2px rgba(201,168,76,0.2)' : 'none',
           transition: 'all 150ms ease', flexShrink: 0,
+          width: 140, overflow: 'hidden',
         }}>
-          <span style={{ color: '#C9A84C', fontSize: '0.82rem', fontWeight: 600, marginRight: 4 }}>£</span>
+          <span style={{
+            color: '#C9A84C', fontSize: '0.9rem', fontWeight: 600,
+            paddingLeft: 12, paddingRight: 4, userSelect: 'none',
+          }}>£</span>
           <input
             type="number"
             value={budget}
@@ -294,57 +312,38 @@ function CategoryCard({ cat, budget, actual, hasStatements, onChange, onBlur }) 
             placeholder="0"
             style={{
               background: 'transparent', border: 'none', outline: 'none',
-              color: '#C9A84C', fontSize: '0.9rem', fontWeight: 700,
-              width: 72, textAlign: 'right',
+              color: '#F5F0E8', fontSize: '1rem', fontWeight: 500,
+              flex: 1, padding: '10px 12px 10px 0', textAlign: 'right',
             }}
           />
         </div>
       </div>
 
-      {/* Progress bar — always shown */}
-      <div style={{ marginTop: 10 }}>
-        {hasBudget ? (
-          <>
-            <div style={{ height: 4, background: 'rgba(255,255,255,0.06)',
-              borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{
-                width: pct + '%', height: '100%',
-                background: barColor,
-                borderRadius: 999,
-                transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
-                boxShadow: `0 0 8px ${barColor}66`,
-              }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-              <span style={{ color: isOver ? '#EF4444' : '#8A9BB5', fontSize: '0.7rem' }}>
-                {hasStatements
-                  ? isOver
-                    ? `${fmtFull(actualNum - budgetNum)} over budget`
-                    : `${fmtFull(actualNum)} spent`
-                  : 'No statement data'}
-              </span>
-              <span style={{ color: '#8A9BB5', fontSize: '0.7rem' }}>
-                {fmt(budgetNum)}
-              </span>
-            </div>
-          </>
-        ) : (
-          /* Dashed placeholder bar */
-          <div style={{
-            height: 4, borderRadius: 999,
-            backgroundImage: 'repeating-linear-gradient(90deg, rgba(201,168,76,0.15) 0px, rgba(201,168,76,0.15) 6px, transparent 6px, transparent 12px)',
-            position: 'relative',
-          }}>
-            <span style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              top: 8, fontSize: '0.68rem', color: 'rgba(138,155,181,0.5)',
-              whiteSpace: 'nowrap',
-            }}>
-              Enter an amount to set your budget
-            </span>
+      {/* Progress bar — only shown when budget is set */}
+      {hasBudget && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ height: 4, background: 'rgba(255,255,255,0.06)',
+            borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{
+              width: pct + '%', height: '100%',
+              background: barColor,
+              borderRadius: 999,
+              transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
+              boxShadow: `0 0 8px ${barColor}55`,
+            }} />
           </div>
-        )}
-      </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+            <span style={{ color: isOver ? '#EF4444' : '#8A9BB5', fontSize: '0.72rem' }}>
+              {hasStatements && actualNum > 0
+                ? isOver
+                  ? `${fmtFull(actualNum - budgetNum)} over budget`
+                  : `${fmtFull(actualNum)} spent`
+                : 'No statement data yet'}
+            </span>
+            <span style={{ color: '#8A9BB5', fontSize: '0.72rem' }}>{fmt(budgetNum)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -634,6 +633,7 @@ export default function BudgetPage() {
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
         input[type=number] { -moz-appearance: textfield; }
       `}</style>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
@@ -648,7 +648,7 @@ export default function BudgetPage() {
 
       {/* ── Summary Cards ── */}
       <div style={{
-        display: 'flex', gap: 14, marginBottom: 32, flexWrap: 'wrap',
+        display: 'flex', gap: 14, marginBottom: 40, flexWrap: 'wrap',
       }}>
         <IncomeCard income={income} onSave={v => setIncome(v)} />
         <BudgetedCard totalBudgeted={totalBudgeted} incomeNum={incomeNum} />
@@ -695,6 +695,7 @@ export default function BudgetPage() {
       <AddCategoryButton onAdd={label => addCustomCategory('fixed', label)} />
 
       {/* ── Variable Costs ── */}
+      <div style={{ marginTop: 40 }} />
       <SectionHeader title="Variable Costs" cats={allVariable} budgets={budgets} />
       {allVariable.map(cat => (
         <CategoryCard
@@ -711,6 +712,8 @@ export default function BudgetPage() {
 
       {/* Bottom padding for floating button */}
       <div style={{ height: 80 }} />
+
+      </div>{/* end max-width wrapper */}
 
       {/* Floating save + toast */}
       <FloatingSaveButton visible={unsaved} onSave={save} />
