@@ -124,36 +124,38 @@ function IncomeCard({ income, onSave }) {
           />
         </div>
       ) : (
-        {num > 0 ? (
-          <div
-            onClick={startEdit}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 4 }}
-            title="Click to edit"
-          >
-            <span style={{ color: '#F5F0E8', fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
-              {fmt(num)}
-            </span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ flexShrink: 0, opacity: 0.5 }}>
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </div>
-        ) : (
-          <div
-            onClick={startEdit}
-            style={{
-              display: 'inline-flex', alignItems: 'center',
-              background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)',
-              color: '#C9A84C', padding: '8px 16px', borderRadius: 8,
-              fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
-              marginBottom: 4, transition: 'all 150ms ease',
-            }}
-          >
-            Click to set income
-          </div>
-        )}
+        <>
+          {num > 0 ? (
+            <div
+              onClick={startEdit}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 4 }}
+              title="Click to edit"
+            >
+              <span style={{ color: '#F5F0E8', fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                {fmt(num)}
+              </span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ flexShrink: 0, opacity: 0.5 }}>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </div>
+          ) : (
+            <div
+              onClick={startEdit}
+              style={{
+                display: 'inline-flex', alignItems: 'center',
+                background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)',
+                color: '#C9A84C', padding: '8px 16px', borderRadius: 8,
+                fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                marginBottom: 4, transition: 'all 150ms ease',
+              }}
+            >
+              Click to set income
+            </div>
+          )}
+        </>
 
     </div>
   );
