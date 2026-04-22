@@ -1228,20 +1228,30 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     return null;
   }, [transactions]);
 
-  // ── Summary stats ──
-  const { txIncome, txExpenses, incomeCount, expenseCount } = useMemo(() => {
-    let txIncome = 0, txExpenses = 0, incomeCount = 0, expenseCount = 0;
+  // ── Summary stats — internal transfers excluded from both Money In and Money Out ──
+  // Pattern-based detection catches old saved statements where isInternal flag may not be set
+  const INTERNAL_TRANSFER_RE = /\bflex\b|\bmonzo\s+flex\b|transfer\s+(from|to)\s+pot|pot\s+transfer|\bsavings?\s+pot\b|saving\s+space|spending\s+space|space\s+transfer|transfer\s+(to|from)\s+space/i;
+
+  const { txIncome, txExpenses, internalCreditTotal, internalDebitTotal, incomeCount, expenseCount } = useMemo(() => {
+    let txIncome = 0, txExpenses = 0, internalCreditTotal = 0, internalDebitTotal = 0;
+    let incomeCount = 0, expenseCount = 0;
     for (const t of transactions) {
       if (t.exclude) continue;
-      if (t.amount > 0) { txIncome += t.amount; incomeCount++; }
-      else { txExpenses += Math.abs(t.amount); expenseCount++; }
+      const isInt = t.isInternal || INTERNAL_TRANSFER_RE.test(t.description || "");
+      if (t.amount > 0) {
+        if (isInt) internalCreditTotal += t.amount;
+        else { txIncome += t.amount; incomeCount++; }
+      } else {
+        if (isInt) internalDebitTotal += Math.abs(t.amount);
+        else { txExpenses += Math.abs(t.amount); expenseCount++; }
+      }
     }
-    return { txIncome, txExpenses, incomeCount, expenseCount };
+    return { txIncome, txExpenses, internalCreditTotal, internalDebitTotal, incomeCount, expenseCount };
   }, [transactions]);
 
-  // Use PDF-extracted totals for KPI display when available (FIX 1)
-  const income   = statementIncome   ?? txIncome;
-  const expenses = statementExpenses ?? txExpenses;
+  // Always use transaction-computed clean values so internal transfers are excluded from both cards
+  const income   = txIncome;
+  const expenses = txExpenses;
   const net      = (endBalance !== null) ? endBalance : income - expenses;
 
   // ── Net balance liquidity gauge ──
@@ -1773,7 +1783,11 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         <StatCard
           label="Total Money In"
           value={fmt(income)}
-          sub={`${incomeCount} credit${incomeCount !== 1 ? "s" : ""}`}
+          sub={
+            internalCreditTotal > 0
+              ? `Excl. ${fmt(internalCreditTotal)} internal transfers`
+              : `${incomeCount} credit${incomeCount !== 1 ? "s" : ""}`
+          }
           gradient="linear-gradient(135deg, #061a10 0%, #0a2918 100%)"
           border="1px solid rgba(0,212,160,0.25)"
           shadow="0 0 40px rgba(0,212,160,0.06), inset 0 1px 0 rgba(0,212,160,0.1)"
@@ -1789,8 +1803,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Total Money Out"
           value={fmt(expenses)}
           sub={
-            internalTransferTotal > 0
-              ? `Excl. ${fmt(internalTransferTotal)} internal transfers`
+            internalDebitTotal > 0
+              ? `Excl. ${fmt(internalDebitTotal)} internal transfers`
               : `${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`
           }
           gradient="linear-gradient(135deg, #1a0606 0%, #290a0a 100%)"
