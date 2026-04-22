@@ -21,25 +21,54 @@ const UNKNOWN_CAT = "Unknown ⚠️";
 // Categories that are transfers — excluded from spending donut/percentages
 const TRANSFER_CATS = new Set(["Transfers Sent", "Transfers Received", "Internal Transfer"]);
 
-// Known merchants that look like person names but aren't — prevent false exclusions
-const KNOWN_MERCHANTS_RE = /tesco|asda|sainsbury|morrisons|lidl|aldi|waitrose|amazon|argos|boots|costa|starbucks|mcdonald|greggs|subway|domino|deliveroo|paypal|netflix|spotify|google|apple|currys|ebay|primark|wilko|barclays|natwest|hsbc|monzo|starling|revolut|lloyds|santander|nationwide|halifax|next|marks|primark|superdrug|ikea|asos|boohoo/i;
+// Known merchant terms — bail out of person-name check if matched
+const KNOWN_MERCHANTS_RE = /tesco|asda|sainsbury|morrisons|lidl|aldi|waitrose|amazon|argos|boots|costa|starbucks|mcdonald|greggs|subway|domino|deliveroo|paypal|netflix|spotify|google|apple|currys|ebay|primark|wilko|barclays|natwest|hsbc|starling|revolut|lloyds|santander|nationwide|halifax|next|marks|superdrug|ikea|asos|boohoo|uber|autotrader|paypoint|caffe|pret|nando|wagamama|gym|fitness|pharmacy|dentist|council|insurance|virgin|sky|vodafone|three|talktalk|broadband/i;
 
-function looksLikePersonName(desc) {
-  if (!desc) return false;
-  // Title prefix is a strong signal
-  if (/^(mr\.?\s|mrs\.?\s|ms\.?\s|miss\.?\s|dr\.?\s)/i.test(desc)) return true;
-  const s = desc
+// Common UK first names — first word match is a strong signal of a person name
+const COMMON_FIRST_NAMES = new Set([
+  "kasam","kasim","mohammed","mohammad","muhammad","ahmed","ali","khan","zeeshan","waleed",
+  "samra","khadija","fatima","aisha","maryam","yasmin","zara","leyla","ibrahim","omar","yusuf",
+  "john","james","david","robert","michael","william","richard","thomas","mark","paul","andrew",
+  "peter","stephen","gary","kevin","brian","tony","jason","adam","ryan","daniel","christopher",
+  "sarah","emma","emily","jessica","laura","sophie","hannah","amy","lucy","charlotte","olivia",
+  "chloe","grace","ella","megan","lauren","helen","claire","rachel","amanda","victoria",
+  "smith","jones","taylor","brown","wilson","johnson","williams","davies","evans","harris",
+  "walker","robinson","thompson","white","martin","jackson","wood","clarke","hall","green",
+]);
+
+function looksLikePersonName(name) {
+  if (!name) return false;
+  // Title prefix → definitely a person
+  if (/^(mr\.?\s|mrs\.?\s|ms\.?\s|miss\.?\s|dr\.?\s)/i.test(name)) return true;
+  // Strip trailing digits, ref codes before testing
+  const s = name
     .replace(/\s+\d{4,}\s*$/, "")
     .replace(/\s+ref:?\s*\S+\s*$/i, "")
     .trim();
+  // Bail out for known merchants
   if (KNOWN_MERCHANTS_RE.test(s)) return false;
   const words = s.split(/\s+/);
-  return (
-    words.length >= 2 &&
-    words.length <= 4 &&
-    words.every(w => /^[A-Z][a-zA-Z]{1,}$/.test(w)) &&
-    !/\d/.test(s)
-  );
+  if (words.length < 2 || words.length > 5 || /\d/.test(s)) return false;
+  // Every word must start with a capital letter (allow single-letter initials like "K")
+  if (!words.every(w => /^[A-Z][a-zA-Z]{0,}$/.test(w))) return false;
+  // First word is a known first name → strong signal
+  if (COMMON_FIRST_NAMES.has(words[0].toLowerCase())) return true;
+  // Last word is a known surname → moderate signal
+  if (COMMON_FIRST_NAMES.has(words[words.length - 1].toLowerCase())) return true;
+  // 2-3 all-caps-starting words, none longer than 12 chars → likely a name
+  if (words.length <= 3 && words.every(w => w.length <= 12)) return true;
+  return false;
+}
+
+// Clean merchant display name — strip "Limited" suffixes, trailing ref codes, appended person names
+function cleanMerchantDisplay(name) {
+  if (!name) return name;
+  let n = name
+    .replace(/\s+limited\b.*$/i, "")    // truncate at "Limited ..."
+    .replace(/\s+ltd\.?\b.*$/i, "")     // truncate at "Ltd ..."
+    .replace(/\s+[A-Za-z]{1,3}\d+\w*\s*$/, "") // strip trailing ref codes e.g. "Ld10wux"
+    .trim();
+  return n || name;
 }
 
 const CAT_CONFIG = {
@@ -772,25 +801,38 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
     else if (n === "Health & Fitness")        personality = PERSONALITIES.wellness;
   }
 
-  // ── Top 5 merchants (used in why text + card C) ──
-  // Exclude internal transfers, Flex, pot transfers, and person-to-person payments
+  // ── Top 5 merchants ──
+  // Excluded: internal flag, transfer categories, Flex/transfer by name, person names
   const MERCHANT_EXCLUDE_CATS = new Set(["Transfers Sent", "Transfers Received", "Internal Transfer"]);
-  // Normalize description for grouping — strip trailing ref numbers so "Kasam Khalid 123" groups with "Kasam Khalid"
+  // Name-based exclusions — catches old saved statements where isInternal/category may not be set correctly
+  const MERCHANT_EXCLUDE_NAME_RE = /\bflex\b|\bmonzo flex\b|\btransfer\b|\bpot\b|\bspace\b/i;
+
   function merchantKey(desc) {
     return (desc || "")
       .replace(/\s+\d{4,}\s*$/, "")
       .replace(/\s+ref:?\s*\S+\s*$/i, "")
+      .replace(/\s+limited\b.*$/i, "")
+      .replace(/\s+ltd\.?\b.*$/i, "")
       .replace(/\s+/g, " ")
       .trim()
       .toLowerCase();
   }
+
   const merchantMap = {};
-  debits.filter(t => !t.isInternal && !MERCHANT_EXCLUDE_CATS.has(t.category) && !looksLikePersonName(t.description)).forEach(t => {
-    const key = merchantKey(t.description);
-    if (!merchantMap[key]) merchantMap[key] = { name: t.description, total: 0, count: 0 };
-    merchantMap[key].total += Math.abs(t.amount);
-    merchantMap[key].count++;
-  });
+  debits
+    .filter(t =>
+      !t.isInternal &&
+      !MERCHANT_EXCLUDE_CATS.has(t.category) &&
+      !MERCHANT_EXCLUDE_NAME_RE.test(t.description) &&
+      !looksLikePersonName(t.description)
+    )
+    .forEach(t => {
+      const displayName = cleanMerchantDisplay(t.description);
+      const key = merchantKey(t.description);
+      if (!merchantMap[key]) merchantMap[key] = { name: displayName, total: 0, count: 0 };
+      merchantMap[key].total += Math.abs(t.amount);
+      merchantMap[key].count++;
+    });
   const top5Merchants = Object.values(merchantMap).sort((a,b) => b.total - a.total).slice(0, 5);
   const maxMerchantTotal = top5Merchants[0]?.total ?? 1;
 
