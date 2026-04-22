@@ -432,6 +432,9 @@ function normaliseMerchant(raw) {
     .replace(/\s{2,}/g, ' ')
     .trim();
 
+  // Raw account numbers / sort codes — replace with generic label
+  if (/^[A-Z]\d{9,}$/i.test(name) || /^\d{8,}$/.test(name)) return "Bank Transfer";
+
   const upper = name.toUpperCase();
   for (const [key, value] of Object.entries(MERCHANT_MAP)) {
     if (upper.startsWith(key) || upper === key) return value;
@@ -1229,6 +1232,14 @@ function categoriseTransaction(rawDesc, amount, type) {
   if (/transfer\s+(from|to)\s+pot|pot\s+transfer|\bsavings\s+pot\b/i.test(raw))
     return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: true, isInternal: true };
 
+  // FIX 4: Starling Spaces are internal savings pots — not real income/spending
+  if (/saving\s+space|spending\s+space|space\s+transfer|transfer\s+(to|from)\s+space/i.test(raw))
+    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: true, isInternal: true };
+
+  // FIX 3: Raw account numbers / sort codes (e.g. "E01250800000000") — never real merchants
+  if (/^[A-Z]\d{9,}$/i.test((rawDesc || "").trim()) || /^\d{8,}$/.test((rawDesc || "").trim()))
+    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false };
+
   // Step 0a — Explicit credit transfer patterns (must beat all other rules)
   if (
     type === "credit" &&
@@ -1386,7 +1397,11 @@ function categoriseTransaction(rawDesc, amount, type) {
   if (type === "credit") return { category: "Transfers Received", exclude: false };
 
   // Step 17b — Person name pattern (2–4 capitalised words, no digits) → Transfer by type
-  const cleanedForName = cleanDescription(rawDesc || "");
+  // Strip trailing ref numbers/codes before the person-name check so "Kasam Khalid 123456" still matches
+  const cleanedForName = cleanDescription(rawDesc || "")
+    .replace(/\s+\d{4,}\s*$/, "")          // trailing reference numbers
+    .replace(/\s+ref:?\s*\S+\s*$/i, "")    // trailing ref codes
+    .trim();
   if (looksLikePersonName(cleanedForName))
     return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false };
 

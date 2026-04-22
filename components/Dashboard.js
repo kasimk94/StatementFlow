@@ -18,6 +18,9 @@ function fmtShort(amount) {
 // ─── Category config ──────────────────────────────────────────────────────────
 const UNKNOWN_CAT = "Unknown ⚠️";
 
+// Categories that are transfers — excluded from spending donut/percentages
+const TRANSFER_CATS = new Set(["Transfers Sent", "Transfers Received", "Internal Transfer"]);
+
 const CAT_CONFIG = {
   "Groceries":               { hex: "#16a34a" },
   "Eating Out":              { hex: "#ea580c" },
@@ -741,12 +744,21 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   // ── Top 5 merchants (used in why text + card C) ──
   // Exclude internal transfers, Flex, pot transfers, and person-to-person payments
   const MERCHANT_EXCLUDE_CATS = new Set(["Transfers Sent", "Transfers Received", "Internal Transfer"]);
+  // Normalize description for grouping — strip trailing ref numbers so "Kasam Khalid 123" groups with "Kasam Khalid"
+  function merchantKey(desc) {
+    return (desc || "")
+      .replace(/\s+\d{4,}\s*$/, "")
+      .replace(/\s+ref:?\s*\S+\s*$/i, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
   const merchantMap = {};
   debits.filter(t => !t.isInternal && !MERCHANT_EXCLUDE_CATS.has(t.category)).forEach(t => {
-    const n = t.description;
-    if (!merchantMap[n]) merchantMap[n] = { name: n, total: 0, count: 0 };
-    merchantMap[n].total += Math.abs(t.amount);
-    merchantMap[n].count++;
+    const key = merchantKey(t.description);
+    if (!merchantMap[key]) merchantMap[key] = { name: t.description, total: 0, count: 0 };
+    merchantMap[key].total += Math.abs(t.amount);
+    merchantMap[key].count++;
   });
   const top5Merchants = Object.values(merchantMap).sort((a,b) => b.total - a.total).slice(0, 5);
   const maxMerchantTotal = top5Merchants[0]?.total ?? 1;
@@ -1391,9 +1403,18 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     );
   }, [transactions, insights]);
 
-  const pieData = useMemo(() =>
-    categoryBreakdown.map((c) => ({ name: c.name, value: c.total, fill: catHex(c.name) })),
+  // Exclude transfer categories from the spending donut — they live in the Transfers In & Out card
+  const spendingOnlyBreakdown = useMemo(() =>
+    categoryBreakdown.filter(c => !TRANSFER_CATS.has(c.name)),
   [categoryBreakdown]);
+
+  const spendingOnlyTotal = useMemo(() =>
+    spendingOnlyBreakdown.reduce((s, c) => s + c.total, 0),
+  [spendingOnlyBreakdown]);
+
+  const pieData = useMemo(() =>
+    spendingOnlyBreakdown.map((c) => ({ name: c.name, value: c.total, fill: catHex(c.name) })),
+  [spendingOnlyBreakdown]);
 
   const barData = useMemo(() => {
     const map = {};
@@ -1861,7 +1882,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               </div>
               {/* Legend */}
               <div className="flex-1">
-                <PieLegend data={pieData} totalExpenses={expenses} />
+                <PieLegend data={pieData} totalExpenses={spendingOnlyTotal || expenses} />
               </div>
             </div>
           )}
@@ -1968,7 +1989,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
             const { name, total, count } = entry;
             const hex      = catHex(name);
-            const pct      = expenses > 0 ? (total / expenses) * 100 : 0;
+            const pctBase  = TRANSFER_CATS.has(name) ? (expenses || 1) : (spendingOnlyTotal || expenses || 1);
+            const pct      = pctBase > 0 ? (total / pctBase) * 100 : 0;
             const isActive = filterCat === name;
             const tip      = CAT_TIPS[name] ?? "Transactions in this category";
 
