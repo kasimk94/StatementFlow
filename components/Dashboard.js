@@ -1779,7 +1779,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} onPrint={handlePrintReport} downloadError={downloadError} />
 
       {/* ── STAT CARDS ── */}
-      <div ref={demoRef} className="stat-cards grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div ref={demoRef} className="stat-cards grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-5">
         <StatCard
           label="Total Money In"
           value={fmt(income)}
@@ -1817,22 +1817,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           countTarget={expenses}
           countTriggered={demoMode ? demoTriggered : loaded}
           countFormat={(v) => fmt(v)}
-        />
-        <StatCard
-          label="Net Balance"
-          value={fmt(net)}
-          sub={net >= 0 ? "✓ Positive cash flow" : <><span style={{ color: "#EF4444" }}>⚠</span> Negative cash flow</>}
-          gradient="linear-gradient(135deg, #0D1117 0%, #111820 100%)"
-          border="1px solid rgba(201,168,76,0.25)"
-          shadow="0 0 40px rgba(201,168,76,0.06), inset 0 1px 0 rgba(201,168,76,0.1)"
-          numColor={net >= 0 ? "#00D4A0" : "#EF4444"}
-          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-          loaded={loaded}
-          delay={300}
-          countTarget={Math.abs(net)}
-          countTriggered={demoMode ? demoTriggered : loaded}
-          countFormat={(v) => fmt(net >= 0 ? v : -v)}
-          gauge={netGauge}
         />
         <StatCard
           label="Transactions"

@@ -458,8 +458,8 @@ export default function Home() {
                   <div style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", color: "#C9A84C", fontSize: "0.72rem", fontWeight: 700, padding: "6px 14px", borderRadius: 999 }}>82 transactions</div>
                 </div>
                 {/* Mock KPI row */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
-                  {[["Money In","£3,522","#00D4A0"],["Money Out","£3,608","#EF4444"],["Net","-£86","#8A9BB5"]].map(([l,v,c]) => (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+                  {[["Money In","£3,522","#00D4A0"],["Money Out","£3,608","#EF4444"]].map(([l,v,c]) => (
                     <div key={l} style={{ background: "#111820", border: "1px solid #1E2A3A", borderRadius: 10, padding: "14px 16px" }}>
                       <div style={{ fontSize: "0.68rem", color: "#8A9BB5", marginBottom: 4 }}>{l}</div>
                       <div style={{ fontSize: "1.15rem", fontWeight: 800, color: c }}>{v}</div>
@@ -753,8 +753,8 @@ export default function Home() {
                 </div>
                 <div style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", color: "#C9A84C", fontSize: "0.7rem", fontWeight: 700, padding: "6px 12px", borderRadius: 999 }}>82 transactions</div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
-                {[["Money In","£3,522","#00D4A0"],["Money Out","£3,608","#EF4444"],["Net","-£86","#8A9BB5"]].map(([l,v,c]) => (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 20 }}>
+                {[["Money In","£3,522","#00D4A0"],["Money Out","£3,608","#EF4444"]].map(([l,v,c]) => (
                   <div key={l} style={{ background: "#111820", border: "1px solid #1E2A3A", borderRadius: 10, padding: "12px" }}>
                     <div style={{ fontSize: "0.65rem", color: "#8A9BB5", marginBottom: 3 }}>{l}</div>
                     <div style={{ fontSize: "1rem", fontWeight: 800, color: c }}>{v}</div>
