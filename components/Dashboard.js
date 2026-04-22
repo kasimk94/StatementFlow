@@ -739,8 +739,10 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
   }
 
   // ── Top 5 merchants (used in why text + card C) ──
+  // Exclude internal transfers, Flex, pot transfers, and person-to-person payments
+  const MERCHANT_EXCLUDE_CATS = new Set(["Transfers Sent", "Transfers Received", "Internal Transfer"]);
   const merchantMap = {};
-  debits.forEach(t => {
+  debits.filter(t => !t.isInternal && !MERCHANT_EXCLUDE_CATS.has(t.category)).forEach(t => {
     const n = t.description;
     if (!merchantMap[n]) merchantMap[n] = { name: n, total: 0, count: 0 };
     merchantMap[n].total += Math.abs(t.amount);

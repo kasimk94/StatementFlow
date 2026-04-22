@@ -558,24 +558,10 @@ export async function POST(req) {
       }
     }
 
-    // ── 7. Filter ONLY explicit Monzo pot transfers ───────────────────────────
-    // If in doubt → KEEP. It is better to include everything than silently drop
-    // real transactions. Bill payments, P2P payments, "Ref: Monzo" payments,
-    // anything over £100 — all kept unconditionally.
-    function isGenuinePotTransfer(t) {
-      const d   = (t.description || '').toLowerCase();
-      const amt = Math.abs(typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0);
-      // Hard keeps — never remove these regardless of description
-      if (amt >= 100) return false;
-      if (/bill payment|faster payment|ref:/i.test(d)) return false;
-      if (/salary|wages|payroll|bacs/i.test(d)) return false;
-      // Only remove: Monzo "Transfer to/from Pot" — must contain BOTH words
-      if (/\bpot\b/.test(d) && /\btransfer\b/.test(d)) return true;
-      return false;
-    }
-
-    const filteredParsed = deduplicated.filter(t => !isGenuinePotTransfer(t));
-    console.log(`Filtered ${deduplicated.length - filteredParsed.length} pot/internal transfers. Remaining: ${filteredParsed.length}`);
+    // ── 7. Pot/Flex transfers are handled by categoriseTransaction (isInternal: true)
+    // They stay in the transaction list but are excluded from totals and merchant chart.
+    const filteredParsed = deduplicated;
+    console.log(`Processing ${filteredParsed.length} transactions (pot/Flex transfers kept, marked internal by categoriser)`);
 
     const rawTransactions = filteredParsed
       .map((t) => {
@@ -629,10 +615,8 @@ export async function POST(req) {
       );
     }
 
-    // ── 7b. Safety filter — strip any pot transfers Claude missed ──────────
-    const cleanedTransactions = rawTransactions.filter(t =>
-      !/(transfer (from|to) pot)/i.test(t.description || "")
-    );
+    // Pot transfers are now categorised as isInternal:true by categoriseTransaction — no hard filter needed.
+    const cleanedTransactions = rawTransactions;
 
     // ── 8. Apply reversal / refund netting + transactionType ───────────────
     const transactions = applyReversals(cleanedTransactions).map(tx => ({
@@ -1214,16 +1198,17 @@ function detectVAT(description, category, amount) {
 // FIX 3+4+5 — Rebuilt categorisation engine (18-step, first-match-wins)
 // ---------------------------------------------------------------------------
 function looksLikePersonName(desc) {
-  // Strip common payment prefixes
+  // Strip common payment prefixes and titles
   const stripped = desc
     .replace(/^(bill payment to|payment to|received from|transfer to|transfer from)\s*/i, "")
+    .replace(/^(mr\.?\s+|mrs\.?\s+|ms\.?\s+|miss\.?\s+|dr\.?\s+)/i, "")
     .trim();
   const words = stripped.split(/\s+/);
-  // 2-4 words, each starts with capital, no digits
+  // 2-4 words, each starts with a capital letter (allow single-letter initials), no digits
   return (
     words.length >= 2 &&
     words.length <= 4 &&
-    words.every(w => /^[A-Z][a-zA-Z]{1,}$/.test(w)) &&
+    words.every(w => /^[A-Z][a-zA-Z]{0,}$/.test(w)) &&
     !/\d/.test(stripped)
   );
 }
@@ -1235,8 +1220,14 @@ function categoriseTransaction(rawDesc, amount, type) {
   // Step 0 — Monzo-specific rules (before all other checks)
   if (/\(p2p payment\)|\(faster payments\)/i.test(raw))
     return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: false };
-  if (/\bflex\b/i.test(raw) && type === "debit")
-    return { category: "Finance & Bills", exclude: false };
+
+  // FIX 1: Monzo Flex is an internal BNPL product — not real merchant spending
+  if (/\bmonzo\s+flex\b|\bflex\b/i.test(raw))
+    return { category: "Transfers Sent", exclude: true, isInternal: true };
+
+  // FIX 2: Monzo pot transfers are internal account movements — not real income/spending
+  if (/transfer\s+(from|to)\s+pot|pot\s+transfer|\bsavings\s+pot\b/i.test(raw))
+    return { category: type === "credit" ? "Transfers Received" : "Transfers Sent", exclude: true, isInternal: true };
 
   // Step 0a — Explicit credit transfer patterns (must beat all other rules)
   if (
