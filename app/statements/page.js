@@ -141,7 +141,7 @@ export default function StatementsPage() {
 
         {/* Right — Upload New button */}
         <Link
-          href="/"
+          href="/upload"
           style={{
             background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
             color: "#080C14",
@@ -219,7 +219,7 @@ export default function StatementsPage() {
             Upload your first bank statement to get started
           </p>
           <Link
-            href="/"
+            href="/upload"
             style={{
               display: "inline-flex",
               alignItems: "center",

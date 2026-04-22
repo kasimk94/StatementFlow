@@ -83,7 +83,7 @@ function EmptyState() {
       </p>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Link href="/statements" style={{
+        <Link href="/upload" style={{
           padding: '11px 24px',
           background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
           color: '#080C14', fontWeight: 700, fontSize: '0.875rem',
