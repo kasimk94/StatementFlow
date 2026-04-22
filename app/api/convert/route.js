@@ -425,12 +425,19 @@ const MERCHANT_MAP = {
 function normaliseMerchant(raw) {
   if (!raw) return raw;
   let name = raw
-    .replace(/\*[A-Z0-9]+/g, '')         // Remove ref codes after * e.g. AMAZON*AB12CD
-    .replace(/\s+(GBR|UK|GB)$/i, '')     // Strip country suffixes
+    .replace(/^int'?l\s+/i, '')          // Strip "Int'l" / "Intl" prefix
+    .replace(/amazon\.co\.uk/gi, 'Amazon') // Expand before generic .co.uk strip
+    .replace(/\.co\.uk\b/gi, '')          // Strip .co.uk domain suffixes
+    .replace(/\*[A-Z0-9]+/g, '')          // Remove ref codes after * e.g. AMAZON*AB12CD
+    .replace(/\s+(GBR|UK|GB)$/i, '')      // Strip country suffixes
     .replace(/\s+(LTD|LIMITED|PLC)$/i, '')
-    .replace(/\s+\d{6,}/g, '')           // Remove long terminal/ref numbers
+    .replace(/\s+\d{6,}/g, '')            // Remove long terminal/ref numbers
     .replace(/\s{2,}/g, ' ')
     .trim();
+
+  // Remove duplicate consecutive words e.g. "Amazon Amazon" → "Amazon"
+  const words = name.split(/\s+/);
+  name = words.filter((w, i) => i === 0 || w.toLowerCase() !== words[i - 1].toLowerCase()).join(' ');
 
   // Raw account numbers / sort codes — replace with generic label
   if (/^[A-Z]\d{9,}$/i.test(name) || /^\d{8,}$/.test(name)) return "Bank Transfer";
@@ -1518,6 +1525,7 @@ function normaliseDate(raw) {
   if (!raw) return "";
   const s = String(raw).trim();
 
+  // DD/MM/YYYY or DD-MM-YYYY (4-digit year)
   const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
   if (m1) {
     const d  = m1[1].padStart(2, "0");
@@ -1526,11 +1534,21 @@ function normaliseDate(raw) {
     if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
   }
 
+  // YYYY-MM-DD
   const m2 = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
   if (m2) {
     const y  = m2[1];
     const mo = parseInt(m2[2], 10) - 1;
     const d  = m2[3].padStart(2, "0");
+    if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
+  }
+
+  // DD/MM/YY or DD-MM-YY (2-digit year — e.g. HSBC "20-07-24")
+  const m3 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})$/);
+  if (m3) {
+    const d  = m3[1].padStart(2, "0");
+    const mo = parseInt(m3[2], 10) - 1;
+    const y  = 2000 + parseInt(m3[3], 10);
     if (mo >= 0 && mo < 12) return `${d} ${MONTHS[mo]} ${y}`;
   }
 

@@ -21,6 +21,27 @@ const UNKNOWN_CAT = "Unknown ⚠️";
 // Categories that are transfers — excluded from spending donut/percentages
 const TRANSFER_CATS = new Set(["Transfers Sent", "Transfers Received", "Internal Transfer"]);
 
+// Known merchants that look like person names but aren't — prevent false exclusions
+const KNOWN_MERCHANTS_RE = /tesco|asda|sainsbury|morrisons|lidl|aldi|waitrose|amazon|argos|boots|costa|starbucks|mcdonald|greggs|subway|domino|deliveroo|paypal|netflix|spotify|google|apple|currys|ebay|primark|wilko|barclays|natwest|hsbc|monzo|starling|revolut|lloyds|santander|nationwide|halifax|next|marks|primark|superdrug|ikea|asos|boohoo/i;
+
+function looksLikePersonName(desc) {
+  if (!desc) return false;
+  // Title prefix is a strong signal
+  if (/^(mr\.?\s|mrs\.?\s|ms\.?\s|miss\.?\s|dr\.?\s)/i.test(desc)) return true;
+  const s = desc
+    .replace(/\s+\d{4,}\s*$/, "")
+    .replace(/\s+ref:?\s*\S+\s*$/i, "")
+    .trim();
+  if (KNOWN_MERCHANTS_RE.test(s)) return false;
+  const words = s.split(/\s+/);
+  return (
+    words.length >= 2 &&
+    words.length <= 4 &&
+    words.every(w => /^[A-Z][a-zA-Z]{1,}$/.test(w)) &&
+    !/\d/.test(s)
+  );
+}
+
 const CAT_CONFIG = {
   "Groceries":               { hex: "#16a34a" },
   "Eating Out":              { hex: "#ea580c" },
@@ -133,8 +154,18 @@ function useCountUp(target, duration, triggered) {
 const _DMI = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
 function parseDateStr(s) {
   if (!s) return null;
+  // "DD Mon YYYY" — primary normalised format
   const m = s.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})/);
   if (m) return new Date(+m[3], _DMI[m[2]] ?? 0, +m[1]);
+  // "DD/MM/YYYY" or "DD-MM-YYYY"
+  const m2 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (m2) return new Date(+m2[3], +m2[2] - 1, +m2[1]);
+  // "DD/MM/YY" or "DD-MM-YY" (HSBC short year, e.g. "20-07-24")
+  const m3 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+  if (m3) return new Date(2000 + +m3[3], +m3[2] - 1, +m3[1]);
+  // "YYYY-MM-DD"
+  const m4 = s.match(/^(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
+  if (m4) return new Date(+m4[1], +m4[2] - 1, +m4[3]);
   return null;
 }
 
@@ -754,7 +785,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
       .toLowerCase();
   }
   const merchantMap = {};
-  debits.filter(t => !t.isInternal && !MERCHANT_EXCLUDE_CATS.has(t.category)).forEach(t => {
+  debits.filter(t => !t.isInternal && !MERCHANT_EXCLUDE_CATS.has(t.category) && !looksLikePersonName(t.description)).forEach(t => {
     const key = merchantKey(t.description);
     if (!merchantMap[key]) merchantMap[key] = { name: t.description, total: 0, count: 0 };
     merchantMap[key].total += Math.abs(t.amount);
