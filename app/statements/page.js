@@ -12,6 +12,16 @@ function fmt(n) {
   return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n ?? 0);
 }
 
+function hasUploadedThisMonth(statements) {
+  const now = new Date();
+  return (statements || []).some(s => {
+    const d = new Date(s.createdAt);
+    return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+}
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
 function fmtDate(dateStr) {
   if (!dateStr) return "—";
   // dateStr could be ISO or YYYY-MM-DD
@@ -238,6 +248,37 @@ export default function StatementsPage() {
           </Link>
         </div>
       )}
+
+      {/* Monthly reminder card */}
+      {!loading && statements.length > 0 && !hasUploadedThisMonth(statements) && (() => {
+        const monthName = MONTH_NAMES[new Date().getMonth()];
+        return (
+          <div style={{
+            background: 'rgba(201,168,76,0.06)',
+            border: '1px solid rgba(201,168,76,0.25)',
+            borderRadius: 14, padding: '16px 20px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 12, marginBottom: 20,
+          }}>
+            <div>
+              <p style={{ margin: '0 0 3px', color: '#F5F0E8', fontSize: '0.9rem', fontWeight: 700 }}>
+                📅 Upload {monthName} statement
+              </p>
+              <p style={{ margin: 0, color: '#8A9BB5', fontSize: '0.82rem' }}>
+                Keep your financial picture current — upload your {monthName} statement
+              </p>
+            </div>
+            <Link href="/upload" style={{
+              background: 'linear-gradient(135deg,#C9A84C,#E8C97A)', color: '#080C14',
+              fontWeight: 700, fontSize: '0.82rem', padding: '9px 18px',
+              borderRadius: 50, textDecoration: 'none', flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(201,168,76,0.3)',
+            }}>
+              Upload Now
+            </Link>
+          </div>
+        );
+      })()}
 
       {/* Statements grid */}
       {!loading && statements.length > 0 && (

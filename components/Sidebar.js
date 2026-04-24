@@ -5,6 +5,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 
+// ─── Streak helpers ───────────────────────────────────────────────────────────
+
+function computeStreak(statements) {
+  if (!statements || statements.length === 0) return 0;
+  const uploaded = new Set();
+  statements.forEach(s => {
+    const d = new Date(s.createdAt);
+    if (!isNaN(d)) uploaded.add(`${d.getFullYear()}-${d.getMonth()}`);
+  });
+  const now = new Date();
+  let yr = now.getFullYear(), mo = now.getMonth(), count = 0;
+  while (count < 120) {
+    if (!uploaded.has(`${yr}-${mo}`)) break;
+    count++;
+    if (--mo < 0) { mo = 11; yr--; }
+  }
+  return count;
+}
+
 // ─── Logo Icon ───────────────────────────────────────────────────────────────
 
 function LogoIcon({ size = 26 }) {
@@ -207,6 +226,15 @@ function SidebarContent({ isOpen, onClose }) {
   const [hoveredItem, setHoveredItem] = useState(null);
   const [signOutHovered, setSignOutHovered] = useState(false);
   const [upgradeHovered, setUpgradeHovered] = useState(false);
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    fetch('/api/statements')
+      .then(r => r.json())
+      .then(d => setStreak(computeStreak(d.statements ?? [])))
+      .catch(() => {});
+  }, [session?.user?.id]);
 
   const isActive = (href) =>
     pathname === href || (href !== '/' && pathname.startsWith(href));
@@ -479,7 +507,7 @@ function SidebarContent({ isOpen, onClose }) {
             )}
           </div>
 
-          {/* Name + Plan */}
+          {/* Name + Plan + Streak */}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
               color: '#F5F0E8',
@@ -494,6 +522,11 @@ function SidebarContent({ isOpen, onClose }) {
               {userName}
             </div>
             <PlanBadge plan={plan} />
+            <div style={{ marginTop: 5, fontSize: '0.68rem', color: streak >= 2 ? '#C9A84C' : '#4A5568', lineHeight: 1.3 }}>
+              {streak >= 2
+                ? `🔥 ${streak} month streak — keep it up!`
+                : 'Upload monthly for streak insights'}
+            </div>
           </div>
         </Link>
       </div>

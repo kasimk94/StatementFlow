@@ -206,6 +206,59 @@ function ErrorState({ message }) {
   );
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function hasUploadedThisMonth(statements) {
+  const now = new Date();
+  return (statements || []).some(s => {
+    const d = new Date(s.createdAt);
+    return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+}
+
+const BANNER_KEY = 'sf_month_banner_v1';
+
+function getBannerDismissKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${now.getMonth()}`;
+}
+
+// ─── Monthly upload reminder banner ───────────────────────────────────────────
+
+function MonthBanner({ onDismiss }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      flexWrap: 'wrap', gap: 10,
+      background: 'rgba(201,168,76,0.07)',
+      border: '1px solid rgba(201,168,76,0.25)',
+      borderRadius: 12, padding: '12px 16px', marginBottom: 20,
+    }}>
+      <p style={{ margin: 0, color: '#C9A84C', fontSize: '0.875rem', fontWeight: 500 }}>
+        📅 Haven't uploaded this month yet — add your latest statement to keep your insights up to date
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <Link href="/upload" style={{
+          background: 'linear-gradient(135deg,#C9A84C,#E8C97A)', color: '#080C14',
+          fontWeight: 700, fontSize: '0.78rem', padding: '6px 14px',
+          borderRadius: 999, textDecoration: 'none',
+        }}>
+          Upload Now
+        </Link>
+        <button
+          onClick={onDismiss}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#8A9BB5', padding: 4, display: 'flex', alignItems: 'center' }}
+          aria-label="Dismiss"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Inner component ──────────────────────────────────────────────────────────
 
 function DashboardPageInner() {
@@ -214,6 +267,22 @@ function DashboardPageInner() {
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
+  const [showBanner, setShowBanner] = useState(false);
+
+  // Check if uploaded this month (only shown when a statement is loaded)
+  useEffect(() => {
+    const dismissed = typeof window !== 'undefined' && localStorage.getItem(BANNER_KEY);
+    if (dismissed === getBannerDismissKey()) return;
+    fetch('/api/statements')
+      .then(r => r.json())
+      .then(d => { if (!hasUploadedThisMonth(d.statements)) setShowBanner(true); })
+      .catch(() => {});
+  }, []);
+
+  function dismissBanner() {
+    localStorage.setItem(BANNER_KEY, getBannerDismissKey());
+    setShowBanner(false);
+  }
 
   useEffect(() => {
     const statementId = searchParams.get('statementId');
@@ -246,6 +315,8 @@ function DashboardPageInner() {
       <style>{`
         @keyframes sf-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
+
+      {showBanner && <MonthBanner onDismiss={dismissBanner} />}
 
       {loading && <Skeleton />}
 
