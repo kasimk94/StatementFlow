@@ -915,32 +915,34 @@ export default function Home() {
                 <tr>
                   <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>Feature</th>
                   <th style={{ background: "rgba(201,168,76,0.12)", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#C9A84C", borderBottom: "1px solid rgba(201,168,76,0.2)" }}>StatementFlow</th>
-                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>Manual Copy-Paste</th>
-                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>Open Banking Apps</th>
+                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>Emma</th>
+                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>Snoop</th>
+                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>DocuClipper</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  ["Instant results",         "✓", "✗", "~"],
-                  ["No bank login required",  "✓", "✓", "✗"],
-                  ["Spending categorisation", "✓", "✗", "✓"],
-                  ["Excel & CSV export",      "✓", "~", "✗"],
-                  ["Accountant-ready data",   "✓", "✗", "✗"],
-                  ["Zero data stored",        "✓", "✓", "✗"],
-                  ["Works with all UK banks", "✓", "✓", "~"],
-                  ["VAT estimation",          "✓", "✗", "✗"],
-                  ["Free to use",             "✓", "✓", "✗"],
-                ].map(([feature, sf, mc, ob], i, arr) => (
+                  ["No bank login needed",  "✅", "❌", "❌", "✅"],
+                  ["No signup to try",      "✅", "❌", "❌", "❌"],
+                  ["PDF upload",            "✅", "❌", "❌", "✅"],
+                  ["Instant dashboard",     "✅", "✅", "✅", "❌"],
+                  ["Excel & CSV export",    "✅", "❌", "❌", "✅"],
+                  ["VAT & audit view",      "✅", "❌", "❌", "❌"],
+                  ["Budget tracking",       "✅", "✅", "✅", "❌"],
+                  ["Statement history",     "✅", "✅", "✅", "❌"],
+                  ["UK banks supported",    "✅", "✅", "✅", "⚠️ Partial"],
+                  ["Price from",            "Free", "£4.99/mo", "Free", "$39/mo"],
+                ].map(([feature, sf, emma, snoop, docu], i, arr) => (
                   <tr key={i} style={{ background: i % 2 === 0 ? "#080C14" : "#0D1117" }}>
                     <td style={{ padding: "13px 20px", fontSize: "0.875rem", fontWeight: 500, color: "#8A9BB5", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{feature}</td>
-                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", fontWeight: 700, color: sf === "✓" ? "#C9A84C" : "#4A5568", background: "rgba(201,168,76,0.04)", borderBottom: i < arr.length - 1 ? "1px solid rgba(201,168,76,0.1)" : "none" }}>{sf}</td>
-                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", color: mc === "✓" ? "#00D4A0" : "#4A5568", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{mc}</td>
-                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", color: ob === "✓" ? "#00D4A0" : "#4A5568", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{ob}</td>
+                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", fontWeight: 700, color: "#C9A84C", background: "rgba(201,168,76,0.04)", borderBottom: i < arr.length - 1 ? "1px solid rgba(201,168,76,0.1)" : "none" }}>{sf}</td>
+                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", color: emma === "✅" ? "#00D4A0" : "#4A5568", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{emma}</td>
+                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", color: snoop === "✅" ? "#00D4A0" : "#4A5568", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{snoop}</td>
+                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", color: docu === "✅" ? "#00D4A0" : "#4A5568", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{docu}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p style={{ textAlign: "center", padding: "10px 0", fontSize: "0.72rem", color: "#4A5568", background: "#0D1117" }}>~ = partial support</p>
           </div>
         </div>
       </section>
@@ -1319,7 +1321,7 @@ export default function Home() {
                 margin: 0, color: "#8A9BB5", fontSize: "0.75rem",
                 fontStyle: "italic", lineHeight: 1.5,
               }}>
-                Feature comparison based on publicly available information as of April 2026. Emma and Snoop use Open Banking which requires granting app access to your live bank account.
+                Comparison based on publicly available information April 2026. Emma and Snoop require Open Banking bank account access.
               </p>
             </div>
           </div>
