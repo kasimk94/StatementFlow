@@ -898,54 +898,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════
-          9. COMPARISON TABLE
-      ══════════════════════════════════════════════════════════════ */}
-      <section className="hp-section" style={{ background: "#080C14" }}>
-        <div style={{ maxWidth: 920, margin: "0 auto" }}>
-          <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
-            <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#C9A84C", textTransform: "uppercase", marginBottom: 12 }}>Why StatementFlow</p>
-            <h2 style={{ fontWeight: 800, color: "#F5F0E8", fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", marginBottom: 12 }}>The smarter way to handle your statement</h2>
-            <p style={{ color: "#8A9BB5", fontSize: "1rem" }}>See how we compare to the alternatives.</p>
-          </div>
-          <p className="comparison-table-hint" style={{ textAlign: "center", fontSize: "0.75rem", color: "#4A5568", marginBottom: 10 }}>← Scroll to see more →</p>
-          <div className="scroll-animate comparison-table-wrap" style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #1E2A3A" }}>
-            <table className="comparison-table" style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
-              <thead>
-                <tr>
-                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>Feature</th>
-                  <th style={{ background: "rgba(201,168,76,0.12)", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#C9A84C", borderBottom: "1px solid rgba(201,168,76,0.2)" }}>StatementFlow</th>
-                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>Emma</th>
-                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>Snoop</th>
-                  <th style={{ background: "#0D1117", padding: "14px 20px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#8A9BB5", borderBottom: "1px solid #1E2A3A" }}>DocuClipper</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ["No bank login needed",  "✅", "❌", "❌", "✅"],
-                  ["No signup to try",      "✅", "❌", "❌", "❌"],
-                  ["PDF upload",            "✅", "❌", "❌", "✅"],
-                  ["Instant dashboard",     "✅", "✅", "✅", "❌"],
-                  ["Excel & CSV export",    "✅", "❌", "❌", "✅"],
-                  ["VAT & audit view",      "✅", "❌", "❌", "❌"],
-                  ["Budget tracking",       "✅", "✅", "✅", "❌"],
-                  ["Statement history",     "✅", "✅", "✅", "❌"],
-                  ["UK banks supported",    "✅", "✅", "✅", "⚠️ Partial"],
-                  ["Price from",            "Free", "£4.99/mo", "Free", "$39/mo"],
-                ].map(([feature, sf, emma, snoop, docu], i, arr) => (
-                  <tr key={i} style={{ background: i % 2 === 0 ? "#080C14" : "#0D1117" }}>
-                    <td style={{ padding: "13px 20px", fontSize: "0.875rem", fontWeight: 500, color: "#8A9BB5", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{feature}</td>
-                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", fontWeight: 700, color: "#C9A84C", background: "rgba(201,168,76,0.04)", borderBottom: i < arr.length - 1 ? "1px solid rgba(201,168,76,0.1)" : "none" }}>{sf}</td>
-                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", color: emma === "✅" ? "#00D4A0" : "#4A5568", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{emma}</td>
-                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", color: snoop === "✅" ? "#00D4A0" : "#4A5568", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{snoop}</td>
-                    <td style={{ padding: "13px 20px", textAlign: "center", fontSize: "0.9rem", color: docu === "✅" ? "#00D4A0" : "#4A5568", borderBottom: i < arr.length - 1 ? "1px solid #1E2A3A" : "none" }}>{docu}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
       {/* ══════════════════════════════════════════════════════════════
           10. PRICING
@@ -1099,15 +1051,15 @@ export default function Home() {
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
 
           {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 16 }}>
               Why StatementFlow
             </p>
-            <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#F5F0E8", margin: "0 0 14px", letterSpacing: "-0.02em" }}>
-              The smarter way to understand your money
+            <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#F5F0E8", margin: "0 0 16px", letterSpacing: "-0.02em" }}>
+              The smarter way to handle your statement
             </h2>
-            <p style={{ color: "#8A9BB5", fontSize: "1.1rem", margin: 0, lineHeight: 1.6, maxWidth: 560, marginInline: "auto" }}>
-              We're the only UK tool that works without giving anyone access to your bank account
+            <p style={{ color: "#8A9BB5", fontSize: "1.1rem", margin: 0, lineHeight: 1.6, maxWidth: 580, marginInline: "auto" }}>
+              We're the only UK tool that gives you instant insights without connecting to your bank
             </p>
           </div>
 
@@ -1128,10 +1080,10 @@ export default function Home() {
                   <tr style={{ background: "#080C14" }}>
                     {/* Feature column */}
                     <th style={{
-                      width: "30%", padding: "18px 20px",
+                      width: "30%", padding: "20px 24px",
                       textAlign: "left", color: "#8A9BB5",
-                      fontSize: "0.78rem", fontWeight: 600,
-                      textTransform: "uppercase", letterSpacing: "0.08em",
+                      fontSize: "0.8rem", fontWeight: 700,
+                      textTransform: "uppercase", letterSpacing: "0.1em",
                       borderBottom: "1px solid rgba(201,168,76,0.1)",
                     }}>
                       Feature
@@ -1139,13 +1091,22 @@ export default function Home() {
 
                     {/* StatementFlow — highlighted */}
                     <th style={{
-                      padding: "18px 16px",
-                      background: "rgba(201,168,76,0.06)",
+                      padding: "20px 16px",
+                      background: "linear-gradient(180deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05))",
                       borderLeft: "1px solid rgba(201,168,76,0.2)",
                       borderRight: "1px solid rgba(201,168,76,0.2)",
-                      borderBottom: "1px solid rgba(201,168,76,0.1)",
+                      borderBottom: "1px solid rgba(201,168,76,0.2)",
                       textAlign: "center",
                     }}>
+                      <span style={{
+                        display: "inline-block", marginBottom: 8,
+                        background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
+                        color: "#080C14", fontSize: "0.7rem", fontWeight: 800,
+                        padding: "3px 10px", borderRadius: 999,
+                        letterSpacing: "0.03em",
+                      }}>
+                        ⭐ Best choice
+                      </span>
                       <div style={{
                         background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
                         WebkitBackgroundClip: "text",
@@ -1155,20 +1116,11 @@ export default function Home() {
                       }}>
                         StatementFlow
                       </div>
-                      <span style={{
-                        display: "inline-block", marginTop: 6,
-                        background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
-                        color: "#080C14", fontSize: "0.62rem", fontWeight: 800,
-                        padding: "2px 9px", borderRadius: 999,
-                        letterSpacing: "0.04em",
-                      }}>
-                        ⭐ Best
-                      </span>
                     </th>
 
                     {/* Emma */}
                     <th style={{
-                      padding: "18px 16px", textAlign: "center",
+                      padding: "20px 16px", textAlign: "center",
                       color: "#8A9BB5", fontSize: "0.9rem", fontWeight: 500,
                       borderBottom: "1px solid rgba(201,168,76,0.1)",
                     }}>
@@ -1177,7 +1129,7 @@ export default function Home() {
 
                     {/* Snoop */}
                     <th style={{
-                      padding: "18px 16px", textAlign: "center",
+                      padding: "20px 16px", textAlign: "center",
                       color: "#8A9BB5", fontSize: "0.9rem", fontWeight: 500,
                       borderBottom: "1px solid rgba(201,168,76,0.1)",
                     }}>
@@ -1186,7 +1138,7 @@ export default function Home() {
 
                     {/* DocuClipper */}
                     <th style={{
-                      padding: "18px 16px", textAlign: "center",
+                      padding: "20px 16px", textAlign: "center",
                       color: "#8A9BB5", fontSize: "0.9rem", fontWeight: 500,
                       borderBottom: "1px solid rgba(201,168,76,0.1)",
                     }}>
@@ -1197,57 +1149,59 @@ export default function Home() {
 
                 <tbody>
                   {[
-                    { feature: "No bank login needed",      sf: true,   emma: false,  snoop: false, docu: true,     isPrice: false },
-                    { feature: "No signup required to try", sf: true,   emma: false,  snoop: false, docu: false,    isPrice: false },
-                    { feature: "PDF statement upload",      sf: true,   emma: false,  snoop: false, docu: true,     isPrice: false },
-                    { feature: "Instant spending dashboard",sf: true,   emma: true,   snoop: true,  docu: false,    isPrice: false },
-                    { feature: "Excel & CSV export",        sf: true,   emma: false,  snoop: false, docu: true,     isPrice: false },
-                    { feature: "VAT & audit-ready view",    sf: true,   emma: false,  snoop: false, docu: false,    isPrice: false },
-                    { feature: "Budget tracking",           sf: true,   emma: true,   snoop: true,  docu: false,    isPrice: false },
-                    { feature: "Statement history",         sf: true,   emma: true,   snoop: true,  docu: false,    isPrice: false },
-                    { feature: "UK banks supported",        sf: true,   emma: true,   snoop: true,  docu: "partial",isPrice: false },
-                    { feature: "Price from",                sf: "Free", emma: "£4.99/mo", snoop: "Free", docu: "$39/mo", isPrice: true },
+                    { feature: "No bank login needed",  sf: true,   emma: false, snoop: false, docu: true,      isPrice: false },
+                    { feature: "No signup to try",      sf: true,   emma: false, snoop: false, docu: false,     isPrice: false },
+                    { feature: "PDF upload",            sf: true,   emma: false, snoop: false, docu: true,      isPrice: false },
+                    { feature: "Instant dashboard",     sf: true,   emma: true,  snoop: true,  docu: false,     isPrice: false },
+                    { feature: "Excel & CSV export",    sf: true,   emma: false, snoop: false, docu: true,      isPrice: false },
+                    { feature: "VAT & audit view",      sf: true,   emma: false, snoop: false, docu: false,     isPrice: false },
+                    { feature: "Budget tracking",       sf: true,   emma: true,  snoop: true,  docu: false,     isPrice: false },
+                    { feature: "Statement history",     sf: true,   emma: true,  snoop: true,  docu: false,     isPrice: false },
+                    { feature: "UK banks supported",    sf: true,   emma: true,  snoop: true,  docu: "partial", isPrice: false },
+                    { feature: "Price from",            sf: "Free", emma: "£4.99/mo", snoop: "Free", docu: "$39/mo", isPrice: true },
                   ].map((row, idx) => {
                     const isEven = idx % 2 === 0;
-                    const rowBg  = isEven ? "rgba(255,255,255,0.01)" : "transparent";
+                    const rowBg  = row.isPrice ? "rgba(201,168,76,0.04)" : (isEven ? "rgba(255,255,255,0.01)" : "transparent");
 
                     function Cell({ val, isSF, isPrice }) {
                       if (isPrice) {
-                        return (
+                        return isSF ? (
                           <span style={{
-                            fontSize: "0.875rem", fontWeight: 700,
-                            color: isSF ? "#C9A84C" : "#8A9BB5",
-                          }}>
-                            {val}
-                          </span>
+                            fontSize: "1.1rem", fontWeight: 700,
+                            background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                          }}>{val}</span>
+                        ) : (
+                          <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#8A9BB5" }}>{val}</span>
                         );
                       }
                       if (val === "partial") {
                         return (
-                          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#F59E0B" }}>
-                            Partial
+                          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#F59E0B", fontStyle: "italic" }}>
+                            ⚠ Partial
                           </span>
                         );
                       }
                       if (val === true) {
                         return (
-                          <svg
-                            width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="#10B981" strokeWidth="2.5"
-                            strokeLinecap="round" strokeLinejoin="round"
-                            style={isSF ? { filter: "drop-shadow(0 0 4px rgba(201,168,76,0.3))" } : {}}
-                          >
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            width: 28, height: 28, borderRadius: "50%",
+                            background: "rgba(16,185,129,0.15)",
+                          }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                              stroke="#ffffff" strokeWidth="2.5"
+                              strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          </span>
                         );
                       }
                       return (
-                        <svg
-                          width="18" height="18" viewBox="0 0 24 24" fill="none"
-                          stroke="#EF4444" strokeWidth="2.5"
-                          strokeLinecap="round" strokeLinejoin="round"
-                          style={{ opacity: 0.6 }}
-                        >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                          stroke="rgba(239,68,68,0.5)" strokeWidth="2.5"
+                          strokeLinecap="round" strokeLinejoin="round">
                           <line x1="18" y1="6" x2="6" y2="18"/>
                           <line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
@@ -1257,50 +1211,50 @@ export default function Home() {
                     return (
                       <tr
                         key={row.feature}
-                        style={{ background: rowBg, transition: "background 120ms ease" }}
+                        style={{ background: rowBg, transition: "background 150ms ease" }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(201,168,76,0.03)"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
                       >
-                        {/* Feature label */}
                         <td style={{
-                          padding: "15px 20px",
+                          padding: "16px 24px",
                           color: "#F5F0E8", fontSize: "0.9rem", fontWeight: 500,
                           borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
+                          borderTop: row.isPrice ? "1px solid rgba(201,168,76,0.1)" : "none",
                         }}>
                           {row.feature}
                         </td>
 
-                        {/* StatementFlow */}
                         <td style={{
-                          padding: "15px 16px", textAlign: "center",
+                          padding: "16px 24px", textAlign: "center",
                           background: "rgba(201,168,76,0.06)",
                           borderLeft: "1px solid rgba(201,168,76,0.2)",
                           borderRight: "1px solid rgba(201,168,76,0.2)",
                           borderBottom: idx < 9 ? "1px solid rgba(201,168,76,0.08)" : "none",
+                          borderTop: row.isPrice ? "1px solid rgba(201,168,76,0.1)" : "none",
                         }}>
                           <Cell val={row.sf} isSF isPrice={row.isPrice} />
                         </td>
 
-                        {/* Emma */}
                         <td style={{
-                          padding: "15px 16px", textAlign: "center",
+                          padding: "16px 24px", textAlign: "center",
                           borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
+                          borderTop: row.isPrice ? "1px solid rgba(201,168,76,0.1)" : "none",
                         }}>
                           <Cell val={row.emma} isPrice={row.isPrice} />
                         </td>
 
-                        {/* Snoop */}
                         <td style={{
-                          padding: "15px 16px", textAlign: "center",
+                          padding: "16px 24px", textAlign: "center",
                           borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
+                          borderTop: row.isPrice ? "1px solid rgba(201,168,76,0.1)" : "none",
                         }}>
                           <Cell val={row.snoop} isPrice={row.isPrice} />
                         </td>
 
-                        {/* DocuClipper */}
                         <td style={{
-                          padding: "15px 16px", textAlign: "center",
+                          padding: "16px 24px", textAlign: "center",
                           borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
+                          borderTop: row.isPrice ? "1px solid rgba(201,168,76,0.1)" : "none",
                         }}>
                           <Cell val={row.docu} isPrice={row.isPrice} />
                         </td>
@@ -1311,20 +1265,16 @@ export default function Home() {
               </table>
             </div>
 
-            {/* Disclaimer */}
-            <div style={{
-              padding: "14px 20px",
-              borderTop: "1px solid rgba(30,42,58,0.6)",
-              background: "rgba(0,0,0,0.15)",
-            }}>
-              <p style={{
-                margin: 0, color: "#8A9BB5", fontSize: "0.75rem",
-                fontStyle: "italic", lineHeight: 1.5,
-              }}>
-                Comparison based on publicly available information April 2026. Emma and Snoop require Open Banking bank account access.
-              </p>
-            </div>
           </div>
+
+          {/* Disclaimer */}
+          <p style={{
+            textAlign: "center", marginTop: 16,
+            color: "#8A9BB5", fontSize: "0.75rem",
+            fontStyle: "italic", lineHeight: 1.5,
+          }}>
+            Comparison based on publicly available information, April 2026. Emma and Snoop require Open Banking bank login access.
+          </p>
 
           {/* CTA */}
           <div style={{ textAlign: "center", marginTop: 40 }}>
