@@ -1164,8 +1164,9 @@ export default function Home() {
                     const rowBg  = row.isPrice ? "rgba(201,168,76,0.04)" : (isEven ? "rgba(255,255,255,0.01)" : "transparent");
 
                     function Cell({ val, isSF, isPrice }) {
+                      let inner;
                       if (isPrice) {
-                        return isSF ? (
+                        inner = isSF ? (
                           <span style={{
                             fontSize: "1.1rem", fontWeight: 700,
                             background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
@@ -1175,20 +1176,19 @@ export default function Home() {
                         ) : (
                           <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#8A9BB5" }}>{val}</span>
                         );
-                      }
-                      if (val === "partial") {
-                        return (
+                      } else if (val === "partial") {
+                        inner = (
                           <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#F59E0B", fontStyle: "italic" }}>
                             ⚠ Partial
                           </span>
                         );
-                      }
-                      if (val === true) {
-                        return (
+                      } else if (val === true) {
+                        inner = (
                           <span style={{
                             display: "inline-flex", alignItems: "center", justifyContent: "center",
                             width: 28, height: 28, borderRadius: "50%",
                             background: "rgba(16,185,129,0.15)",
+                            flexShrink: 0,
                           }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                               stroke="#ffffff" strokeWidth="2.5"
@@ -1197,14 +1197,21 @@ export default function Home() {
                             </svg>
                           </span>
                         );
+                      } else {
+                        inner = (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="rgba(239,68,68,0.5)" strokeWidth="2.5"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            style={{ display: "block" }}>
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        );
                       }
                       return (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                          stroke="rgba(239,68,68,0.5)" strokeWidth="2.5"
-                          strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18"/>
-                          <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {inner}
+                        </div>
                       );
                     }
 
@@ -1225,7 +1232,7 @@ export default function Home() {
                         </td>
 
                         <td style={{
-                          padding: "16px 24px", textAlign: "center",
+                          padding: "16px 24px", textAlign: "center", verticalAlign: "middle",
                           background: "rgba(201,168,76,0.06)",
                           borderLeft: "1px solid rgba(201,168,76,0.2)",
                           borderRight: "1px solid rgba(201,168,76,0.2)",
@@ -1236,7 +1243,7 @@ export default function Home() {
                         </td>
 
                         <td style={{
-                          padding: "16px 24px", textAlign: "center",
+                          padding: "16px 24px", textAlign: "center", verticalAlign: "middle",
                           borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
                           borderTop: row.isPrice ? "1px solid rgba(201,168,76,0.1)" : "none",
                         }}>
@@ -1244,7 +1251,7 @@ export default function Home() {
                         </td>
 
                         <td style={{
-                          padding: "16px 24px", textAlign: "center",
+                          padding: "16px 24px", textAlign: "center", verticalAlign: "middle",
                           borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
                           borderTop: row.isPrice ? "1px solid rgba(201,168,76,0.1)" : "none",
                         }}>
@@ -1252,7 +1259,7 @@ export default function Home() {
                         </td>
 
                         <td style={{
-                          padding: "16px 24px", textAlign: "center",
+                          padding: "16px 24px", textAlign: "center", verticalAlign: "middle",
                           borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
                           borderTop: row.isPrice ? "1px solid rgba(201,168,76,0.1)" : "none",
                         }}>
