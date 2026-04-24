@@ -184,7 +184,7 @@ export default function UploadPage() {
       if (rejected.length) { setDragErr('Only PDF files are accepted.'); return; }
       addFiles(accepted);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [files, isPro, maxFiles]),
+    }, [files, isBusiness, maxFiles]),
     accept:   { 'application/pdf': ['.pdf'] },
     multiple: true,
     disabled: isProcessing || files.length >= maxFiles,
