@@ -1091,7 +1091,264 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════
-          11. FAQ
+          11. COMPETITOR COMPARISON
+      ══════════════════════════════════════════════════════════════ */}
+      <section className="hp-section" style={{ background: "#080C14" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
+
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
+              Why StatementFlow
+            </p>
+            <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#F5F0E8", margin: "0 0 14px", letterSpacing: "-0.02em" }}>
+              The smarter way to understand your money
+            </h2>
+            <p style={{ color: "#8A9BB5", fontSize: "1.1rem", margin: 0, lineHeight: 1.6, maxWidth: 560, marginInline: "auto" }}>
+              We're the only UK tool that works without giving anyone access to your bank account
+            </p>
+          </div>
+
+          {/* Comparison table card */}
+          <div style={{
+            background: "#0D1117",
+            border: "1px solid rgba(201,168,76,0.15)",
+            borderRadius: 20,
+            overflow: "hidden",
+            maxWidth: 900,
+            margin: "0 auto",
+          }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
+
+                {/* Column headers */}
+                <thead>
+                  <tr style={{ background: "#080C14" }}>
+                    {/* Feature column */}
+                    <th style={{
+                      width: "30%", padding: "18px 20px",
+                      textAlign: "left", color: "#8A9BB5",
+                      fontSize: "0.78rem", fontWeight: 600,
+                      textTransform: "uppercase", letterSpacing: "0.08em",
+                      borderBottom: "1px solid rgba(201,168,76,0.1)",
+                    }}>
+                      Feature
+                    </th>
+
+                    {/* StatementFlow — highlighted */}
+                    <th style={{
+                      padding: "18px 16px",
+                      background: "rgba(201,168,76,0.06)",
+                      borderLeft: "1px solid rgba(201,168,76,0.2)",
+                      borderRight: "1px solid rgba(201,168,76,0.2)",
+                      borderBottom: "1px solid rgba(201,168,76,0.1)",
+                      textAlign: "center",
+                    }}>
+                      <div style={{
+                        background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        fontSize: "0.95rem", fontWeight: 800,
+                        letterSpacing: "-0.01em",
+                      }}>
+                        StatementFlow
+                      </div>
+                      <span style={{
+                        display: "inline-block", marginTop: 6,
+                        background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
+                        color: "#080C14", fontSize: "0.62rem", fontWeight: 800,
+                        padding: "2px 9px", borderRadius: 999,
+                        letterSpacing: "0.04em",
+                      }}>
+                        ⭐ Best
+                      </span>
+                    </th>
+
+                    {/* Emma */}
+                    <th style={{
+                      padding: "18px 16px", textAlign: "center",
+                      color: "#8A9BB5", fontSize: "0.9rem", fontWeight: 500,
+                      borderBottom: "1px solid rgba(201,168,76,0.1)",
+                    }}>
+                      Emma
+                    </th>
+
+                    {/* Snoop */}
+                    <th style={{
+                      padding: "18px 16px", textAlign: "center",
+                      color: "#8A9BB5", fontSize: "0.9rem", fontWeight: 500,
+                      borderBottom: "1px solid rgba(201,168,76,0.1)",
+                    }}>
+                      Snoop
+                    </th>
+
+                    {/* DocuClipper */}
+                    <th style={{
+                      padding: "18px 16px", textAlign: "center",
+                      color: "#8A9BB5", fontSize: "0.9rem", fontWeight: 500,
+                      borderBottom: "1px solid rgba(201,168,76,0.1)",
+                    }}>
+                      DocuClipper
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {[
+                    { feature: "No bank login needed",      sf: true,   emma: false,  snoop: false, docu: true,     isPrice: false },
+                    { feature: "No signup required to try", sf: true,   emma: false,  snoop: false, docu: false,    isPrice: false },
+                    { feature: "PDF statement upload",      sf: true,   emma: false,  snoop: false, docu: true,     isPrice: false },
+                    { feature: "Instant spending dashboard",sf: true,   emma: true,   snoop: true,  docu: false,    isPrice: false },
+                    { feature: "Excel & CSV export",        sf: true,   emma: false,  snoop: false, docu: true,     isPrice: false },
+                    { feature: "VAT & audit-ready view",    sf: true,   emma: false,  snoop: false, docu: false,    isPrice: false },
+                    { feature: "Budget tracking",           sf: true,   emma: true,   snoop: true,  docu: false,    isPrice: false },
+                    { feature: "Statement history",         sf: true,   emma: true,   snoop: true,  docu: false,    isPrice: false },
+                    { feature: "UK banks supported",        sf: true,   emma: true,   snoop: true,  docu: "partial",isPrice: false },
+                    { feature: "Price from",                sf: "Free", emma: "£4.99/mo", snoop: "Free", docu: "$39/mo", isPrice: true },
+                  ].map((row, idx) => {
+                    const isEven = idx % 2 === 0;
+                    const rowBg  = isEven ? "rgba(255,255,255,0.01)" : "transparent";
+
+                    function Cell({ val, isSF, isPrice }) {
+                      if (isPrice) {
+                        return (
+                          <span style={{
+                            fontSize: "0.875rem", fontWeight: 700,
+                            color: isSF ? "#C9A84C" : "#8A9BB5",
+                          }}>
+                            {val}
+                          </span>
+                        );
+                      }
+                      if (val === "partial") {
+                        return (
+                          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#F59E0B" }}>
+                            Partial
+                          </span>
+                        );
+                      }
+                      if (val === true) {
+                        return (
+                          <svg
+                            width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="#10B981" strokeWidth="2.5"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            style={isSF ? { filter: "drop-shadow(0 0 4px rgba(201,168,76,0.3))" } : {}}
+                          >
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        );
+                      }
+                      return (
+                        <svg
+                          width="18" height="18" viewBox="0 0 24 24" fill="none"
+                          stroke="#EF4444" strokeWidth="2.5"
+                          strokeLinecap="round" strokeLinejoin="round"
+                          style={{ opacity: 0.6 }}
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      );
+                    }
+
+                    return (
+                      <tr
+                        key={row.feature}
+                        style={{ background: rowBg, transition: "background 120ms ease" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(201,168,76,0.03)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
+                      >
+                        {/* Feature label */}
+                        <td style={{
+                          padding: "15px 20px",
+                          color: "#F5F0E8", fontSize: "0.9rem", fontWeight: 500,
+                          borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
+                        }}>
+                          {row.feature}
+                        </td>
+
+                        {/* StatementFlow */}
+                        <td style={{
+                          padding: "15px 16px", textAlign: "center",
+                          background: "rgba(201,168,76,0.06)",
+                          borderLeft: "1px solid rgba(201,168,76,0.2)",
+                          borderRight: "1px solid rgba(201,168,76,0.2)",
+                          borderBottom: idx < 9 ? "1px solid rgba(201,168,76,0.08)" : "none",
+                        }}>
+                          <Cell val={row.sf} isSF isPrice={row.isPrice} />
+                        </td>
+
+                        {/* Emma */}
+                        <td style={{
+                          padding: "15px 16px", textAlign: "center",
+                          borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
+                        }}>
+                          <Cell val={row.emma} isPrice={row.isPrice} />
+                        </td>
+
+                        {/* Snoop */}
+                        <td style={{
+                          padding: "15px 16px", textAlign: "center",
+                          borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
+                        }}>
+                          <Cell val={row.snoop} isPrice={row.isPrice} />
+                        </td>
+
+                        {/* DocuClipper */}
+                        <td style={{
+                          padding: "15px 16px", textAlign: "center",
+                          borderBottom: idx < 9 ? "1px solid rgba(30,42,58,0.5)" : "none",
+                        }}>
+                          <Cell val={row.docu} isPrice={row.isPrice} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Disclaimer */}
+            <div style={{
+              padding: "14px 20px",
+              borderTop: "1px solid rgba(30,42,58,0.6)",
+              background: "rgba(0,0,0,0.15)",
+            }}>
+              <p style={{
+                margin: 0, color: "#8A9BB5", fontSize: "0.75rem",
+                fontStyle: "italic", lineHeight: 1.5,
+              }}>
+                Feature comparison based on publicly available information as of April 2026. Emma and Snoop use Open Banking which requires granting app access to your live bank account.
+              </p>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: "center", marginTop: 40 }}>
+            <a
+              href="/upload"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)",
+                color: "#080C14", fontWeight: 700, fontSize: "1rem",
+                padding: "14px 34px", borderRadius: 50,
+                textDecoration: "none",
+                boxShadow: "0 4px 24px rgba(201,168,76,0.35)",
+                transition: "box-shadow 0.2s ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 8px 36px rgba(201,168,76,0.55)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 4px 24px rgba(201,168,76,0.35)"; }}
+            >
+              Try StatementFlow Free →
+            </a>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════
+          12. FAQ
       ══════════════════════════════════════════════════════════════ */}
       <section id="faq" aria-label="Frequently Asked Questions" className="hp-section" style={{ background: "#080C14" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
