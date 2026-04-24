@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
+import UpgradeModal from '@/components/UpgradeModal';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -187,9 +189,11 @@ function StatementExportRow({ stmt, isLast, downloading, onExcel, onCSV }) {
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function ExportPage() {
+  const { data: session } = useSession();
   const [statements, setStatements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(null);
+  const [upgradeModal, setUpgradeModal] = useState(false);
 
   useEffect(() => {
     fetch('/api/statements')
@@ -202,6 +206,10 @@ export default function ExportPage() {
   }, []);
 
   async function handleDownloadExcel(stmt) {
+    if ((session?.user?.plan || 'FREE') === 'FREE') {
+      setUpgradeModal(true);
+      return;
+    }
     setDownloading(stmt.id + '_excel');
     try {
       const res = await fetch(`/api/statements/${stmt.id}`);
@@ -274,6 +282,8 @@ export default function ExportPage() {
           50% { opacity: 0.4; }
         }
       `}</style>
+
+      {upgradeModal && <UpgradeModal feature="excel" onClose={() => setUpgradeModal(false)} />}
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>

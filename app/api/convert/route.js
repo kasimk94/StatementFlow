@@ -502,17 +502,21 @@ export async function POST(req) {
 
     // ── 0. Upload limit check ───────────────────────────────────────────────
     const session = await getServerSession(authOptions);
+    let sessionUser = null;
     if (session?.user?.id) {
-      const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-      if (user && user.plan === "FREE" && user.uploadCount >= 1) {
-        return NextResponse.json(
-          { error: "You have reached the 1 upload limit on the free plan. Upgrade to Pro for unlimited uploads." },
-          { status: 403 }
-        );
+      sessionUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+      if (sessionUser && sessionUser.plan === "FREE") {
+        const now = new Date();
+        const resetAt = new Date(sessionUser.monthlyUploadsResetAt);
+        const isNewMonth = now.getFullYear() !== resetAt.getFullYear() || now.getMonth() !== resetAt.getMonth();
+        const used = isNewMonth ? 0 : (sessionUser.monthlyUploads ?? 0);
+        if (used >= 3) {
+          return NextResponse.json(
+            { error: "You've reached 3 uploads this month on the Free plan. Upgrade to Pro for unlimited uploads." },
+            { status: 403 }
+          );
+        }
       }
-    } else {
-      // Guest: check cookie-based counter (handled client-side — server trusts session)
-      // No strict server enforcement for guests; rely on client-side gate
     }
 
     // ── 1. Read form data ───────────────────────────────────────────────────
@@ -721,9 +725,16 @@ export async function POST(req) {
     // ── Increment upload count + save statement for logged-in users ───────
     let statementId = null;
     if (session?.user?.id) {
+      const now = new Date();
+      const resetAt = sessionUser ? new Date(sessionUser.monthlyUploadsResetAt) : now;
+      const isNewMonth = now.getFullYear() !== resetAt.getFullYear() || now.getMonth() !== resetAt.getMonth();
       await prisma.user.update({
         where: { id: session.user.id },
-        data: { uploadCount: { increment: 1 } },
+        data: {
+          uploadCount: { increment: 1 },
+          monthlyUploads: isNewMonth ? 1 : { increment: 1 },
+          ...(isNewMonth ? { monthlyUploadsResetAt: now } : {}),
+        },
       });
 
       // Derive date range from transactions

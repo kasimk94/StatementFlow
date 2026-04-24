@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useDropzone } from 'react-dropzone';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import UpgradeModal from '@/components/UpgradeModal';
 
 const BANKS = ['Barclays', 'HSBC', 'Monzo', 'Starling', 'Lloyds', 'NatWest', 'Santander', 'Halifax'];
 
@@ -75,17 +76,30 @@ export default function UploadPage() {
   const router = useRouter();
   const { data: session } = useSession();
 
-  const isPro    = ['PRO', 'BUSINESS'].includes(session?.user?.plan);
-  const maxFiles = isPro ? 6 : 1;
+  const plan       = session?.user?.plan || 'FREE';
+  const isBusiness = plan === 'BUSINESS';
+  const maxFiles   = isBusiness ? 6 : 1;
 
-  const [files,       setFiles]       = useState([]);
-  const [statuses,    setStatuses]    = useState([]);
-  const [resultIds,   setResultIds]   = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showProBanner, setShowProBanner] = useState(false);
-  const [error,       setError]       = useState(null);
-  const [dragErr,     setDragErr]     = useState(null);
-  const [allDone,     setAllDone]     = useState(false);
+  const [files,          setFiles]          = useState([]);
+  const [statuses,       setStatuses]       = useState([]);
+  const [resultIds,      setResultIds]      = useState([]);
+  const [isProcessing,   setIsProcessing]   = useState(false);
+  const [showProBanner,  setShowProBanner]  = useState(false);
+  const [error,          setError]          = useState(null);
+  const [dragErr,        setDragErr]        = useState(null);
+  const [allDone,        setAllDone]        = useState(false);
+  const [monthlyUploads, setMonthlyUploads] = useState(0);
+  const [upgradeModal,   setUpgradeModal]   = useState(null);
+
+  // Fetch monthly usage for free users
+  useEffect(() => {
+    if (plan === 'FREE') {
+      fetch('/api/user/usage')
+        .then(r => r.json())
+        .then(d => { if (typeof d.monthlyUploads === 'number') setMonthlyUploads(d.monthlyUploads); })
+        .catch(() => {});
+    }
+  }, [plan]);
 
   const doneCount = statuses.filter(s => s === 'done').length;
 
@@ -109,10 +123,13 @@ export default function UploadPage() {
     if (!pdfs.length) { setDragErr('Only PDF files are accepted.'); return; }
 
     const slots = maxFiles - files.length;
-    if (slots <= 0) return;
+    if (slots <= 0) {
+      if (!isBusiness) setUpgradeModal('bulk');
+      return;
+    }
 
     const toAdd = pdfs.slice(0, slots);
-    if (pdfs.length > slots && !isPro) setShowProBanner(true);
+    if (pdfs.length > slots && !isBusiness) setShowProBanner(true);
 
     setFiles(p     => [...p, ...toAdd]);
     setStatuses(p  => [...p, ...toAdd.map(() => 'pending')]);
@@ -128,6 +145,10 @@ export default function UploadPage() {
 
   async function handleUpload() {
     if (!files.length || isProcessing) return;
+    if (plan === 'FREE' && monthlyUploads >= 3) {
+      setUpgradeModal('uploads');
+      return;
+    }
     setIsProcessing(true);
     setError(null);
 
@@ -178,6 +199,8 @@ export default function UploadPage() {
 
   const progressPct = files.length > 0 ? (doneCount / files.length) * 100 : 0;
 
+  const atMonthlyLimit = plan === 'FREE' && monthlyUploads >= 3;
+
   return (
     <DashboardLayout title="Upload Statement">
       <style>{`
@@ -185,13 +208,15 @@ export default function UploadPage() {
         @keyframes up-spin  { to { transform: rotate(360deg); } }
       `}</style>
 
+      {upgradeModal && <UpgradeModal feature={upgradeModal} onClose={() => setUpgradeModal(null)} />}
+
       {/* Page header */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ color: '#F5F0E8', fontSize: '1.8rem', fontWeight: 700, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
           Upload Statement{files.length > 1 ? 's' : ''}
         </h1>
         <p style={{ color: '#8A9BB5', margin: 0, fontSize: '0.9rem' }}>
-          {isPro
+          {isBusiness
             ? 'Upload up to 6 statements for a combined multi-bank analysis'
             : 'Upload a bank statement PDF to analyse your transactions'}
         </p>
@@ -199,8 +224,40 @@ export default function UploadPage() {
 
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
 
+        {/* Monthly usage bar for free users */}
+        {plan === 'FREE' && (
+          <div style={{
+            background: '#0D1117', border: '1px solid rgba(201,168,76,0.12)',
+            borderRadius: 12, padding: '14px 18px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ color: '#8A9BB5', fontSize: '0.8rem' }}>Uploads this month</span>
+              <span style={{ color: atMonthlyLimit ? '#EF4444' : '#F5F0E8', fontSize: '0.8rem', fontWeight: 700 }}>
+                {monthlyUploads} / 3
+              </span>
+            </div>
+            <div style={{ height: 5, background: '#1E2A3A', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: 999,
+                background: atMonthlyLimit ? '#EF4444' : 'linear-gradient(90deg,#C9A84C,#E8C97A)',
+                width: `${Math.min((monthlyUploads / 3) * 100, 100)}%`,
+                transition: 'width 0.4s ease',
+              }} />
+            </div>
+            {atMonthlyLimit && (
+              <p style={{ color: '#EF4444', fontSize: '0.78rem', margin: '8px 0 0' }}>
+                Limit reached —{' '}
+                <Link href="/account#upgrade" style={{ color: '#C9A84C', fontWeight: 600, textDecoration: 'none' }}>
+                  upgrade to Pro
+                </Link>
+                {' '}for unlimited uploads
+              </p>
+            )}
+          </div>
+        )}
+
         {/* ── Drop zone ── */}
-        {canAddMore && (
+        {canAddMore && !atMonthlyLimit && (
           <div
             {...getRootProps()}
             style={{
@@ -238,7 +295,7 @@ export default function UploadPage() {
                     {files.length > 0 ? 'Add another statement' : 'Drop your bank statement here'}
                   </p>
                   <p style={{ margin: 0, fontSize: '0.82rem', color: '#8A9BB5' }}>
-                    Supports PDF files up to 10MB{isPro ? ` · Up to ${maxFiles} files` : ''}
+                    Supports PDF files up to 10MB{isBusiness ? ` · Up to ${maxFiles} files` : ''}
                   </p>
                 </div>
                 <button
@@ -276,15 +333,15 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* Pro banner */}
-        {showProBanner && !isPro && (
+        {/* Bulk upgrade banner */}
+        {showProBanner && !isBusiness && (
           <div style={{
             background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.3)',
             borderRadius: 12, padding: '12px 16px', marginBottom: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
           }}>
             <p style={{ margin: 0, fontSize: '0.85rem', color: '#C9A84C', fontWeight: 500 }}>
-              ⭐ Upgrade to Pro to upload multiple statements at once
+              ⭐ Upgrade to Business to upload multiple statements at once
             </p>
             <Link href="/account#upgrade" style={{
               background: 'linear-gradient(135deg,#C9A84C,#E8C97A)', color: '#080C14',
@@ -409,13 +466,13 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* Pro upgrade hint for free users with no files */}
-        {files.length === 0 && !isPro && (
+        {/* Business upgrade hint for non-Business users with no files */}
+        {files.length === 0 && !isBusiness && (
           <div style={{ textAlign: 'center', marginTop: 20 }}>
             <p style={{ color: '#8A9BB5', fontSize: '0.78rem', margin: 0 }}>
               Want to upload multiple statements?{' '}
               <Link href="/account#upgrade" style={{ color: '#C9A84C', fontWeight: 600, textDecoration: 'none' }}>
-                Upgrade to Pro →
+                Upgrade to Business →
               </Link>
             </p>
           </div>

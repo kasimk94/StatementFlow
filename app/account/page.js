@@ -12,7 +12,8 @@ export default async function AccountPage({ searchParams }) {
     where: { email: session.user.email },
     select: {
       id: true, name: true, email: true, plan: true,
-      uploadCount: true, image: true, createdAt: true,
+      uploadCount: true, monthlyUploads: true, monthlyUploadsResetAt: true,
+      image: true, createdAt: true,
     },
   });
 
@@ -28,9 +29,15 @@ export default async function AccountPage({ searchParams }) {
     statementCount = await prisma.statement.count({ where: { userId: user.id } });
   } catch (_) {}
 
+  // Resolve monthly uploads (reset if new month)
+  const now = new Date();
+  const resetAt = new Date(user.monthlyUploadsResetAt ?? now);
+  const isNewMonth = now.getFullYear() !== resetAt.getFullYear() || now.getMonth() !== resetAt.getMonth();
+  const resolvedMonthlyUploads = isNewMonth ? 0 : (user.monthlyUploads ?? 0);
+
   return (
     <AccountClient
-      user={user}
+      user={{ ...user, monthlyUploads: resolvedMonthlyUploads }}
       successMsg={successMsg}
       cancelMsg={cancelMsg}
       statementCount={statementCount}

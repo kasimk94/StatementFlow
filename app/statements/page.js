@@ -196,8 +196,51 @@ export default function StatementsPage() {
         </div>
       )}
 
+      {/* Locked state for free users */}
+      {!loading && (session?.user?.plan || 'FREE') === 'FREE' && (
+        <div style={{ paddingTop: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 0 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h2 style={{ color: '#F5F0E8', fontSize: '1.3rem', fontWeight: 700, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+            Statement history is a Pro feature
+          </h2>
+          <p style={{ color: '#8A9BB5', fontSize: '0.9rem', maxWidth: 360, lineHeight: 1.6, margin: '0 0 32px' }}>
+            Upgrade to Pro to save your statements, revisit past data, and track your finances over time.
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <form action="/api/stripe/checkout" method="POST">
+              <input type="hidden" name="plan" value="PRO" />
+              <button type="submit" style={{
+                padding: '11px 28px',
+                background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+                color: '#080C14', fontWeight: 700, fontSize: '0.9rem',
+                borderRadius: 50, border: 'none', cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(201,168,76,0.35)',
+              }}>
+                Upgrade to Pro — £4.99/mo
+              </button>
+            </form>
+            <Link href="/upload" style={{
+              padding: '11px 24px',
+              background: 'transparent', border: '1px solid rgba(201,168,76,0.35)',
+              color: '#C9A84C', fontWeight: 600, fontSize: '0.875rem',
+              borderRadius: 50, textDecoration: 'none',
+            }}>
+              Upload a Statement
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Empty state */}
-      {!loading && statements.length === 0 && (
+      {!loading && statements.length === 0 && (session?.user?.plan || 'FREE') !== 'FREE' && (
         <div style={{ textAlign: "center", paddingTop: 80 }}>
           <svg
             width="64" height="64"
@@ -250,7 +293,7 @@ export default function StatementsPage() {
       )}
 
       {/* Monthly reminder card */}
-      {!loading && statements.length > 0 && !hasUploadedThisMonth(statements) && (() => {
+      {!loading && (session?.user?.plan || 'FREE') !== 'FREE' && statements.length > 0 && !hasUploadedThisMonth(statements) && (() => {
         const monthName = MONTH_NAMES[new Date().getMonth()];
         return (
           <div style={{
@@ -281,7 +324,7 @@ export default function StatementsPage() {
       })()}
 
       {/* Statements grid */}
-      {!loading && statements.length > 0 && (
+      {!loading && statements.length > 0 && (session?.user?.plan || 'FREE') !== 'FREE' && (
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fill, minmax(440px, 1fr))",

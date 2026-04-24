@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 
 // ─── Category definitions ─────────────────────────────────────────────────────
@@ -860,6 +862,7 @@ function TipsCard() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function BudgetPage() {
+  const { data: session } = useSession();
   const [income,         setIncome]         = useState('');
   const [budgets,        setBudgets]        = useState({});
   const [actuals,        setActuals]        = useState({});
@@ -1042,6 +1045,55 @@ export default function BudgetPage() {
       const inp = incomePromptRef.current.querySelector('input');
       if (inp) setTimeout(() => inp.focus(), 400);
     }
+  }
+
+  const plan = session?.user?.plan || 'FREE';
+
+  if (plan === 'FREE') {
+    return (
+      <DashboardLayout title="Budget">
+        <div style={{ paddingTop: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 0 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h2 style={{ color: '#F5F0E8', fontSize: '1.3rem', fontWeight: 700, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+            Budget planner is a Pro feature
+          </h2>
+          <p style={{ color: '#8A9BB5', fontSize: '0.9rem', maxWidth: 360, lineHeight: 1.6, margin: '0 0 32px' }}>
+            Set monthly budgets, track actuals against targets, and get a financial health score.
+            Upgrade to Pro to unlock this tool.
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <form action="/api/stripe/checkout" method="POST">
+              <input type="hidden" name="plan" value="PRO" />
+              <button type="submit" style={{
+                padding: '11px 28px',
+                background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+                color: '#080C14', fontWeight: 700, fontSize: '0.9rem',
+                borderRadius: 50, border: 'none', cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(201,168,76,0.35)',
+              }}>
+                Upgrade to Pro — £4.99/mo
+              </button>
+            </form>
+            <Link href="/upload" style={{
+              padding: '11px 24px',
+              background: 'transparent', border: '1px solid rgba(201,168,76,0.35)',
+              color: '#C9A84C', fontWeight: 600, fontSize: '0.875rem',
+              borderRadius: 50, textDecoration: 'none',
+            }}>
+              Upload a Statement
+            </Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   if (loading) {

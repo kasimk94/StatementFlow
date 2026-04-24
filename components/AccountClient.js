@@ -6,10 +6,18 @@ import Link from "next/link";
 import DashboardLayout from "@/components/DashboardLayout";
 
 const PLAN_DETAILS = {
-  FREE:     { label: "FREE",     price: "£0/month",     uploads: "1 upload per month" },
+  FREE:     { label: "FREE",     price: "£0/month",     uploads: "3 uploads per month" },
   PRO:      { label: "PRO",      price: "£4.99/month",  uploads: "Unlimited uploads" },
-  BUSINESS: { label: "BUSINESS", price: "£19.99/month", uploads: "Unlimited uploads" },
+  BUSINESS: { label: "BUSINESS", price: "£19.99/month", uploads: "Unlimited uploads + bulk" },
 };
+
+const FREE_FEATURES_LOCKED = [
+  "Statement history",
+  "Budget planner",
+  "Excel export",
+  "Audit-Ready view",
+  "Bulk upload",
+];
 
 function PlanBadge({ plan }) {
   const styles = {
@@ -67,7 +75,8 @@ export default function AccountClient({ user, successMsg, cancelMsg, statementCo
   const initials = (user.name || user.email || "?")
     .split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
 
-  const uploadLimit = plan === "FREE" ? 1 : null;
+  const monthlyUploads = user.monthlyUploads ?? 0;
+  const uploadLimit = plan === "FREE" ? 3 : null;
 
   return (
     <DashboardLayout title="Account">
@@ -155,9 +164,20 @@ export default function AccountClient({ user, successMsg, cancelMsg, statementCo
           {plan === "FREE" && (
             <>
               <Divider />
-              <p style={{ fontSize: "0.875rem", color: "#8A9BB5", marginBottom: 16 }}>
-                Upgrade to unlock unlimited uploads, full statement history, and priority support.
+              <p style={{ fontSize: "0.82rem", color: "#8A9BB5", marginBottom: 12 }}>
+                Upgrade to unlock everything below:
               </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+                {FREE_FEATURES_LOCKED.map(f => (
+                  <span key={f} style={{
+                    background: "rgba(239,68,68,0.06)", color: "#8A9BB5",
+                    border: "1px solid rgba(239,68,68,0.15)", borderRadius: 99,
+                    padding: "3px 12px", fontSize: "0.75rem", fontWeight: 500,
+                  }}>
+                    🔒 {f}
+                  </span>
+                ))}
+              </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <form action="/api/stripe/checkout" method="POST" style={{ display: "inline" }}>
                   <input type="hidden" name="plan" value="PRO" />
@@ -203,17 +223,17 @@ export default function AccountClient({ user, successMsg, cancelMsg, statementCo
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: "0.875rem", color: "#8A9BB5" }}>Statements this month</span>
-                <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#F5F0E8" }}>
-                  {user.uploadCount ?? 0}{uploadLimit ? ` / ${uploadLimit}` : ""}
+                <span style={{ fontSize: "0.875rem", color: "#8A9BB5" }}>Uploads this month</span>
+                <span style={{ fontSize: "0.875rem", fontWeight: 600, color: uploadLimit && monthlyUploads >= uploadLimit ? "#EF4444" : "#F5F0E8" }}>
+                  {plan === "FREE" ? monthlyUploads : (user.uploadCount ?? 0)}{uploadLimit ? ` / ${uploadLimit}` : ""}
                 </span>
               </div>
               {uploadLimit && (
                 <div style={{ height: 4, background: "#1E2A3A", borderRadius: 999, overflow: "hidden" }}>
                   <div style={{
                     height: "100%",
-                    width: `${Math.min(((user.uploadCount ?? 0) / uploadLimit) * 100, 100)}%`,
-                    background: "linear-gradient(90deg, #C9A84C, #E8C97A)",
+                    width: `${Math.min((monthlyUploads / uploadLimit) * 100, 100)}%`,
+                    background: monthlyUploads >= uploadLimit ? "#EF4444" : "linear-gradient(90deg, #C9A84C, #E8C97A)",
                     borderRadius: 999,
                     transition: "width 0.6s ease",
                   }} />

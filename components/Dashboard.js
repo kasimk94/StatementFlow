@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import {
   PieChart, Pie, Cell, Tooltip as ReTooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Label,
 } from "recharts";
+import UpgradeModal from "@/components/UpgradeModal";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 function fmt(amount) {
@@ -1118,11 +1120,15 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const [txExpanded, setTxExpanded]           = useState(false);
   const [weekFilter, setWeekFilter]           = useState(null);
   const [accountantView, setAccountantView]   = useState(false);
+  const [showAuditModal, setShowAuditModal]   = useState(false);
   const [warningsDismissed, setWarningsDismissed] = useState(false);
   const [successVisible, setSuccessVisible]       = useState(true);
   const [editingTx, setEditingTx]                 = useState(null); // { idx, merchantKey }
   const [localCategories, setLocalCategories]     = useState({}); // txKey → category
   const [catSaving, setCatSaving]                 = useState(null);
+
+  const { data: session } = useSession();
+  const userPlan = session?.user?.plan || 'FREE';
 
   // Animation states
   const [loaded,          setLoaded]          = useState(false);
@@ -1634,6 +1640,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   return (
     <div className="space-y-6" style={{ transition: "background 0.4s ease", background: "#080C14", borderRadius: 20, padding: accountantView ? "0 0 24px" : undefined, paddingTop: 16 }}>
 
+      {showAuditModal && <UpgradeModal feature="audit" onClose={() => setShowAuditModal(false)} />}
+
       {/* ── PRINT STYLES ── */}
       <style>{`
         @media print {
@@ -1853,7 +1861,10 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         <div onClick={() => setAccountantView(false)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 400 : 600, color: accountantView ? "#8A9BB5" : "#C9A84C", transition: "color 0.3s ease", userSelect: "none" }}>
           👤 Personal
         </div>
-        <div onClick={() => setAccountantView(true)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "#080C14" : "#8A9BB5", transition: "color 0.3s ease", userSelect: "none" }}>
+        <div
+          onClick={() => { if (userPlan === 'FREE') setShowAuditModal(true); else setAccountantView(true); }}
+          style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "#080C14" : "#8A9BB5", transition: "color 0.3s ease", userSelect: "none" }}
+        >
           📊 Audit-Ready
         </div>
       </div>
