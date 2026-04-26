@@ -264,6 +264,14 @@ function SidebarContent({ isOpen, onClose }) {
     .toUpperCase();
 
   return (
+    <>
+      <style>{`
+        .sf-sidebar-nav::-webkit-scrollbar { width: 3px; }
+        .sf-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+        .sf-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.18); border-radius: 999px; }
+        .sf-sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,0.38); }
+        .sf-sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(201,168,76,0.18) transparent; }
+      `}</style>
     <div style={{
       position: 'fixed',
       left: 0,
@@ -310,7 +318,7 @@ function SidebarContent({ isOpen, onClose }) {
       }} />
 
       {/* ── Nav Sections ── */}
-      <nav style={{
+      <nav className="sf-sidebar-nav" style={{
         flex: 1,
         overflowY: 'auto',
         padding: '12px 8px',
@@ -530,6 +538,7 @@ function SidebarContent({ isOpen, onClose }) {
         </Link>
       </div>
     </div>
+    </>
   );
 }
 

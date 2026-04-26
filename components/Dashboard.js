@@ -953,7 +953,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
             <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600, color: "#F5F0E8", borderLeft: "3px solid #C9A84C", paddingLeft: 12 }}>✨ Your Money, Explained</h2>
             <span style={{ fontSize: "0.62rem", fontWeight: 700, background: "linear-gradient(135deg,#C9A84C,#E8C97A)", color: "#080C14", padding: "3px 10px", borderRadius: 20, letterSpacing: "0.02em", whiteSpace: "nowrap", flexShrink: 0 }}>StatementFlow AI</span>
           </div>
-          <p style={{ margin: 0, fontSize: "0.82rem", color: "#8A9BB5" }}>Here's what stood out this month</p>
+          <p style={{ margin: 0, fontSize: "0.82rem", color: "#8A9BB5" }}>{insights?.summary || "Here's what stood out this month"}</p>
         </div>
         {score > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
@@ -974,8 +974,7 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
         {/* Card A — Spending Personality with "Why?" toggle (Upgrade 4) */}
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ flex: 1, borderRadius: showWhy ? "12px 12px 0 0" : 12, boxShadow: "0 0 60px rgba(201,168,76,0.04), 0 4px 24px rgba(0,0,0,0.4)", padding: 24, background: "linear-gradient(135deg, #0a1206 0%, #111820 100%)", border: "1px solid rgba(201,168,76,0.2)", minHeight: 168, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: -24, right: -24, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
-            <div style={{ position: "absolute", bottom: -28, left: -12, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+            <div style={{ position: "absolute", top: -30, right: -30, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.14) 0%, transparent 70%)", pointerEvents: "none" }} />
             <p style={{ margin: "0 0 8px", fontSize: "0.62rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em" }}>Spending Personality</p>
             <div style={{ fontSize: "3rem", lineHeight: 1, marginBottom: 10 }}>{personality.emoji}</div>
             <p style={{ margin: "0 0 4px", fontSize: "1.5rem", fontWeight: 700, color: "#C9A84C", lineHeight: 1.2, letterSpacing: "-0.02em" }}>{personality.name}</p>
@@ -1103,6 +1102,69 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
           </div>
         )}
       </div>
+
+      {/* ── AI TIP ── */}
+      {insights?.tip && (
+        <div style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: 1 }}>💡</span>
+          <p style={{ margin: 0, fontSize: "0.83rem", color: "#C9A84C", lineHeight: 1.5, fontWeight: 500 }}>{insights.tip}</p>
+        </div>
+      )}
+
+      {/* ── SUBSCRIPTION DETECTION ── */}
+      {(() => {
+        const KNOWN_SUBS = ["netflix","spotify","amazon prime","prime video","apple","disney","hbo","sky","now tv","youtube","microsoft","adobe","gym","fitness","o2","vodafone","three","ee","bt ","virgin media","broadband","icloud","dropbox","notion","slack","zoom","openai","chatgpt","claude","duolingo","audible"];
+        const seen = new Set();
+        const subs = [];
+        // Known subscription merchants — any appearance
+        for (const t of transactions) {
+          if (t.amount >= 0) continue;
+          const nameLow = t.description.toLowerCase();
+          for (const kw of KNOWN_SUBS) {
+            if (nameLow.includes(kw) && !seen.has(t.description)) {
+              seen.add(t.description);
+              subs.push({ name: t.description, amount: Math.abs(t.amount), isKnown: true });
+              break;
+            }
+          }
+        }
+        // Same-merchant same-exact-amount appearing 2+ times (patterns)
+        const freq = {};
+        for (const t of transactions) {
+          if (t.amount >= 0 || seen.has(t.description)) continue;
+          const key = `${t.description}||${Math.abs(t.amount).toFixed(2)}`;
+          freq[key] = (freq[key] || 0) + 1;
+        }
+        for (const [key, count] of Object.entries(freq)) {
+          if (count < 2) continue;
+          const [name, amtStr] = key.split("||");
+          if (!seen.has(name)) {
+            seen.add(name);
+            subs.push({ name, amount: parseFloat(amtStr), isKnown: false });
+          }
+        }
+        const list = subs.slice(0, 6);
+        if (list.length === 0) return null;
+        const monthlyTotal = list.reduce((s, r) => s + r.amount, 0);
+        return (
+          <div style={{ background: "#0D1117", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24, border: "1px solid #1E2A3A" }}>
+            {sectionLabel("Recurring Payments")}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {list.map((r, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < list.length - 1 ? "1px solid #1E2A3A" : "none" }}>
+                  <span style={{ fontSize: "1rem", flexShrink: 0 }}>🔄</span>
+                  <span style={{ flex: 1, fontSize: "0.85rem", color: "#F5F0E8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                  {r.isKnown && <span style={{ fontSize: "0.65rem", fontWeight: 700, background: "rgba(201,168,76,0.1)", color: "#C9A84C", padding: "2px 7px", borderRadius: 10, border: "1px solid rgba(201,168,76,0.2)", flexShrink: 0 }}>Sub</span>}
+                  <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#C9A84C", flexShrink: 0 }}>{fmt(r.amount)}</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: "14px 0 0", fontSize: "0.78rem", color: "#8A9BB5" }}>
+              Detected recurring total: <strong style={{ color: "#F5F0E8" }}>{fmt(monthlyTotal)}</strong> — review these regularly to cancel unused subscriptions
+            </p>
+          </div>
+        );
+      })()}
 
     </div>
   );
@@ -1882,6 +1944,35 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         />
       </div>
 
+      {/* ── SAVINGS RATE INDICATOR ── */}
+      {income > 0 && (() => {
+        const rate = Math.max(-100, Math.min(100, ((income - expenses) / income) * 100));
+        const barPct = Math.max(0, Math.min(100, rate));
+        const barColor = rate >= 20 ? "#10B981" : rate >= 10 ? "#F59E0B" : "#EF4444";
+        const msg = rate >= 30 ? "Excellent — you saved well above the 20% target this period"
+          : rate >= 20 ? "On track — you hit the recommended 20% savings benchmark"
+          : rate >= 10 ? "Getting there — aim for 20% to build a healthy buffer"
+          : rate >= 0  ? "Low — most income went on expenses; try trimming non-essentials"
+          : "Overspent — spending exceeded income this period";
+        return (
+          <div style={{ background: "#0D1117", borderRadius: 12, border: "1px solid #1E2A3A", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+              <div>
+                <p style={{ margin: 0, fontSize: "0.62rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em" }}>Savings Rate</p>
+                <p style={{ margin: "2px 0 0", fontSize: "0.82rem", color: "#8A9BB5" }}>{msg}</p>
+              </div>
+              <span style={{ fontSize: "1.6rem", fontWeight: 800, color: barColor, lineHeight: 1 }}>{rate.toFixed(1)}%</span>
+            </div>
+            <div style={{ position: "relative", height: 8, borderRadius: 999, background: "#1E2A3A", overflow: "visible" }}>
+              <div style={{ height: "100%", width: `${barPct}%`, background: `linear-gradient(90deg, ${barColor}, ${barColor}cc)`, borderRadius: 999, transition: "width 1s ease 0.4s" }} />
+              {/* 20% target marker */}
+              <div style={{ position: "absolute", top: -3, left: "20%", width: 2, height: 14, background: "#C9A84C", borderRadius: 1 }} />
+              <span style={{ position: "absolute", top: 13, left: "20%", transform: "translateX(-50%)", fontSize: "0.6rem", color: "#C9A84C", fontWeight: 700, whiteSpace: "nowrap" }}>20% goal</span>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── VIEW TOGGLE ── */}
       <div className="view-toggle view-toggle-full" style={{ background: "#0D1117", borderRadius: "999px", padding: "4px", position: "relative", cursor: "pointer", border: "1px solid #1E2A3A" }}>
         {/* Sliding pill */}
@@ -2442,6 +2533,22 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       </div>{/* end max-height wrapper */}
       </div>{/* end transactions outer */}
+
+      {/* ── MONTH-ON-MONTH TEASER ── */}
+      {!demoMode && (
+        <div style={{ background: "#0D1117", borderRadius: 14, border: "1px solid #1E2A3A", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem", flexShrink: 0 }}>📈</div>
+            <div>
+              <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#F5F0E8" }}>Month-on-Month Comparison</p>
+              <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#8A9BB5" }}>Upload last month's statement to compare spending trends, savings changes, and category shifts</p>
+            </div>
+          </div>
+          <a href="/statements" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "linear-gradient(135deg, #C9A84C, #E8C97A)", color: "#080C14", fontWeight: 700, fontSize: "0.8rem", borderRadius: 10, textDecoration: "none", flexShrink: 0 }}>
+            View Statements →
+          </a>
+        </div>
+      )}
 
       {/* ── DEV DEBUG PANEL ── */}
       {process.env.NODE_ENV === "development" && !demoMode && debug && (

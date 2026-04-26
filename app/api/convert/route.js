@@ -390,6 +390,80 @@ function validateParse(parseResult, transactions) {
 }
 
 // ---------------------------------------------------------------------------
+// AI insights — generates a specific spending summary + tip via Claude Haiku
+// ---------------------------------------------------------------------------
+async function generateAiInsights(transactions, categories, income, expenses) {
+  try {
+    const SKIP = new Set(["Transfers Received","Transfers Sent","Internal Transfer","Refunds"]);
+    const topCats = (categories || [])
+      .filter(c => !SKIP.has(c.name))
+      .slice(0, 4)
+      .map(c => `${c.name} £${c.total.toFixed(2)}`);
+
+    const merchantTotals = {};
+    for (const t of transactions) {
+      if (t.amount >= 0 || t.isInternal) continue;
+      merchantTotals[t.description] = (merchantTotals[t.description] || 0) + Math.abs(t.amount);
+    }
+    const top3 = Object.entries(merchantTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name, amt]) => `${name} £${amt.toFixed(2)}`);
+
+    // Detect week-by-week pattern for richer context
+    const weekTotals = [0, 0, 0, 0, 0];
+    for (const t of transactions) {
+      if (t.amount >= 0 || t.isInternal) continue;
+      const d = t.date ? new Date(t.date.replace(/(\d+)\s+(\w+)\s+(\d+)/, '$3-$2-$1')) : null;
+      if (d && !isNaN(d)) {
+        const dayOfMonth = d.getDate();
+        const wkIdx = Math.min(4, Math.floor((dayOfMonth - 1) / 7));
+        weekTotals[wkIdx] += Math.abs(t.amount);
+      }
+    }
+    const peakWeekIdx = weekTotals.indexOf(Math.max(...weekTotals));
+
+    const savingsRate = income > 0 ? (((income - expenses) / income) * 100).toFixed(1) : "0";
+
+    const prompt = `You are a personal finance assistant. Produce concise, specific insights for a UK bank statement.
+
+Facts:
+- Total income: £${income.toFixed(2)}
+- Total spending: £${expenses.toFixed(2)}
+- Savings rate: ${savingsRate}%
+- Top spending categories: ${topCats.join("; ")}
+- Top 3 merchants by spend: ${top3.join("; ")}
+- Heaviest spending week: Week ${peakWeekIdx + 1} of the month (£${weekTotals[peakWeekIdx].toFixed(2)})
+
+Output ONLY valid JSON, no markdown:
+{"spendingScore":75,"summary":"One sentence: name the top category and its exact amount, then note one specific pattern such as the peak week or a day-of-week trend.","tip":"One concrete action to save money — reference an actual category or merchant from the data above, not generic advice.","subscriptions":{"list":[]}}
+
+Rules for spendingScore (0-100): savings rate 0%=20, 10%=40, 20%=65, 30%=80, 40%+=95. Adjust down 5 pts if spending exceeded income.
+Rules for subscriptions.list: only obvious recurring digital/service charges (e.g. Netflix, Spotify, gym, insurance). Max 5 items, format "Merchant £x.xx". Leave empty [] if none detected.`;
+
+    const res = await anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 450,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    logCallCost("insights", res.usage?.input_tokens ?? 0, res.usage?.output_tokens ?? 0);
+    const raw = (res.content[0]?.text || "{}").trim();
+    const match = raw.match(/\{[\s\S]*\}/);
+    const json = match ? JSON.parse(match[0]) : {};
+    return {
+      spendingScore: typeof json.spendingScore === "number" ? Math.max(0, Math.min(100, Math.round(json.spendingScore))) : 0,
+      summary: typeof json.summary === "string" ? json.summary : null,
+      tip:     typeof json.tip     === "string" ? json.tip     : null,
+      subscriptions: { list: Array.isArray(json.subscriptions?.list) ? json.subscriptions.list : [] },
+    };
+  } catch (e) {
+    console.warn("AI insights generation skipped:", e.message);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Merchant name normalisation (FIX 5)
 // ---------------------------------------------------------------------------
 const MERCHANT_MAP = {
@@ -709,6 +783,9 @@ export async function POST(req) {
 
     // ── Validation ─────────────────────────────────────────────────────────
     const validation = validateParse(parseResult, rawTransactions);
+
+    // ── AI Insights (non-blocking — failure returns null) ───────────────────
+    const aiInsights = await generateAiInsights(transactions, categories, totalIncome, totalExpenses);
     console.log("Validation:", JSON.stringify({ isValid: validation.isValid, confidence: validation.confidence, errors: validation.errors.length, warnings: validation.warnings.length }));
 
     // ── Cost summary (individual calls already logged at point of use) ───────
@@ -767,6 +844,7 @@ export async function POST(req) {
               internalTransferTotal, reversalsCount,
               categoryBreakdown: categories,
               vatSummary, realIncome, realSpending, validation,
+              insights: aiInsights,
             },
           },
         });
@@ -786,7 +864,7 @@ export async function POST(req) {
       transactionCount:     transactions.length,
       confidence:           parseConfidence,
       bank:                 bankDetected || bankName,
-      insights:             null,
+      insights:             aiInsights,
       trueSpending,
       trueIncome,
       overdraftLimit,
