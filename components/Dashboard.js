@@ -1517,6 +1517,12 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     }
     return Object.entries(map)
       .map(([name, { expense, income }]) => ({ name, expense, income }))
+      .filter(({ name }) => {
+        if (/^(Mr|Mrs|Ms|Dr|Miss)\s/i.test(name)) return false;
+        if (/^[A-Z][a-z]+\s[A-Z][a-z]+$/.test(name)) return false;
+        if (name.toLowerCase().includes('kasam')) return false;
+        return true;
+      })
       .sort((a, b) => b.expense - a.expense)
       .slice(0, 8);
   }, [transactions]);
