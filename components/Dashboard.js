@@ -1508,10 +1508,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const barData = useMemo(() => {
     const map = {};
     for (const t of transactions) {
-      if (t.isInternal) continue;
-      if (MERCHANT_EXCLUDE_CATS.has(t.category)) continue;
-      if (MERCHANT_EXCLUDE_NAME_RE.test(t.description)) continue;
-      if (looksLikePersonName(t.description)) continue;
       const key = t.description || "Unknown";
       if (!map[key]) map[key] = { expense: 0, income: 0 };
       if (t.amount < 0) map[key].expense += Math.abs(t.amount);
@@ -1519,7 +1515,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
     }
     return Object.entries(map)
       .map(([name, { expense, income }]) => ({ name, expense, income }))
-      .filter(d => d.expense > 0)
       .sort((a, b) => b.expense - a.expense)
       .slice(0, 8);
   }, [transactions]);

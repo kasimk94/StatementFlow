@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import Dashboard from '@/components/Dashboard';
@@ -108,7 +107,7 @@ function EmptyState() {
 
 // ─── Statement header (bank name, date range, confidence, back + export) ──────
 
-function StatementHeader({ statement, rawData, isGuest }) {
+function StatementHeader({ statement, rawData }) {
   const bankName = statement?.bankName || rawData?.bank || 'Bank Statement';
   const dateFrom = fmtDate(statement?.dateFrom);
   const dateTo   = fmtDate(statement?.dateTo);
@@ -161,30 +160,26 @@ function StatementHeader({ statement, rawData, isGuest }) {
 
       {/* Right: export buttons */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {!isGuest && (
-          <a
-            href={`/api/download?id=${statement?.id}`}
-            download
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '8px 16px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600,
-              background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
-              color: '#080C14', textDecoration: 'none',
-            }}
-          >
-            ↓ Download Excel
-          </a>
-        )}
-        {!isGuest && (
-          <Link href="/export" style={{
+        <a
+          href={`/api/download?id=${statement?.id}`}
+          download
+          style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             padding: '8px 16px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600,
-            background: 'transparent', border: '1px solid rgba(201,168,76,0.3)',
-            color: '#C9A84C', textDecoration: 'none',
-          }}>
-            All Exports →
-          </Link>
-        )}
+            background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+            color: '#080C14', textDecoration: 'none',
+          }}
+        >
+          ↓ Download Excel
+        </a>
+        <Link href="/export" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '8px 16px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600,
+          background: 'transparent', border: '1px solid rgba(201,168,76,0.3)',
+          color: '#C9A84C', textDecoration: 'none',
+        }}>
+          All Exports →
+        </Link>
       </div>
     </div>
   );
@@ -264,51 +259,10 @@ function MonthBanner({ onDismiss }) {
   );
 }
 
-// ─── Guest banner ─────────────────────────────────────────────────────────────
-
-function GuestBanner() {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      flexWrap: 'wrap', gap: 12,
-      background: 'rgba(201,168,76,0.06)',
-      border: '1px solid rgba(201,168,76,0.3)',
-      borderRadius: 12, padding: '14px 18px', marginBottom: 24,
-    }}>
-      <div>
-        <p style={{ margin: '0 0 2px', color: '#C9A84C', fontSize: '0.875rem', fontWeight: 700 }}>
-          You're viewing as a guest
-        </p>
-        <p style={{ margin: 0, color: '#8A9BB5', fontSize: '0.8rem' }}>
-          Sign up free to save this statement and upload 3 per month
-        </p>
-      </div>
-      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-        <Link href="/register" style={{
-          background: 'linear-gradient(135deg,#C9A84C,#E8C97A)', color: '#080C14',
-          fontWeight: 700, fontSize: '0.78rem', padding: '7px 16px',
-          borderRadius: 999, textDecoration: 'none',
-        }}>
-          Create Free Account
-        </Link>
-        <Link href="/login" style={{
-          background: 'transparent', border: '1px solid rgba(201,168,76,0.4)',
-          color: '#C9A84C', fontWeight: 600, fontSize: '0.78rem', padding: '7px 16px',
-          borderRadius: 999, textDecoration: 'none',
-        }}>
-          Log In
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 // ─── Inner component ──────────────────────────────────────────────────────────
 
 function DashboardPageInner() {
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
-  const isGuest = status !== 'loading' && !session;
   const [statement, setStatement] = useState(null);
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
@@ -362,9 +316,7 @@ function DashboardPageInner() {
         @keyframes sf-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
 
-      {isGuest && data && <GuestBanner />}
-
-      {showBanner && !isGuest && <MonthBanner onDismiss={dismissBanner} />}
+      {showBanner && <MonthBanner onDismiss={dismissBanner} />}
 
       {loading && <Skeleton />}
 
@@ -376,7 +328,7 @@ function DashboardPageInner() {
 
       {!loading && !error && data && (
         <>
-          <StatementHeader statement={statement} rawData={data} isGuest={isGuest} />
+          <StatementHeader statement={statement} rawData={data} />
           <Dashboard
             transactions={data.transactions || []}
             bank={data.bank}
