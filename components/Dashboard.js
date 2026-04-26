@@ -560,7 +560,7 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 // ─── Export toolbar (shared between real dashboard and demo) ─────────────────
-function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError }) {
+function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError, isGuest }) {
   return (
     <div
       className="export-toolbar-inner"
@@ -608,40 +608,42 @@ function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError 
           <span style={{ fontSize: "1rem" }}>📄</span> Download Report
         </button>
 
-        <button
-          onClick={onDownload}
-          disabled={downloading}
-          style={{
-            background:  "#1a3322",
-            color:       "#86efac",
-            fontWeight:  700,
-            fontSize:    "0.88rem",
-            padding:     "9px 20px",
-            borderRadius: 11,
-            border:      "1px solid rgba(34,197,94,0.5)",
-            cursor:      downloading ? "not-allowed" : "pointer",
-            opacity:     downloading ? 0.6 : 1,
-            boxShadow:   "0 4px 14px rgba(34,197,94,0.1)",
-            display:     "flex",
-            alignItems:  "center",
-            gap:         7,
-            transition:  "transform 0.15s ease, box-shadow 0.2s ease",
-          }}
-          onMouseEnter={(e) => { if (!downloading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(34,197,94,0.25)"; } }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(34,197,94,0.1)"; }}
-        >
-          {downloading ? (
-            <>
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              Generating…
-            </>
-          ) : (
-            <><span style={{ fontSize: "1rem" }}>📊</span> Download Excel</>
-          )}
-        </button>
+        {!isGuest && (
+          <button
+            onClick={onDownload}
+            disabled={downloading}
+            style={{
+              background:  "#1a3322",
+              color:       "#86efac",
+              fontWeight:  700,
+              fontSize:    "0.88rem",
+              padding:     "9px 20px",
+              borderRadius: 11,
+              border:      "1px solid rgba(34,197,94,0.5)",
+              cursor:      downloading ? "not-allowed" : "pointer",
+              opacity:     downloading ? 0.6 : 1,
+              boxShadow:   "0 4px 14px rgba(34,197,94,0.1)",
+              display:     "flex",
+              alignItems:  "center",
+              gap:         7,
+              transition:  "transform 0.15s ease, box-shadow 0.2s ease",
+            }}
+            onMouseEnter={(e) => { if (!downloading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(34,197,94,0.25)"; } }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(34,197,94,0.1)"; }}
+          >
+            {downloading ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Generating…
+              </>
+            ) : (
+              <><span style={{ fontSize: "1rem" }}>📊</span> Download Excel</>
+            )}
+          </button>
+        )}
 
         <button
           onClick={onCSV}
@@ -1642,6 +1644,37 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
       {showAuditModal && <UpgradeModal feature="audit" onClose={() => setShowAuditModal(false)} />}
 
+      {/* ── GUEST BANNER ── */}
+      {!session && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap", gap: 12,
+          background: "rgba(201,168,76,0.08)",
+          borderBottom: "1px solid rgba(201,168,76,0.15)",
+          borderRadius: 10, padding: "12px 20px", marginBottom: 20,
+        }}>
+          <p style={{ margin: 0, color: "#C9A84C", fontSize: "0.85rem", fontWeight: 500 }}>
+            💾 Your results won't be saved — sign up free to keep your statement history
+          </p>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <a href="/register" style={{
+              background: "linear-gradient(135deg,#C9A84C,#E8C97A)", color: "#080C14",
+              fontWeight: 700, fontSize: "0.78rem", padding: "6px 14px",
+              borderRadius: 999, textDecoration: "none",
+            }}>
+              Create Account
+            </a>
+            <a href="/login" style={{
+              background: "transparent", border: "1px solid rgba(201,168,76,0.35)",
+              color: "#C9A84C", fontWeight: 600, fontSize: "0.78rem", padding: "6px 14px",
+              borderRadius: 999, textDecoration: "none",
+            }}>
+              Log In
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* ── PRINT STYLES ── */}
       <style>{`
         @media print {
@@ -1784,7 +1817,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── EXPORT TOOLBAR ── */}
-      <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} onPrint={handlePrintReport} downloadError={downloadError} />
+      <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} onPrint={handlePrintReport} downloadError={downloadError} isGuest={!session} />
 
       {/* ── STAT CARDS ── */}
       <div ref={demoRef} className="stat-cards grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-5">
@@ -1865,7 +1898,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           onClick={() => { if (userPlan === 'FREE') setShowAuditModal(true); else setAccountantView(true); }}
           style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 600 : 400, color: accountantView ? "#080C14" : "#8A9BB5", transition: "color 0.3s ease", userSelect: "none" }}
         >
-          📊 Audit-Ready
+          📊 Audit-Ready{!session ? ' 🔒' : ''}
         </div>
       </div>
 
