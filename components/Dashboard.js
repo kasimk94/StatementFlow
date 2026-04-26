@@ -1111,58 +1111,17 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
         </div>
       )}
 
-      {/* ── SUBSCRIPTION DETECTION ── */}
-      {(() => {
-        const KNOWN_SUBS = ["netflix","spotify","amazon prime","prime video","apple","disney","hbo","sky","now tv","youtube","microsoft","adobe","gym","fitness","o2","vodafone","three","ee","bt ","virgin media","broadband","icloud","dropbox","notion","slack","zoom","openai","chatgpt","claude","duolingo","audible"];
-        const CASH_EXCLUDE_RE = /\bcash\b|atm|withdrawal|post office|cash machine|cash point|cashpoint/i;
-
-        // Count how many times each merchant appears as a debit
-        const appearances = {};
-        for (const t of transactions) {
-          if (t.amount >= 0) continue;
-          appearances[t.description] = (appearances[t.description] || 0) + 1;
-        }
-
-        const seen = new Set();
-        const subs = [];
-
-        for (const t of transactions) {
-          if (t.amount >= 0) continue;
-          const amount = Math.abs(t.amount);
-          if (amount < 2) continue;                         // minimum £2
-          if (appearances[t.description] < 2) continue;    // must appear 2+ times
-          if (seen.has(t.description)) continue;
-          if (CASH_EXCLUDE_RE.test(t.description)) continue;
-          if (looksLikePersonName(t.description)) continue;
-
-          const nameLow = t.description.toLowerCase();
-          const isKnown = KNOWN_SUBS.some(kw => nameLow.includes(kw));
-          seen.add(t.description);
-          subs.push({ name: t.description, amount, isKnown });
-        }
-
-        const list = subs.slice(0, 6);
-        if (list.length === 0) return null;
-        const monthlyTotal = list.reduce((s, r) => s + r.amount, 0);
-        return (
-          <div style={{ background: "#0D1117", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.3)", padding: 24, border: "1px solid #1E2A3A" }}>
-            {sectionLabel("Recurring Payments")}
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {list.map((r, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < list.length - 1 ? "1px solid #1E2A3A" : "none" }}>
-                  <span style={{ fontSize: "1rem", flexShrink: 0 }}>🔄</span>
-                  <span style={{ flex: 1, fontSize: "0.85rem", color: "#F5F0E8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
-                  {r.isKnown && <span style={{ fontSize: "0.65rem", fontWeight: 700, background: "rgba(201,168,76,0.1)", color: "#C9A84C", padding: "2px 7px", borderRadius: 10, border: "1px solid rgba(201,168,76,0.2)", flexShrink: 0 }}>Sub</span>}
-                  <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#C9A84C", flexShrink: 0 }}>{fmt(r.amount)}</span>
-                </div>
-              ))}
-            </div>
-            <p style={{ margin: "14px 0 0", fontSize: "0.78rem", color: "#8A9BB5" }}>
-              Detected recurring total: <strong style={{ color: "#F5F0E8" }}>{fmt(monthlyTotal)}</strong> — review these regularly to cancel unused subscriptions
-            </p>
-          </div>
-        );
-      })()}
+      {/* ── SUBSCRIPTION TEASER (real detection lives on /insights) ── */}
+      <div style={{ background: "rgba(201,168,76,0.04)", border: "1px solid rgba(201,168,76,0.1)", borderRadius: 12, padding: 20, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>🔄</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: "0 0 3px", fontSize: "0.88rem", fontWeight: 700, color: "#F5F0E8" }}>Subscription Detection</p>
+          <p style={{ margin: 0, fontSize: "0.8rem", color: "#8A9BB5", lineHeight: 1.5 }}>Upload statements from multiple months to automatically detect your recurring subscriptions and bills</p>
+        </div>
+        <a href="/insights" style={{ display: "inline-flex", alignItems: "center", padding: "8px 16px", background: "linear-gradient(135deg,#C9A84C,#E8C97A)", color: "#080C14", fontWeight: 700, fontSize: "0.78rem", borderRadius: 999, textDecoration: "none", flexShrink: 0 }}>
+          View Insights →
+        </a>
+      </div>
 
     </div>
   );
