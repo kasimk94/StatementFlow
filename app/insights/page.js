@@ -27,6 +27,7 @@ export default function InsightsPage() {
   const { data: session, status } = useSession();
   const [subscriptions, setSubscriptions] = useState([]);
   const [statementCount, setStatementCount] = useState(0);
+  const [monthCount, setMonthCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export default function InsightsPage() {
       .then(d => {
         setSubscriptions(d.subscriptions || []);
         setStatementCount(d.statementCount || 0);
+        setMonthCount(d.monthCount || 0);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -66,8 +68,8 @@ export default function InsightsPage() {
         </div>
       )}
 
-      {/* Not enough statements */}
-      {!loading && statementCount < 2 && (
+      {/* Not enough months */}
+      {!loading && monthCount < 2 && (
         <div style={{ paddingTop: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 0 }}>
           <div style={{
             width: 72, height: 72, borderRadius: '50%',
@@ -108,7 +110,7 @@ export default function InsightsPage() {
       )}
 
       {/* Subscriptions section */}
-      {!loading && statementCount >= 2 && (
+      {!loading && monthCount >= 2 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* Section header */}

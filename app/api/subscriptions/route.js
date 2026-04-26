@@ -46,8 +46,16 @@ export async function GET() {
     select:  { id: true, dateFrom: true, dateTo: true, rawData: true },
   });
 
-  if (statements.length < 2) {
-    return NextResponse.json({ subscriptions: [], statementCount: statements.length });
+  // Build distinct calendar months set (YYYY-MM)
+  const distinctMonths = new Set(
+    statements
+      .map(s => s.dateFrom ? s.dateFrom.slice(0, 7) : null)
+      .filter(Boolean)
+  );
+  const monthCount = distinctMonths.size;
+
+  if (monthCount < 2) {
+    return NextResponse.json({ subscriptions: [], statementCount: statements.length, monthCount });
   }
 
   // merchantKey → { displayName, periods: { periodKey → firstAmount } }
@@ -55,7 +63,7 @@ export async function GET() {
 
   for (const stmt of statements) {
     const txs = stmt.rawData?.transactions || [];
-    const periodKey = stmt.dateFrom || stmt.id;
+    const periodKey = stmt.dateFrom ? stmt.dateFrom.slice(0, 7) : stmt.id;
 
     for (const tx of txs) {
       if (!tx.amount || tx.amount >= 0) continue;
@@ -117,5 +125,6 @@ export async function GET() {
   return NextResponse.json({
     subscriptions: subscriptions.slice(0, 20),
     statementCount: statements.length,
+    monthCount,
   });
 }

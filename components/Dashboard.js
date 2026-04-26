@@ -768,7 +768,7 @@ function DebugPanel({ debug }) {
 }
 
 // ─── Unified Financial Summary ────────────────────────────────────────────────
-function FinancialSummary({ transactions, income, expenses, net, categoryBreakdown, dateRange, insights, onWeekClick, activeWeek }) {
+function FinancialSummary({ transactions, income, expenses, net, categoryBreakdown, dateRange, insights, onWeekClick, activeWeek, recurringPayments = { loading: false, multiMonth: false, subs: [] } }) {
   const [showWhy, setShowWhy] = useState(false);
 
   const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -1111,17 +1111,46 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
         </div>
       )}
 
-      {/* ── SUBSCRIPTION TEASER (real detection lives on /insights) ── */}
-      <div style={{ background: "rgba(201,168,76,0.04)", border: "1px solid rgba(201,168,76,0.1)", borderRadius: 12, padding: 20, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>🔄</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: "0 0 3px", fontSize: "0.88rem", fontWeight: 700, color: "#F5F0E8" }}>Subscription Detection</p>
-          <p style={{ margin: 0, fontSize: "0.8rem", color: "#8A9BB5", lineHeight: 1.5 }}>Upload statements from multiple months to automatically detect your recurring subscriptions and bills</p>
+      {/* ── RECURRING PAYMENTS ── */}
+      {recurringPayments.loading ? (
+        <div style={{ height: 80, background: "#0D1117", borderRadius: 12, border: "1px solid rgba(201,168,76,0.06)", animation: "sf-pulse 1.6s ease-in-out infinite" }} />
+      ) : !recurringPayments.multiMonth ? (
+        <div style={{ background: "rgba(201,168,76,0.04)", border: "1px solid rgba(201,168,76,0.1)", borderRadius: 12, padding: 20, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>🔄</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: "0 0 3px", fontSize: "0.88rem", fontWeight: 700, color: "#F5F0E8" }}>Recurring Payments</p>
+            <p style={{ margin: 0, fontSize: "0.9rem", color: "#8A9BB5", lineHeight: 1.5 }}>Upload another month&apos;s statement to see your recurring payments and subscriptions detected automatically</p>
+          </div>
+          <a href="/upload" style={{ display: "inline-flex", alignItems: "center", padding: "8px 16px", background: "linear-gradient(135deg,#C9A84C,#E8C97A)", color: "#080C14", fontWeight: 700, fontSize: "0.78rem", borderRadius: 999, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap" }}>
+            Upload Another Month →
+          </a>
         </div>
-        <a href="/insights" style={{ display: "inline-flex", alignItems: "center", padding: "8px 16px", background: "linear-gradient(135deg,#C9A84C,#E8C97A)", color: "#080C14", fontWeight: 700, fontSize: "0.78rem", borderRadius: 999, textDecoration: "none", flexShrink: 0 }}>
-          View Insights →
-        </a>
-      </div>
+      ) : recurringPayments.subs.length === 0 ? (
+        <div style={{ background: "#0D1117", border: "1px solid #1E2A3A", borderRadius: 12, padding: 20 }}>
+          {sectionLabel("Recurring Payments")}
+          <p style={{ margin: 0, fontSize: "0.88rem", color: "#8A9BB5", textAlign: "center" }}>No consistent recurring payments detected yet</p>
+        </div>
+      ) : (
+        <div style={{ background: "#0D1117", border: "1px solid #1E2A3A", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px 10px", borderBottom: "1px solid #1E2A3A" }}>
+            {sectionLabel("Recurring Payments")}
+          </div>
+          {recurringPayments.subs.map((sub, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", borderBottom: i < recurringPayments.subs.length - 1 ? "1px solid #1E2A3A" : "none" }}>
+              <span style={{ fontSize: "1rem", flexShrink: 0 }}>🔄</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 600, color: "#F5F0E8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.merchantName}</p>
+                <p style={{ margin: "2px 0 0", fontSize: "0.72rem", color: "#8A9BB5" }}>{sub.monthsDetected} month{sub.monthsDetected !== 1 ? "s" : ""} detected</p>
+              </div>
+              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "#C9A84C", flexShrink: 0 }}>{fmt(sub.averageAmount)}</span>
+            </div>
+          ))}
+          <div style={{ padding: "12px 20px", background: "rgba(201,168,76,0.04)", borderTop: "1px solid rgba(201,168,76,0.12)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <p style={{ margin: 0, fontSize: "0.78rem", color: "#8A9BB5" }}>Estimated monthly recurring</p>
+            <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#C9A84C" }}>{fmt(recurringPayments.subs.reduce((s, r) => s + r.averageAmount, 0))}<span style={{ fontSize: "0.72rem", fontWeight: 500, color: "#8A9BB5" }}>/mo</span></p>
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -1150,6 +1179,23 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
 
   const { data: session } = useSession();
   const userPlan = session?.user?.plan || 'FREE';
+
+  const [recurringPayments, setRecurringPayments] = useState({ loading: true, multiMonth: false, subs: [] });
+
+  useEffect(() => {
+    if (!session) {
+      setRecurringPayments({ loading: false, multiMonth: false, subs: [] });
+      return;
+    }
+    fetch('/api/subscriptions')
+      .then(r => r.json())
+      .then(d => setRecurringPayments({
+        loading: false,
+        multiMonth: (d.monthCount || 0) >= 2,
+        subs: d.subscriptions || [],
+      }))
+      .catch(() => setRecurringPayments({ loading: false, multiMonth: false, subs: [] }));
+  }, [session]);
 
   // Animation states
   const [loaded,          setLoaded]          = useState(false);
@@ -1969,6 +2015,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
             insights={insights}
             onWeekClick={handleWeekClick}
             activeWeek={weekFilter}
+            recurringPayments={recurringPayments}
           /></div>
         )}
 
