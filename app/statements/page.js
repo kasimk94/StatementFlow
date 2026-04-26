@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -33,6 +33,133 @@ function fmtDate(dateStr) {
 function fmtUploadDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+// ── Inline upload zone ────────────────────────────────────────────────────────
+
+function InlineUpload() {
+  const router = useRouter();
+  const inputRef = useRef(null);
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  function pickFile(f) {
+    if (!f || f.type !== 'application/pdf') { setError('PDF files only'); return; }
+    setFile(f);
+    setError(null);
+  }
+
+  async function handleUpload() {
+    if (!file || uploading) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/convert', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Upload failed');
+      setDone(true);
+      setTimeout(() => router.push(`/dashboard?statementId=${json.statementId}`), 1000);
+    } catch (e) {
+      setError(e.message);
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div
+      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => { e.preventDefault(); setDragOver(false); pickFile(e.dataTransfer.files[0]); }}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 12,
+        border: `2px dashed ${dragOver ? 'rgba(201,168,76,0.7)' : 'rgba(201,168,76,0.35)'}`,
+        borderRadius: 16, padding: '18px 24px', marginBottom: 24,
+        background: dragOver ? 'rgba(201,168,76,0.04)' : 'transparent',
+        transition: 'border-color 0.15s ease, background 0.15s ease',
+      }}
+    >
+      {/* Left: icon + label */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <polyline points="16,16 12,12 8,16"/><line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+        </svg>
+        <div>
+          {done ? (
+            <span style={{ color: '#10B981', fontSize: '0.875rem', fontWeight: 600 }}>
+              ✅ Done! Taking you to your dashboard...
+            </span>
+          ) : file ? (
+            <span style={{ color: '#F5F0E8', fontSize: '0.875rem', fontWeight: 600 }}>{file.name}</span>
+          ) : (
+            <span style={{ color: '#8A9BB5', fontSize: '0.875rem' }}>
+              Drop your PDF here or <span style={{ color: '#C9A84C', fontWeight: 600 }}>browse</span>
+            </span>
+          )}
+          {error && <p style={{ margin: '2px 0 0', color: '#EF4444', fontSize: '0.78rem' }}>{error}</p>}
+        </div>
+      </div>
+
+      {/* Right: action button */}
+      {!done && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {!file && (
+            <>
+              <input ref={inputRef} type="file" accept=".pdf,application/pdf" style={{ display: 'none' }}
+                onChange={e => pickFile(e.target.files[0])} />
+              <button
+                onClick={() => inputRef.current?.click()}
+                style={{
+                  padding: '8px 20px', borderRadius: 50,
+                  background: 'linear-gradient(135deg,#C9A84C,#E8C97A)',
+                  color: '#080C14', fontWeight: 700, fontSize: '0.85rem',
+                  border: 'none', cursor: 'pointer',
+                }}
+              >
+                Browse Files
+              </button>
+            </>
+          )}
+          {file && !uploading && (
+            <>
+              <button
+                onClick={() => { setFile(null); setError(null); }}
+                style={{ background: 'transparent', border: 'none', color: '#8A9BB5', cursor: 'pointer', fontSize: '0.8rem' }}
+              >
+                Clear
+              </button>
+              <button
+                onClick={handleUpload}
+                style={{
+                  padding: '8px 20px', borderRadius: 50,
+                  background: 'linear-gradient(135deg,#C9A84C,#E8C97A)',
+                  color: '#080C14', fontWeight: 700, fontSize: '0.85rem',
+                  border: 'none', cursor: 'pointer',
+                }}
+              >
+                Analyse Statement
+              </button>
+            </>
+          )}
+          {uploading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#C9A84C', fontSize: '0.85rem', fontWeight: 600 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                style={{ animation: 'sf-spin 1s linear infinite', flexShrink: 0 }}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              Analysing...
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Skeleton card ─────────────────────────────────────────────────────────────
@@ -117,6 +244,7 @@ export default function StatementsPage() {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.4; }
         }
+        @keyframes sf-spin { to { transform: rotate(360deg); } }
       `}</style>
 
       {/* Header row */}
@@ -182,6 +310,9 @@ export default function StatementsPage() {
           Upload New Statement
         </Link>
       </div>
+
+      {/* Inline upload zone */}
+      {status === 'authenticated' && <InlineUpload />}
 
       {/* Loading skeletons */}
       {loading && (

@@ -162,9 +162,8 @@ const NAV_SECTIONS = [
     section: 'OVERVIEW',
     items: [
       { label: 'Dashboard',     icon: 'LayoutDashboard', href: '/dashboard' },
-      { label: 'My Statements',     icon: 'FileText', href: '/statements' },
-      { label: 'Upload Statement',  icon: 'Upload',   href: '/upload' },
-      { label: 'Transactions',      icon: 'List',     href: '/transactions' },
+      { label: 'My Statements', icon: 'FileText',        href: '/statements' },
+      { label: 'Transactions',  icon: 'List',            href: '/transactions' },
     ],
   },
   {
