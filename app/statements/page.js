@@ -72,18 +72,19 @@ function InlineUpload() {
 
   return (
     <div
+      id="inline-upload"
       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); pickFile(e.dataTransfer.files[0]); }}
       style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: 12,
         border: `2px dashed ${dragOver ? 'rgba(201,168,76,0.7)' : 'rgba(201,168,76,0.35)'}`,
         borderRadius: 16, padding: '18px 24px', marginBottom: 24,
         background: dragOver ? 'rgba(201,168,76,0.04)' : 'transparent',
         transition: 'border-color 0.15s ease, background 0.15s ease',
+        overflow: 'hidden',
       }}
     >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
       {/* Left: icon + label */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -155,6 +156,17 @@ function InlineUpload() {
               </svg>
               Analysing...
             </div>
+          )}
+        </div>
+      )}
+      </div>{/* end flex row */}
+      {/* Progress bar — shown while uploading */}
+      {(uploading || done) && (
+        <div style={{ marginTop: 10, height: 3, background: '#1E2A3A', borderRadius: 999, overflow: 'hidden' }}>
+          {done ? (
+            <div style={{ height: '100%', width: '100%', background: 'linear-gradient(90deg,#10B981,#34D399)', borderRadius: 999, transition: 'width 0.4s ease' }} />
+          ) : (
+            <div style={{ height: '100%', width: '35%', background: 'linear-gradient(90deg,#C9A84C,#E8C97A)', borderRadius: 999, animation: 'sf-progress-slide 1.4s ease-in-out infinite' }} />
           )}
         </div>
       )}
@@ -245,6 +257,7 @@ export default function StatementsPage() {
           50%       { opacity: 0.4; }
         }
         @keyframes sf-spin { to { transform: rotate(360deg); } }
+        @keyframes sf-progress-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
       `}</style>
 
       {/* Header row */}
@@ -277,9 +290,9 @@ export default function StatementsPage() {
           </p>
         </div>
 
-        {/* Right — Upload New button */}
-        <Link
-          href="/upload"
+        {/* Right — scroll to inline upload */}
+        <button
+          onClick={() => document.getElementById('inline-upload')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
           style={{
             background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
             color: "#080C14",
@@ -308,7 +321,7 @@ export default function StatementsPage() {
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
           Upload New Statement
-        </Link>
+        </button>
       </div>
 
       {/* Inline upload zone */}
@@ -402,8 +415,8 @@ export default function StatementsPage() {
           }}>
             Upload your first bank statement to get started
           </p>
-          <Link
-            href="/upload"
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -414,12 +427,13 @@ export default function StatementsPage() {
               fontSize: "0.875rem",
               padding: "10px 24px",
               borderRadius: 50,
-              textDecoration: "none",
+              border: "none",
+              cursor: "pointer",
               boxShadow: "0 4px 16px rgba(201,168,76,0.3)",
             }}
           >
             Upload Statement
-          </Link>
+          </button>
         </div>
       )}
 
@@ -442,14 +456,17 @@ export default function StatementsPage() {
                 Keep your financial picture current — upload your {monthName} statement
               </p>
             </div>
-            <Link href="/upload" style={{
-              background: 'linear-gradient(135deg,#C9A84C,#E8C97A)', color: '#080C14',
-              fontWeight: 700, fontSize: '0.82rem', padding: '9px 18px',
-              borderRadius: 50, textDecoration: 'none', flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(201,168,76,0.3)',
-            }}>
+            <button
+              onClick={() => document.getElementById('inline-upload')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+              style={{
+                background: 'linear-gradient(135deg,#C9A84C,#E8C97A)', color: '#080C14',
+                fontWeight: 700, fontSize: '0.82rem', padding: '9px 18px',
+                borderRadius: 50, border: 'none', cursor: 'pointer', flexShrink: 0,
+                boxShadow: '0 4px 12px rgba(201,168,76,0.3)',
+              }}
+            >
               Upload Now
-            </Link>
+            </button>
           </div>
         );
       })()}

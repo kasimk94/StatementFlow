@@ -1114,35 +1114,33 @@ function FinancialSummary({ transactions, income, expenses, net, categoryBreakdo
       {/* ── SUBSCRIPTION DETECTION ── */}
       {(() => {
         const KNOWN_SUBS = ["netflix","spotify","amazon prime","prime video","apple","disney","hbo","sky","now tv","youtube","microsoft","adobe","gym","fitness","o2","vodafone","three","ee","bt ","virgin media","broadband","icloud","dropbox","notion","slack","zoom","openai","chatgpt","claude","duolingo","audible"];
-        const seen = new Set();
-        const subs = [];
-        // Known subscription merchants — any appearance
+        const CASH_EXCLUDE_RE = /\bcash\b|atm|withdrawal|post office|cash machine|cash point|cashpoint/i;
+
+        // Count how many times each merchant appears as a debit
+        const appearances = {};
         for (const t of transactions) {
           if (t.amount >= 0) continue;
-          const nameLow = t.description.toLowerCase();
-          for (const kw of KNOWN_SUBS) {
-            if (nameLow.includes(kw) && !seen.has(t.description)) {
-              seen.add(t.description);
-              subs.push({ name: t.description, amount: Math.abs(t.amount), isKnown: true });
-              break;
-            }
-          }
+          appearances[t.description] = (appearances[t.description] || 0) + 1;
         }
-        // Same-merchant same-exact-amount appearing 2+ times (patterns)
-        const freq = {};
+
+        const seen = new Set();
+        const subs = [];
+
         for (const t of transactions) {
-          if (t.amount >= 0 || seen.has(t.description)) continue;
-          const key = `${t.description}||${Math.abs(t.amount).toFixed(2)}`;
-          freq[key] = (freq[key] || 0) + 1;
+          if (t.amount >= 0) continue;
+          const amount = Math.abs(t.amount);
+          if (amount < 2) continue;                         // minimum £2
+          if (appearances[t.description] < 2) continue;    // must appear 2+ times
+          if (seen.has(t.description)) continue;
+          if (CASH_EXCLUDE_RE.test(t.description)) continue;
+          if (looksLikePersonName(t.description)) continue;
+
+          const nameLow = t.description.toLowerCase();
+          const isKnown = KNOWN_SUBS.some(kw => nameLow.includes(kw));
+          seen.add(t.description);
+          subs.push({ name: t.description, amount, isKnown });
         }
-        for (const [key, count] of Object.entries(freq)) {
-          if (count < 2) continue;
-          const [name, amtStr] = key.split("||");
-          if (!seen.has(name)) {
-            seen.add(name);
-            subs.push({ name, amount: parseFloat(amtStr), isKnown: false });
-          }
-        }
+
         const list = subs.slice(0, 6);
         if (list.length === 0) return null;
         const monthlyTotal = list.reduce((s, r) => s + r.amount, 0);
