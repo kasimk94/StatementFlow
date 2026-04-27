@@ -211,11 +211,11 @@ function KPICard({ label, value, sub, accentColor, icon, dateRange, duration }) 
       <div>
         {dateRange ? (
           <>
-            <div style={{ color: '#F5F0E8', fontSize: '0.9rem', fontWeight: 700, lineHeight: 1.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ color: '#F5F0E8', fontSize: '13px', fontWeight: 600, lineHeight: 1.4, whiteSpace: 'nowrap' }}>
               {dateRange}
             </div>
             {duration && (
-              <div style={{ color: '#6B7280', fontSize: '0.75rem', marginTop: 5 }}>{duration}</div>
+              <div style={{ color: '#6B7280', fontSize: '12px', marginTop: 5 }}>{duration}</div>
             )}
           </>
         ) : (
@@ -729,9 +729,9 @@ function CombinedInner() {
 
       {/* Combined Insights */}
       <div style={{
-        background: 'linear-gradient(135deg, #0F172A, #1E293B)',
-        border: '1px solid rgba(245,158,11,0.15)',
-        borderRadius: 16, padding: '20px 22px', marginBottom: 24,
+        background: '#0F172A',
+        border: '1px solid rgba(245,158,11,0.12)',
+        borderRadius: 16, padding: '20px 24px', marginBottom: 24,
       }}>
         <div style={{ borderLeft: '3px solid #F59E0B', paddingLeft: 12, marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -740,11 +740,15 @@ function CombinedInner() {
           </div>
           <div style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: 3 }}>Auto-generated from your uploaded statements</div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {insights.map((ins, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-              <span style={{ fontSize: '1.1rem', flexShrink: 0, lineHeight: 1 }}>{INSIGHT_ICONS[i] || '💡'}</span>
-              <span style={{ color: '#D1D5DB', fontSize: '0.875rem', lineHeight: 1.5 }}>{ins}</span>
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 0',
+              borderBottom: i < insights.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            }}>
+              <span style={{ fontSize: '18px', flexShrink: 0, lineHeight: 1 }}>{INSIGHT_ICONS[i] || '💡'}</span>
+              <span style={{ color: '#D1D5DB', fontSize: '14px', lineHeight: 1.5 }}>{ins}</span>
             </div>
           ))}
         </div>
@@ -822,22 +826,22 @@ function MerchantCard({ merchant: m, rank }) {
       style={{
         background: '#1C1C2E',
         border: `1px solid ${hovered ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`,
-        borderRadius: 12, padding: 16,
+        borderRadius: 12, padding: '14px 16px',
+        display: 'flex', flexDirection: 'column', gap: 8,
         transition: 'border-color 150ms ease',
         cursor: 'default',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ color: '#4B5563', fontSize: '0.72rem', fontWeight: 700 }}>#{rank}</span>
         <span style={{ background: 'rgba(255,255,255,0.06)', color: '#9CA3AF', fontSize: '0.68rem', fontWeight: 600, padding: '2px 7px', borderRadius: 999 }}>
           {m.count}×
         </span>
       </div>
-      <div style={{ color: '#FFFFFF', fontSize: '0.95rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 6 }}
-           title={m.name}>
+      <div style={{ color: '#F5F0E8', fontSize: '15px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
         {displayName}
       </div>
-      <div style={{ color: '#F59E0B', fontSize: '1.15rem', fontWeight: 700 }}>
+      <div style={{ color: '#F59E0B', fontSize: '18px', fontWeight: 700, margin: 0 }}>
         {fmt(m.total)}
       </div>
     </div>
