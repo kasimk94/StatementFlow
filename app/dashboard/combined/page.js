@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import { Building2, ShoppingBag, Calendar, TrendingUp } from 'lucide-react';
 import {
   PieChart, Pie, Cell, Label, Tooltip as ReTooltip,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -129,14 +130,19 @@ function SectionTitle({ title, sub }) {
 
 function cleanMerchantName(raw) {
   if (!raw) return raw;
-  // Strip trailing location words, reference codes, and noise after merchant root
+  // Preserve known two-word prefixes before stripping location noise
+  const KEEP_TWO = /^(london\s+borough|post\s+office|rci\s+financial|co-operative|john\s+lewis|marks\s+spencer|american\s+express)\b/i;
+  const kept = raw.match(KEEP_TWO)?.[0];
+  if (kept) {
+    const titled = kept.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    return titled;
+  }
   let s = raw
     .replace(/\s+(ltd|limited|plc|llp|inc|corp|uk|gb)\.?\b.*/i, '')
-    .replace(/\s+\d{2,}.*$/, '')               // trailing numbers → location/ref
+    .replace(/\s+\d{2,}.*$/, '')
     .replace(/\s+(st|rd|ave|lane|street|road|drive|close|way|green|park|house)\b.*/i, '')
-    .replace(/\s+(london|borough|of|serv|service|services)\b.*/i, '')
+    .replace(/\s+(borough|of|serv|service|services)\b.*/i, '')
     .trim();
-  // Title-case the result if it looks ALL-CAPS
   if (s === s.toUpperCase() && s.length > 2) {
     s = s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   }
@@ -408,7 +414,12 @@ const CARD_STYLE = {
   padding: 22,
 };
 
-const INSIGHT_ICONS = ['🏦', '💳', '📅', '💰'];
+const INSIGHT_ICONS = [
+  <Building2  size={16} color="#60A5FA"/>,
+  <ShoppingBag size={16} color="#F59E0B"/>,
+  <Calendar   size={16} color="#A78BFA"/>,
+  <TrendingUp size={16} color="#10B981"/>,
+];
 
 function CombinedInner() {
   const searchParams = useSearchParams();
@@ -641,7 +652,7 @@ function CombinedInner() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 16, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', alignItems: 'stretch', gap: 16, marginBottom: 28 }}>
         <KPICard label="Total Money In"     accentColor="#10B981" icon={KPIIcons.in}  value={fmt(kpis.totalIn)}  sub={`${statements.length} statement${statements.length !== 1 ? 's' : ''}`}/>
         <KPICard label="Total Money Out"    accentColor="#EF4444" icon={KPIIcons.out} value={fmt(kpis.totalOut)} sub="excluding internals"/>
         <KPICard label="Total Transactions" accentColor="#F59E0B" icon={KPIIcons.txn} value={kpis.txnCount}      sub="across all banks"/>
@@ -744,10 +755,10 @@ function CombinedInner() {
           {insights.map((ins, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '8px 0',
+              paddingTop: 6, paddingBottom: 6,
               borderBottom: i < insights.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
             }}>
-              <span style={{ fontSize: '18px', flexShrink: 0, lineHeight: 1 }}>{INSIGHT_ICONS[i] || '💡'}</span>
+              <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{INSIGHT_ICONS[i] || <Building2 size={16} color="#60A5FA"/>}</span>
               <span style={{ color: '#D1D5DB', fontSize: '14px', lineHeight: 1.5 }}>{ins}</span>
             </div>
           ))}
@@ -758,7 +769,7 @@ function CombinedInner() {
       <div style={{ ...CARD_STYLE, marginBottom: 24 }}>
         <SectionTitle title="Top Merchants" sub="Highest spending merchants across all statements"/>
         {topMerchants.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
             {topMerchants.map((m, i) => (
               <MerchantCard key={i} merchant={m} rank={i + 1}/>
             ))}
