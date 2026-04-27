@@ -129,6 +129,7 @@ function SectionTitle({ title, sub }) {
 // ─── Merchant name cleaner ────────────────────────────────────────────────────
 
 const KNOWN_ACRONYMS = new Set(['rci','atm','hsbc','hmrc','bbc','axa','bnp','dhl','ups','nhs','aa','rac','bp','bt','ee','o2','sky','itv','ebay','hmv','ikea','bmw','vw','hp','lg','ge']);
+const BRAND_OVERRIDES = { paypal: 'PayPal', paypoint: 'PayPoint' };
 
 function cleanMerchantName(raw) {
   if (!raw) return raw;
@@ -137,7 +138,7 @@ function cleanMerchantName(raw) {
   const kept = raw.match(KEEP_TWO)?.[0];
   if (kept) {
     return kept.split(' ').map(w =>
-      KNOWN_ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+      BRAND_OVERRIDES[w.toLowerCase()] ?? (KNOWN_ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     ).join(' ');
   }
   let s = raw
@@ -148,7 +149,7 @@ function cleanMerchantName(raw) {
     .trim();
   // Title-case each word, uppercasing known acronyms
   s = s.split(' ').map(w =>
-    KNOWN_ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+    BRAND_OVERRIDES[w.toLowerCase()] ?? (KNOWN_ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
   ).join(' ');
   return s || raw;
 }
