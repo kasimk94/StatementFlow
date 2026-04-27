@@ -6,7 +6,7 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Building2, ShoppingBag, Calendar, TrendingUp } from 'lucide-react';
 import {
-  PieChart, Pie, Cell, Label, Tooltip as ReTooltip,
+  PieChart, Pie, Cell, Label, LabelList, Tooltip as ReTooltip,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 
@@ -264,8 +264,8 @@ function BarChartTooltip({ active, payload, label }) {
       <div style={{ color: '#F5F0E8', fontWeight: 600, marginBottom: 6 }}>{label}</div>
       {payload.map((p, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-          <div style={{ width: 8, height: 8, borderRadius: 2, background: p.color, flexShrink: 0 }}/>
-          <span style={{ color: '#FFFFFF' }}>{p.name}: <strong style={{ color: '#F5F0E8' }}>{fmt(p.value)}</strong></span>
+          <div style={{ width: 8, height: 8, borderRadius: 2, background: p.fill || p.color, flexShrink: 0 }}/>
+          <strong style={{ color: '#F5F0E8' }}>{fmt(p.value)}</strong>
         </div>
       ))}
     </div>
@@ -533,26 +533,27 @@ function CombinedInner() {
 
   const maxOut = useMemo(() => Math.max(...bankBreakdown.map(b => b.totalOut), 0), [bankBreakdown]);
 
-  const { trendData, trendBanks } = useMemo(() => {
-    const byPeriod = {};
-    const bankSet  = new Set();
-    statements.forEach(st => {
-      const bank = st.bankName || st.rawData?.bank || 'Unknown';
-      bankSet.add(bank);
-      (st.rawData?.transactions || []).forEach(t => {
-        if (t.exclude || t.isInternal) return;
-        const amt = Number(t.amount) || 0;
-        if (amt >= 0) return;
-        const d = parseDateRaw(t.date);
-        if (!d) return;
-        const period = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-        if (!byPeriod[period]) byPeriod[period] = { period };
-        byPeriod[period][bank] = (byPeriod[period][bank] || 0) + Math.abs(amt);
-      });
-    });
-    const data = Object.values(byPeriod).sort((a, b) => parsePeriodLabel(a.period) - parsePeriodLabel(b.period));
-    return { trendData: data, trendBanks: [...bankSet] };
+  const trendBanks = useMemo(() => {
+    const bankSet = new Set();
+    statements.forEach(st => bankSet.add(st.bankName || st.rawData?.bank || 'Unknown'));
+    return [...bankSet];
   }, [statements]);
+
+  const bankSpendData = useMemo(() => {
+    const map = {};
+    let idx = 0;
+    allTransactions.forEach(t => {
+      if (t.exclude || t.isInternal) return;
+      const amt = Number(t.amount) || 0;
+      if (amt >= 0) return;
+      const bank = t._bank || 'Unknown';
+      if (!map[bank]) map[bank] = { bank, total: 0, colorIdx: idx++ };
+      map[bank].total += Math.abs(amt);
+    });
+    return Object.values(map)
+      .map(b => ({ ...b, color: bankColor(b.bank, b.colorIdx) }))
+      .sort((a, b) => b.total - a.total);
+  }, [allTransactions]);
 
   const monthActivity = useMemo(() => {
     const map = {};
@@ -668,29 +669,29 @@ function CombinedInner() {
         <KPICard label="Date Range"         accentColor="#8B5CF6" icon={KPIIcons.cal} dateRange={kpis.dateRangeStr} duration={duration}/>
       </div>
 
-      {/* Spending Trend Chart */}
-      {trendData.length > 0 && (
+      {/* Spending by Bank Chart */}
+      {bankSpendData.length > 0 && (
         <div style={{ ...CARD_STYLE, marginBottom: 24 }}>
-          <SectionTitle title="Spending by Bank — Over Time" sub="Monthly spend per bank across all uploaded statements"/>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={trendData} barCategoryGap="30%" barGap={4} style={{ background: 'transparent' }}>
+          <SectionTitle title="Spending by Bank" sub="Total spend per bank across all uploaded statements"/>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={bankSpendData} barCategoryGap="35%" style={{ background: 'transparent' }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false}/>
-              <XAxis dataKey="period" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={{ stroke: 'rgba(255,255,255,0.06)' }} tickLine={false}/>
+              <XAxis dataKey="bank" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={{ stroke: 'rgba(255,255,255,0.06)' }} tickLine={false}/>
               <YAxis tickFormatter={v => v >= 1000 ? `£${(v/1000).toFixed(0)}k` : `£${v}`} tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} width={52}/>
               <ReTooltip content={<BarChartTooltip/>} cursor={{ fill: 'rgba(255,255,255,0.02)' }}/>
-              {trendBanks.map((bank, i) => (
-                <Bar key={bank} dataKey={bank} fill={bankColor(bank, i)} radius={[4,4,0,0]} barSize={32}/>
-              ))}
+              <Bar dataKey="total" radius={[6,6,0,0]} barSize={48}>
+                {bankSpendData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color}/>
+                ))}
+                <LabelList
+                  dataKey="total"
+                  position="top"
+                  formatter={v => v >= 1000 ? `£${(v/1000).toFixed(1)}k` : `£${Math.round(v)}`}
+                  style={{ fill: '#FFFFFF', fontSize: 13, fontWeight: 600 }}
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 14, justifyContent: 'center' }}>
-            {trendBanks.map((bank, i) => (
-              <div key={bank} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: bankColor(bank, i), flexShrink: 0 }}/>
-                <span style={{ color: '#6B7280', fontSize: '0.75rem' }}>{bank}</span>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 
