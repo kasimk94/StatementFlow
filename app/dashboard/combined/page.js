@@ -128,14 +128,17 @@ function SectionTitle({ title, sub }) {
 
 // ─── Merchant name cleaner ────────────────────────────────────────────────────
 
+const KNOWN_ACRONYMS = new Set(['rci','atm','hsbc','hmrc','bbc','axa','bnp','dhl','ups','nhs','aa','rac','bp','bt','ee','o2','sky','itv','ebay','hmv','ikea','bmw','vw','hp','lg','ge']);
+
 function cleanMerchantName(raw) {
   if (!raw) return raw;
   // Preserve known two-word prefixes before stripping location noise
   const KEEP_TWO = /^(london\s+borough|post\s+office|rci\s+financial|co-operative|john\s+lewis|marks\s+spencer|american\s+express)\b/i;
   const kept = raw.match(KEEP_TWO)?.[0];
   if (kept) {
-    const titled = kept.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    return titled;
+    return kept.split(' ').map(w =>
+      KNOWN_ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+    ).join(' ');
   }
   let s = raw
     .replace(/\s+(ltd|limited|plc|llp|inc|corp|uk|gb)\.?\b.*/i, '')
@@ -143,9 +146,10 @@ function cleanMerchantName(raw) {
     .replace(/\s+(st|rd|ave|lane|street|road|drive|close|way|green|park|house)\b.*/i, '')
     .replace(/\s+(borough|of|serv|service|services)\b.*/i, '')
     .trim();
-  if (s === s.toUpperCase() && s.length > 2) {
-    s = s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-  }
+  // Title-case each word, uppercasing known acronyms
+  s = s.split(' ').map(w =>
+    KNOWN_ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+  ).join(' ');
   return s || raw;
 }
 
@@ -622,7 +626,7 @@ function CombinedInner() {
   const duration = dateDuration(kpis.earliest, kpis.latest);
 
   return (
-    <DashboardLayout title="Combined Statement Analysis">
+    <DashboardLayout title="">
       <style>{`@keyframes comb-pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
 
       {/* Header */}
@@ -837,9 +841,9 @@ function MerchantCard({ merchant: m, rank }) {
   const displayName = cleanMerchantName(m.name);
   const isTop = rank === 1;
   const borderColor = hovered
-    ? 'rgba(245,158,11,0.3)'
+    ? 'rgba(245,158,11,0.5)'
     : isTop
-      ? 'rgba(245,158,11,0.25)'
+      ? 'rgba(245,158,11,0.45)'
       : 'rgba(255,255,255,0.08)';
   return (
     <div
@@ -853,6 +857,7 @@ function MerchantCard({ merchant: m, rank }) {
         display: 'flex', flexDirection: 'column', gap: 8,
         transition: 'all 0.15s ease',
         cursor: 'default',
+        boxShadow: isTop ? '0 0 12px rgba(245,158,11,0.08)' : 'none',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
