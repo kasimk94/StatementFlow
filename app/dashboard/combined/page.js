@@ -118,11 +118,29 @@ function Sk({ h = 120 }) {
 
 function SectionTitle({ title, sub }) {
   return (
-    <div style={{ borderLeft: '2px solid #C9A84C', paddingLeft: 10, marginBottom: sub ? 14 : 18 }}>
-      <div style={{ color: '#F5F0E8', fontSize: '1.05rem', fontWeight: 700 }}>{title}</div>
-      {sub && <div style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: 2 }}>{sub}</div>}
+    <div style={{ borderLeft: '3px solid #F59E0B', paddingLeft: 12, marginBottom: sub ? 16 : 20 }}>
+      <div style={{ color: '#F5F0E8', fontSize: '1.1rem', fontWeight: 700 }}>{title}</div>
+      {sub && <div style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: 3 }}>{sub}</div>}
     </div>
   );
+}
+
+// ─── Merchant name cleaner ────────────────────────────────────────────────────
+
+function cleanMerchantName(raw) {
+  if (!raw) return raw;
+  // Strip trailing location words, reference codes, and noise after merchant root
+  let s = raw
+    .replace(/\s+(ltd|limited|plc|llp|inc|corp|uk|gb)\.?\b.*/i, '')
+    .replace(/\s+\d{2,}.*$/, '')               // trailing numbers → location/ref
+    .replace(/\s+(st|rd|ave|lane|street|road|drive|close|way|green|park|house)\b.*/i, '')
+    .replace(/\s+(london|borough|of|serv|service|services)\b.*/i, '')
+    .trim();
+  // Title-case the result if it looks ALL-CAPS
+  if (s === s.toUpperCase() && s.length > 2) {
+    s = s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
+  return s || raw;
 }
 
 // ─── KPI card icons ───────────────────────────────────────────────────────────
@@ -168,6 +186,10 @@ function KPICard({ label, value, sub, accentColor, icon, dateRange, duration }) 
         borderTop: `3px solid ${accentColor}`,
         borderRadius: 16,
         padding: '18px 20px',
+        minHeight: 130,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
         boxShadow: hovered
           ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px ${accentColor}22`
           : '0 4px 24px rgba(0,0,0,0.3)',
@@ -177,32 +199,34 @@ function KPICard({ label, value, sub, accentColor, icon, dateRange, duration }) 
         overflow: 'hidden',
       }}
     >
-      {/* Icon top-right */}
-      <div style={{ position: 'absolute', top: 14, right: 14, color: accentColor, opacity: 0.5 }}>
-        {icon}
+      {/* Label row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ color: '#9CA3AF', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+          {label}
+        </div>
+        <div style={{ color: accentColor, opacity: 0.5, flexShrink: 0 }}>{icon}</div>
       </div>
 
-      <div style={{ color: '#9CA3AF', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 10 }}>
-        {label}
+      {/* Value area */}
+      <div>
+        {dateRange ? (
+          <>
+            <div style={{ color: '#F5F0E8', fontSize: '0.9rem', fontWeight: 700, lineHeight: 1.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {dateRange}
+            </div>
+            {duration && (
+              <div style={{ color: '#6B7280', fontSize: '0.75rem', marginTop: 5 }}>{duration}</div>
+            )}
+          </>
+        ) : (
+          <>
+            <div style={{ color: accentColor, fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              {value}
+            </div>
+            {sub && <div style={{ color: '#6B7280', fontSize: '0.73rem', marginTop: 6 }}>{sub}</div>}
+          </>
+        )}
       </div>
-
-      {dateRange ? (
-        <>
-          <div style={{ color: '#F5F0E8', fontSize: '0.95rem', fontWeight: 700, lineHeight: 1.3, paddingRight: 28 }}>
-            {dateRange}
-          </div>
-          {duration && (
-            <div style={{ color: '#6B7280', fontSize: '0.75rem', marginTop: 6 }}>{duration}</div>
-          )}
-        </>
-      ) : (
-        <>
-          <div style={{ color: accentColor, fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            {value}
-          </div>
-          {sub && <div style={{ color: '#6B7280', fontSize: '0.73rem', marginTop: 6 }}>{sub}</div>}
-        </>
-      )}
     </div>
   );
 }
@@ -707,17 +731,20 @@ function CombinedInner() {
       <div style={{
         background: 'linear-gradient(135deg, #0F172A, #1E293B)',
         border: '1px solid rgba(245,158,11,0.15)',
-        borderRadius: 16, padding: 24, marginBottom: 24,
+        borderRadius: 16, padding: '20px 22px', marginBottom: 24,
       }}>
-        <div style={{ marginBottom: 18 }}>
-          <span style={{ color: '#F59E0B', fontSize: '1.1rem', marginRight: 6 }}>✨</span>
-          <span style={{ color: '#F5F0E8', fontSize: '1.05rem', fontWeight: 700 }}>Combined Insights</span>
+        <div style={{ borderLeft: '3px solid #F59E0B', paddingLeft: 12, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: '#F59E0B', fontSize: '1rem' }}>✨</span>
+            <span style={{ color: '#F5F0E8', fontSize: '1.1rem', fontWeight: 700 }}>Combined Insights</span>
+          </div>
+          <div style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: 3 }}>Auto-generated from your uploaded statements</div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {insights.map((ins, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 10 }}>
-              <span style={{ fontSize: '1.1rem', flexShrink: 0, lineHeight: 1.3 }}>{INSIGHT_ICONS[i] || '💡'}</span>
-              <span style={{ color: '#E5E7EB', fontSize: '0.875rem', lineHeight: 1.6 }}>{ins}</span>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
+              <span style={{ fontSize: '1.1rem', flexShrink: 0, lineHeight: 1 }}>{INSIGHT_ICONS[i] || '💡'}</span>
+              <span style={{ color: '#D1D5DB', fontSize: '0.875rem', lineHeight: 1.5 }}>{ins}</span>
             </div>
           ))}
         </div>
@@ -744,9 +771,9 @@ function CombinedInner() {
           borderBottom: txExpanded ? '1px solid rgba(255,255,255,0.04)' : 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
         }}>
-          <div>
-            <div style={{ color: '#F5F0E8', fontSize: '1rem', fontWeight: 700 }}>All Transactions</div>
-            <div style={{ color: '#6B7280', fontSize: '0.78rem', marginTop: 2 }}>
+          <div style={{ borderLeft: '3px solid #F59E0B', paddingLeft: 12 }}>
+            <div style={{ color: '#F5F0E8', fontSize: '1.1rem', fontWeight: 700 }}>All Transactions</div>
+            <div style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: 3 }}>
               {allTransactions.length} transactions across {statements.length} statement{statements.length !== 1 ? 's' : ''}
             </div>
           </div>
@@ -786,8 +813,10 @@ function CombinedInner() {
 
 function MerchantCard({ merchant: m, rank }) {
   const [hovered, setHovered] = useState(false);
+  const displayName = cleanMerchantName(m.name);
   return (
     <div
+      title={m.name}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -804,8 +833,9 @@ function MerchantCard({ merchant: m, rank }) {
           {m.count}×
         </span>
       </div>
-      <div style={{ color: '#FFFFFF', fontSize: '0.95rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 6 }}>
-        {m.name}
+      <div style={{ color: '#FFFFFF', fontSize: '0.95rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 6 }}
+           title={m.name}>
+        {displayName}
       </div>
       <div style={{ color: '#F59E0B', fontSize: '1.15rem', fontWeight: 700 }}>
         {fmt(m.total)}
