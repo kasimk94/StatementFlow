@@ -226,7 +226,7 @@ function KPICard({ label, value, sub, accentColor, icon, dateRange, duration }) 
           </>
         ) : (
           <>
-            <div style={{ color: accentColor, fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            <div style={{ color: accentColor, fontSize: '26px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               {value}
             </div>
             {sub && <div style={{ color: '#6B7280', fontSize: '0.73rem', marginTop: 6 }}>{sub}</div>}
@@ -584,7 +584,13 @@ function CombinedInner() {
 
   const statementPills = statements.map(st => {
     const bank = st.bankName || st.rawData?.bank || 'Statement';
-    return st.dateFrom ? `${bank} · ${st.dateFrom}` : bank;
+    let label = bank;
+    if (st.dateFrom) {
+      const d = parseDateRaw(st.dateFrom);
+      const month = d ? d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : st.dateFrom;
+      label = `${bank} · ${month}`;
+    }
+    return label;
   });
 
   if (loading) {
@@ -616,7 +622,7 @@ function CombinedInner() {
   const duration = dateDuration(kpis.earliest, kpis.latest);
 
   return (
-    <DashboardLayout title="Combined Dashboard">
+    <DashboardLayout title="Combined Statement Analysis">
       <style>{`@keyframes comb-pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
 
       {/* Header */}
@@ -829,22 +835,28 @@ function CombinedInner() {
 function MerchantCard({ merchant: m, rank }) {
   const [hovered, setHovered] = useState(false);
   const displayName = cleanMerchantName(m.name);
+  const isTop = rank === 1;
+  const borderColor = hovered
+    ? 'rgba(245,158,11,0.3)'
+    : isTop
+      ? 'rgba(245,158,11,0.25)'
+      : 'rgba(255,255,255,0.08)';
   return (
     <div
       title={m.name}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: '#1C1C2E',
-        border: `1px solid ${hovered ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`,
+        background: hovered ? '#252535' : '#1C1C2E',
+        border: `1px solid ${borderColor}`,
         borderRadius: 12, padding: '14px 16px',
         display: 'flex', flexDirection: 'column', gap: 8,
-        transition: 'border-color 150ms ease',
+        transition: 'all 0.15s ease',
         cursor: 'default',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ color: '#4B5563', fontSize: '0.72rem', fontWeight: 700 }}>#{rank}</span>
+        <span style={{ color: isTop ? '#F59E0B' : '#9CA3AF', fontSize: '13px', fontWeight: isTop ? 700 : 600 }}>#{rank}</span>
         <span style={{ background: 'rgba(255,255,255,0.06)', color: '#9CA3AF', fontSize: '0.68rem', fontWeight: 600, padding: '2px 7px', borderRadius: 999 }}>
           {m.count}×
         </span>
