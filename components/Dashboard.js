@@ -213,7 +213,7 @@ function CategoryBadge({ name }) {
 }
 
 // Premium stat card — matches combined dashboard KPI style
-function StatCard({ label, value, sub, numColor, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge }) {
+function StatCard({ label, value, sub, numColor, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge, cardStyle }) {
   const _counted = useCountUp(
     countTarget ?? 0,
     1500,
@@ -241,6 +241,7 @@ function StatCard({ label, value, sub, numColor, icon, loaded, delay, countTarge
         opacity:    loaded ? 1 : 0,
         transform:  loaded ? "translateY(0)" : "translateY(24px)",
         transition: `opacity 0.5s ease-out ${delay}ms, transform 0.5s ease-out ${delay}ms`,
+        ...cardStyle,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -1814,6 +1815,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           countTarget={income}
           countTriggered={demoMode ? demoTriggered : loaded}
           countFormat={(v) => fmt(v)}
+          cardStyle={{ borderTop: '3px solid #10B981', borderLeft: '1px solid rgba(255,255,255,0.06)', borderRight: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(135deg, #1A1A2E, #16213E)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
         />
         <StatCard
           label="Total Money Out"
@@ -1830,6 +1832,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           countTarget={expenses}
           countTriggered={demoMode ? demoTriggered : loaded}
           countFormat={(v) => fmt(v)}
+          cardStyle={{ borderTop: '3px solid #EF4444', borderLeft: '1px solid rgba(255,255,255,0.06)', borderRight: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(135deg, #1A1A2E, #16213E)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
         />
         <StatCard
           label="Transactions"
@@ -1842,6 +1845,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           countTarget={transactions.length}
           countTriggered={demoMode ? demoTriggered : loaded}
           countFormat={(v) => Math.round(v).toString()}
+          cardStyle={{ borderTop: '3px solid #F59E0B', borderLeft: '1px solid rgba(255,255,255,0.06)', borderRight: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(135deg, #1A1A2E, #16213E)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
         />
       </div>
 
