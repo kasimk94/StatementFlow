@@ -211,8 +211,8 @@ function CategoryBadge({ name }) {
   );
 }
 
-// Dark-gold themed stat card
-function StatCard({ label, value, sub, gradient, border, shadow, numColor, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge }) {
+// Premium stat card — matches combined dashboard KPI style
+function StatCard({ label, value, sub, numColor, icon, loaded, delay, countTarget, countTriggered, countFormat, gauge }) {
   const _counted = useCountUp(
     countTarget ?? 0,
     1500,
@@ -222,33 +222,37 @@ function StatCard({ label, value, sub, gradient, border, shadow, numColor, icon,
     ? (countFormat ? countFormat(_counted) : Math.round(_counted).toString())
     : value;
 
-  const numLen = (displayValue?.toString() ?? "").length;
-  const numFontSize = numLen <= 6 ? "2rem" : numLen <= 8 ? "1.75rem" : numLen <= 10 ? "1.5rem" : "1.25rem";
-
   return (
     <div
-      className="relative rounded-2xl p-5 flex items-center gap-3 overflow-hidden"
       style={{
-        background: gradient,
-        border: border || "1px solid #1E2A3A",
+        background: "linear-gradient(135deg, #1A1A2E, #16213E)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderTop: `3px solid ${numColor || "#C9A84C"}`,
         borderRadius: 16,
-        boxShadow: shadow || "0 0 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
+        padding: "18px 20px",
+        minHeight: 120,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
         opacity:    loaded ? 1 : 0,
         transform:  loaded ? "translateY(0)" : "translateY(24px)",
         transition: `opacity 0.5s ease-out ${delay}ms, transform 0.5s ease-out ${delay}ms`,
       }}
     >
-      {/* Decorative background circles */}
-      <div className="pointer-events-none absolute -top-8 -right-8 w-36 h-36 rounded-full" style={{ background: "rgba(255,255,255,0.03)" }} />
-      <div className="pointer-events-none absolute -bottom-6 right-12 w-20 h-20 rounded-full" style={{ background: "rgba(255,255,255,0.02)" }} />
-
-      <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 text-2xl" style={{ background: "rgba(255,255,255,0.08)", color: numColor || "#F5F0E8" }}>
-        {icon}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ color: "#9CA3AF", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
+          {label}
+        </div>
+        {icon && (
+          <div style={{ color: numColor || "#C9A84C", opacity: 0.5, flexShrink: 0 }}>{icon}</div>
+        )}
       </div>
-      <div className="relative min-w-0 flex-1">
-        <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>{label}</p>
-        <p style={{ fontWeight: 800, color: numColor || "#F5F0E8", marginTop: 4, lineHeight: 1, fontSize: numFontSize, whiteSpace: "nowrap" }}>{displayValue}</p>
-        {sub && <p style={{ fontSize: "0.82rem", color: "#8A9BB5", marginTop: 6 }}>{sub}</p>}
+      <div>
+        <div style={{ color: numColor || "#F5F0E8", fontSize: "28px", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          {displayValue}
+        </div>
+        {sub && <div style={{ color: "#6B7280", fontSize: "0.73rem", marginTop: 6 }}>{sub}</div>}
         {gauge && (
           <div style={{ marginTop: 8 }}>
             <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
@@ -559,121 +563,39 @@ function AccountantView({ transactions, income, expenses, net, categoryBreakdown
 }
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-// ─── Export toolbar (shared between real dashboard and demo) ─────────────────
-function ExportToolbar({ downloading, onDownload, onCSV, onPrint, downloadError, isGuest }) {
+// ─── Export toolbar ───────────────────────────────────────────────────────────
+function ExportToolbar({ downloading, onDownload, downloadError, isGuest }) {
   return (
-    <div
-      className="export-toolbar-inner"
-      style={{
-        background:   "#0D1117",
-        borderRadius: 12,
-        border:       "1px solid #1E2A3A",
-        boxShadow:    "0 4px 24px rgba(0,0,0,0.3)",
-        padding:      "10px 18px 10px 20px",
-      }}
-    >
-      {/* Label */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#F5F0E8" }}>Export Your Results</span>
-        <span className="export-toolbar-label-sub" style={{ fontSize: "0.8rem", color: "#8A9BB5", fontWeight: 400 }}>— download your full statement report</span>
-      </div>
-
-      {/* Buttons */}
-      <div className="export-toolbar-buttons">
+    <div className="export-toolbar-inner" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      {!isGuest && (
         <button
-          onClick={onPrint}
+          onClick={onDownload}
+          disabled={downloading}
           style={{
-            background:   "#1a2744",
-            color:        "#93c5fd",
-            fontWeight:   700,
-            fontSize:     "0.88rem",
-            padding:      "9px 20px",
-            borderRadius: 11,
-            border:       "1px solid rgba(59,130,246,0.5)",
-            cursor:       "pointer",
-            boxShadow:    "0 4px 14px rgba(59,130,246,0.15)",
-            display:      "flex",
-            alignItems:   "center",
-            gap:          7,
-            transition:   "transform 0.15s ease, box-shadow 0.2s ease",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "9px 18px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 700,
+            background: "linear-gradient(135deg,#C9A84C,#E8C97A)",
+            color: "#080C14", border: "none",
+            cursor: downloading ? "not-allowed" : "pointer",
+            opacity: downloading ? 0.6 : 1,
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(59,130,246,0.3)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(59,130,246,0.15)"; }}
         >
-          <span style={{ fontSize: "1rem" }}>📄</span> Download Report
-        </button>
-
-        {!isGuest && (
-          <button
-            onClick={onDownload}
-            disabled={downloading}
-            style={{
-              background:  "#1a3322",
-              color:       "#86efac",
-              fontWeight:  700,
-              fontSize:    "0.88rem",
-              padding:     "9px 20px",
-              borderRadius: 11,
-              border:      "1px solid rgba(34,197,94,0.5)",
-              cursor:      downloading ? "not-allowed" : "pointer",
-              opacity:     downloading ? 0.6 : 1,
-              boxShadow:   "0 4px 14px rgba(34,197,94,0.1)",
-              display:     "flex",
-              alignItems:  "center",
-              gap:         7,
-              transition:  "transform 0.15s ease, box-shadow 0.2s ease",
-            }}
-            onMouseEnter={(e) => { if (!downloading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(34,197,94,0.25)"; } }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(34,197,94,0.1)"; }}
-          >
-            {downloading ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                Generating…
-              </>
-            ) : (
-              <><span style={{ fontSize: "1rem" }}>📊</span> Download Excel</>
-            )}
-          </button>
-        )}
-
-        <button
-          onClick={onCSV}
-          style={{
-            background:   "#1a2744",
-            color:        "#93c5fd",
-            fontWeight:   700,
-            fontSize:     "0.88rem",
-            padding:      "9px 20px",
-            borderRadius: 11,
-            border:       "1px solid rgba(59,130,246,0.5)",
-            cursor:       "pointer",
-            boxShadow:    "0 4px 14px rgba(59,130,246,0.15)",
-            display:      "flex",
-            alignItems:   "center",
-            gap:          7,
-            transition:   "transform 0.15s ease, box-shadow 0.2s ease",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 22px rgba(59,130,246,0.3)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 14px rgba(59,130,246,0.15)"; }}
-        >
-          <span style={{ fontSize: "1rem" }}>📄</span> Download CSV
-        </button>
-      </div>
-
-      {downloadError && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.875rem", color: "#EF4444", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, padding: "12px 16px", width: "100%" }}>
-          <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
+          {downloading ? "Generating…" : "Download Excel"}
+        </button>
+      )}
+      <a href="/export" style={{
+        display: "inline-flex", alignItems: "center", gap: 5,
+        padding: "9px 18px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 600,
+        background: "transparent", border: "1px solid rgba(201,168,76,0.3)",
+        color: "#C9A84C", textDecoration: "none",
+      }}>
+        All Exports →
+      </a>
+      {downloadError && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.875rem", color: "#EF4444", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "8px 14px", width: "100%" }}>
           {downloadError}
         </div>
       )}
@@ -1173,6 +1095,9 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
   const [showAuditModal, setShowAuditModal]   = useState(false);
   const [warningsDismissed, setWarningsDismissed] = useState(false);
   const [successVisible, setSuccessVisible]       = useState(true);
+  const [parseQualityExpanded, setParseQualityExpanded] = useState(
+    () => !!(validation && (validation.confidence ?? 100) < 90)
+  );
   const [editingTx, setEditingTx]                 = useState(null); // { idx, merchantKey }
   const [localCategories, setLocalCategories]     = useState({}); // txKey → category
   const [catSaving, setCatSaving]                 = useState(null);
@@ -1783,74 +1708,53 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── PARSE QUALITY REPORT BANNER ── */}
-      {!demoMode && validation && (() => {
-        const { isValid, confidence: conf, errors, warnings: warns } = validation;
+      {!demoMode && validation && !warningsDismissed && (() => {
+        const { errors, warnings: warns } = validation;
+        const conf        = validation.confidence;
         const hasErrors   = errors.length > 0;
         const hasWarnings = warns.length > 0;
-        const isSuccess   = isValid && !hasWarnings && conf > 85;
-        const isDismissed = warningsDismissed && !hasErrors;
-
-        if (isDismissed) return null;
-        if (isSuccess && !successVisible) return null;
-
-        const accentColor = hasErrors ? "#EF4444" : hasWarnings ? "#F59E0B" : "#00D4A0";
-        const confPillBg  = conf >= 90 ? "rgba(0,212,160,0.15)" : conf >= 70 ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)";
-        const confPillClr = conf >= 90 ? "#00D4A0" : conf >= 70 ? "#F59E0B" : "#EF4444";
-        const title       = hasErrors
-          ? "⚠ Issues detected with this statement"
-          : hasWarnings
-          ? "Parse Quality Report"
-          : "✓ Statement successfully read";
-        const items       = hasErrors ? errors : hasWarnings ? warns : null;
-
+        if (!hasErrors && !hasWarnings && (conf ?? 100) >= 90) return null;
+        const accentColor = hasErrors ? "#EF4444" : "#F59E0B";
+        const confPillBg  = (conf ?? 0) >= 90 ? "rgba(0,212,160,0.12)" : (conf ?? 0) >= 70 ? "rgba(245,158,11,0.12)" : "rgba(239,68,68,0.12)";
+        const confPillClr = (conf ?? 0) >= 90 ? "#00D4A0" : (conf ?? 0) >= 70 ? "#F59E0B" : "#EF4444";
+        const items       = hasErrors ? errors : hasWarnings ? warns : [];
         return (
-          <div style={{
-            background: "#0F1521",
-            border: `1px solid #2A3A52`,
-            borderLeft: `4px solid ${accentColor}`,
-            borderRadius: 12,
-            padding: "20px 24px",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-            opacity: (isSuccess && successVisible) ? 1 : 1,
-            transition: "opacity 0.6s ease",
-          }}>
-            {/* Header row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontWeight: 600, color: "#F0F4FF", fontSize: "0.9rem", flex: 1 }}>{title}</span>
+          <div style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 10, overflow: "hidden" }}>
+            <button
+              onClick={() => setParseQualityExpanded(v => !v)}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+            >
+              <span style={{ color: accentColor, fontSize: "0.82rem", fontWeight: 600 }}>⚠ Parse Quality</span>
               {typeof conf === "number" && (
-                <span style={{ background: confPillBg, color: confPillClr, fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", borderRadius: 999, whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
-                  {conf}% confidence
+                <span style={{ background: confPillBg, color: confPillClr, fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+                  {conf}%
                 </span>
               )}
-              {(hasWarnings || isSuccess) && (
-                <button
-                  onClick={() => { setWarningsDismissed(true); if (isSuccess) setSuccessVisible(false); }}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#4A5568", fontSize: "1rem", lineHeight: 1, padding: "0 0 0 10px", flexShrink: 0 }}
-                  aria-label="Dismiss"
-                >✕</button>
-              )}
-            </div>
-
-            {/* Success sub-text */}
-            {isSuccess && (
-              <p style={{ margin: "6px 0 0", color: "#8A9BB5", fontSize: "0.82rem" }}>
-                {transactions.length} transactions extracted · No issues detected
-              </p>
-            )}
-
-            {/* Divider + items */}
-            {items && items.length > 0 && (
-              <>
-                <div style={{ height: 1, background: "#1E2A3A", margin: "14px 0 12px" }} />
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {items.map((item, i) => (
+              <span style={{ marginLeft: "auto", color: "#6B7280", fontSize: "0.72rem" }}>
+                {parseQualityExpanded ? "▲ hide" : "▼ details"}
+              </span>
+            </button>
+            {parseQualityExpanded && (
+              <div style={{ padding: "0 16px 14px", borderTop: "1px solid rgba(245,158,11,0.1)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5, paddingTop: 10 }}>
+                  {items.length === 0 ? (
+                    <span style={{ color: "#D1D5DB", fontSize: "0.82rem" }}>{transactions.length} transactions extracted · No issues detected</span>
+                  ) : items.map((item, i) => (
                     <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                       <span style={{ color: accentColor, fontSize: "0.8rem", flexShrink: 0, marginTop: 1 }}>›</span>
-                      <span style={{ color: "#8A9BB5", fontSize: "0.82rem", lineHeight: 1.5 }}>{item}</span>
+                      <span style={{ color: "#D1D5DB", fontSize: "0.82rem", lineHeight: 1.5 }}>{item}</span>
                     </div>
                   ))}
                 </div>
-              </>
+                {!hasErrors && (
+                  <button
+                    onClick={() => setWarningsDismissed(true)}
+                    style={{ marginTop: 10, background: "none", border: "1px solid rgba(245,158,11,0.2)", color: "#9CA3AF", fontSize: "0.75rem", padding: "4px 12px", borderRadius: 6, cursor: "pointer" }}
+                  >
+                    Dismiss
+                  </button>
+                )}
+              </div>
             )}
           </div>
         );
@@ -1888,7 +1792,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       </div>
 
       {/* ── EXPORT TOOLBAR ── */}
-      <ExportToolbar downloading={downloading} onDownload={handleDownload} onCSV={handleCSV} onPrint={handlePrintReport} downloadError={downloadError} isGuest={!session} />
+      <ExportToolbar downloading={downloading} onDownload={handleDownload} downloadError={downloadError} isGuest={!session} />
 
       {/* ── STAT CARDS ── */}
       <div ref={demoRef} className="stat-cards grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-5">
@@ -1900,11 +1804,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               ? `Excl. ${fmt(internalCreditTotal)} internal transfers`
               : `${incomeCount} credit${incomeCount !== 1 ? "s" : ""}`
           }
-          gradient="linear-gradient(135deg, #061a10 0%, #0a2918 100%)"
-          border="1px solid rgba(0,212,160,0.25)"
-          shadow="0 0 40px rgba(0,212,160,0.06), inset 0 1px 0 rgba(0,212,160,0.1)"
-          numColor="#00D4A0"
-          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
+          numColor="#10B981"
+          icon={<svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
           loaded={loaded}
           delay={100}
           countTarget={income}
@@ -1919,11 +1820,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               ? `Excl. ${fmt(internalDebitTotal)} internal transfers`
               : `${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`
           }
-          gradient="linear-gradient(135deg, #1a0606 0%, #290a0a 100%)"
-          border="1px solid rgba(239,68,68,0.25)"
-          shadow="0 0 40px rgba(239,68,68,0.06), inset 0 1px 0 rgba(239,68,68,0.1)"
           numColor="#EF4444"
-          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
+          icon={<svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
           loaded={loaded}
           delay={200}
           countTarget={expenses}
@@ -1934,11 +1832,8 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           label="Transactions"
           value={`${transactions.length}`}
           sub={`${incomeCount} in · ${expenseCount} out`}
-          gradient="linear-gradient(135deg, #0a0d1a 0%, #0d1122 100%)"
-          border="1px solid rgba(99,102,241,0.25)"
-          shadow="0 0 40px rgba(99,102,241,0.06), inset 0 1px 0 rgba(99,102,241,0.1)"
-          numColor="#818CF8"
-          icon={<svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
+          numColor="#F59E0B"
+          icon={<svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
           loaded={loaded}
           delay={400}
           countTarget={transactions.length}
@@ -1961,14 +1856,13 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           <div style={{ background: "#0D1117", borderRadius: 12, border: "1px solid #1E2A3A", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
               <div>
-                <p style={{ margin: 0, fontSize: "0.62rem", fontWeight: 700, color: "#8A9BB5", textTransform: "uppercase", letterSpacing: "0.1em" }}>Savings Rate</p>
+                <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em" }}>Savings Rate</p>
                 <p style={{ margin: "2px 0 0", fontSize: "0.82rem", color: "#8A9BB5" }}>{msg}</p>
               </div>
-              <span style={{ fontSize: "1.6rem", fontWeight: 800, color: barColor, lineHeight: 1 }}>{rate.toFixed(1)}%</span>
+              <span style={{ fontSize: "18px", fontWeight: 700, color: barColor, lineHeight: 1 }}>{rate.toFixed(1)}%</span>
             </div>
-            <div style={{ position: "relative", height: 8, borderRadius: 999, background: "#1E2A3A", overflow: "visible" }}>
-              <div style={{ height: "100%", width: `${barPct}%`, background: `linear-gradient(90deg, ${barColor}, ${barColor}cc)`, borderRadius: 999, transition: "width 1s ease 0.4s" }} />
-              {/* 20% target marker */}
+            <div style={{ position: "relative", height: 8, borderRadius: 4, background: "rgba(255,255,255,0.08)", overflow: "visible" }}>
+              <div style={{ height: "100%", width: `${barPct}%`, background: "linear-gradient(90deg, #EF4444, #F59E0B)", borderRadius: 4, transition: "width 1s ease 0.4s" }} />
               <div style={{ position: "absolute", top: -3, left: "20%", width: 2, height: 14, background: "#C9A84C", borderRadius: 1 }} />
               <span style={{ position: "absolute", top: 13, left: "20%", transform: "translateX(-50%)", fontSize: "0.6rem", color: "#C9A84C", fontWeight: 700, whiteSpace: "nowrap" }}>20% goal</span>
             </div>
@@ -1984,14 +1878,13 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           top: "4px",
           bottom: "4px",
           width: "calc(50% - 4px)",
-          background: accountantView ? "linear-gradient(135deg, #C9A84C, #E8C97A)" : "rgba(201,168,76,0.05)",
+          background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
           borderRadius: "999px",
-          boxShadow: accountantView ? "0 2px 8px rgba(201,168,76,0.4)" : "none",
-          borderBottom: accountantView ? "none" : "2px solid #C9A84C",
-          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, box-shadow 0.3s ease",
+          boxShadow: "0 2px 8px rgba(201,168,76,0.4)",
+          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           transform: accountantView ? "translateX(calc(100% + 4px))" : "translateX(0)",
         }} />
-        <div onClick={() => setAccountantView(false)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 400 : 600, color: accountantView ? "#8A9BB5" : "#C9A84C", transition: "color 0.3s ease", userSelect: "none" }}>
+        <div onClick={() => setAccountantView(false)} style={{ position: "relative", zIndex: 1, padding: "8px 24px", borderRadius: "999px", fontSize: "0.875rem", fontWeight: accountantView ? 400 : 600, color: accountantView ? "#8A9BB5" : "#080C14", transition: "color 0.3s ease", userSelect: "none" }}>
           👤 Personal
         </div>
         <div

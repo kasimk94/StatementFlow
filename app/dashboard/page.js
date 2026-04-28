@@ -311,7 +311,7 @@ function DashboardPageInner() {
   const statementId = searchParams.get('statementId');
 
   return (
-    <DashboardLayout title="Dashboard">
+    <DashboardLayout title="">
       <style>{`
         @keyframes sf-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
