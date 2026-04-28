@@ -7,6 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Label,
 } from "recharts";
 import UpgradeModal from "@/components/UpgradeModal";
+import { TrendingUp, TrendingDown, Receipt } from "lucide-react";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 function fmt(amount) {
@@ -226,8 +227,10 @@ function StatCard({ label, value, sub, numColor, icon, loaded, delay, countTarge
     <div
       style={{
         background: "linear-gradient(135deg, #1A1A2E, #16213E)",
-        border: "1px solid rgba(255,255,255,0.06)",
         borderTop: `3px solid ${numColor || "#C9A84C"}`,
+        borderLeft: "1px solid rgba(255,255,255,0.06)",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 16,
         padding: "18px 20px",
         minHeight: 120,
@@ -1805,7 +1808,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               : `${incomeCount} credit${incomeCount !== 1 ? "s" : ""}`
           }
           numColor="#10B981"
-          icon={<svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
+          icon={<TrendingUp size={18} color="#10B981" />}
           loaded={loaded}
           delay={100}
           countTarget={income}
@@ -1821,7 +1824,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
               : `${expenseCount} debit${expenseCount !== 1 ? "s" : ""}`
           }
           numColor="#EF4444"
-          icon={<svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" /></svg>}
+          icon={<TrendingDown size={18} color="#EF4444" />}
           loaded={loaded}
           delay={200}
           countTarget={expenses}
@@ -1833,7 +1836,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           value={`${transactions.length}`}
           sub={`${incomeCount} in · ${expenseCount} out`}
           numColor="#F59E0B"
-          icon={<svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
+          icon={<Receipt size={18} color="#F59E0B" />}
           loaded={loaded}
           delay={400}
           countTarget={transactions.length}
