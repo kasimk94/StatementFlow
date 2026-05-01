@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { sendGAEvent } from "@next/third-parties/google";
 import {
   PieChart, Pie, Cell, Tooltip as ReTooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Label,
@@ -1326,6 +1327,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
       a.download = "statement.xlsx";
       a.click();
       URL.revokeObjectURL(url);
+      sendGAEvent('event', 'excel_downloaded', {});
     } catch (err) {
       setDownloadError(err.message);
     } finally {

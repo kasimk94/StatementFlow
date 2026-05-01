@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useDropzone } from 'react-dropzone';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import { sendGAEvent } from '@next/third-parties/google';
 import UpgradeModal from '@/components/UpgradeModal';
 
 const BANKS = ['Barclays', 'HSBC', 'Monzo', 'Starling', 'Lloyds', 'NatWest', 'Santander', 'Halifax'];
@@ -167,6 +168,7 @@ export default function UploadPage() {
         ids[i] = json.statementId || null;
         setResultIds([...ids]);
         setStatuses(p => { const n = [...p]; n[i] = 'done'; return n; });
+        sendGAEvent('event', 'statement_uploaded', { bank: json.bank || 'unknown' });
       } catch (err) {
         setStatuses(p => { const n = [...p]; n[i] = 'error'; return n; });
         setError(`"${files[i].name}" failed: ${err.message}`);
