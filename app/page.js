@@ -488,7 +488,7 @@ export default function Home() {
           2. STATS BAR
       ══════════════════════════════════════════════════════════════ */}
       <section style={{ background: "#0D1117", borderTop: "1px solid rgba(201,168,76,0.12)", borderBottom: "1px solid rgba(201,168,76,0.12)", paddingTop: 60, paddingBottom: 60, paddingLeft: 24, paddingRight: 24 }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0 }}>
+        <div className="sf-stats-bar" style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0 }}>
           {[
             ["40+",       "UK Banks Supported"],
             ["< 60s",     "Processing Time"],

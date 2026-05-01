@@ -659,9 +659,26 @@ img, video { max-width: 100%; height: auto; }
     justify-content: center;
   }
 
-  /* ── Security & features: 2-col grid on mobile ── */
+  /* ── Security & features: 1-col on mobile ── */
   .security-grid-2col {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Stats bar: 2x2 grid on mobile ── */
+  .sf-stats-bar {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0 !important;
+  }
+  .sf-stats-bar > div {
+    border-right: none !important;
+    border-bottom: 1px solid #1E2A3A;
+    padding: 12px 16px !important;
+  }
+  .sf-stats-bar > div:nth-child(odd) {
+    border-right: 1px solid #1E2A3A !important;
+  }
+  .sf-stats-bar > div:nth-last-child(-n+2) {
+    border-bottom: none;
   }
 
   /* ── General section horizontal padding ── */
