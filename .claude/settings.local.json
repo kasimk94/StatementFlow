@@ -41,7 +41,11 @@
       "Bash(find /c/Users/Lenovo/Desktop/bank-converter -maxdepth 3 -not -path */node_modules* -not -path */.next* -type f)",
       "Bash(/tmp/tree_output.txt:*)",
       "Read(//tmp/**)",
-      "Bash(find /c/Users/Lenovo/Desktop/bank-converter -name *[Ss]idebar* -o -name *[Ss]ide*)"
+      "Bash(find /c/Users/Lenovo/Desktop/bank-converter -name *[Ss]idebar* -o -name *[Ss]ide*)",
+      "Bash(git config *)",
+      "Bash(git revert *)",
+      "Bash(curl -s -X POST http://localhost:3000/api/admin/set-tier -H 'Content-Type: application/json' -d '{\"email\":\"kasimkhalid63@gmail.com\",\"tier\":\"BUSINESS\"}')",
+      "Bash(powershell *)"
     ]
   }
 }

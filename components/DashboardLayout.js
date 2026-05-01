@@ -39,6 +39,7 @@ function injectStyles() {
     @media (max-width: 767px) {
       .sf-sidebar-desktop-spacer { display: none !important; }
       .sf-topbar-hamburger { display: flex !important; }
+      .sf-main-content { padding: 16px !important; }
     }
     @media (min-width: 768px) {
       .sf-topbar-hamburger { display: none !important; }
@@ -210,7 +211,7 @@ export default function DashboardLayout({ children, title }) {
         </header>
 
         {/* ── Page Content ── */}
-        <div style={{
+        <div className="sf-main-content" style={{
           flex: 1,
           overflowY: 'auto',
           padding: 24,

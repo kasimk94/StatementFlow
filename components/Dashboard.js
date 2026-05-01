@@ -1933,7 +1933,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           ) : (
             <div className="flex flex-col lg:flex-row gap-4 items-start">
               {/* Chart */}
-              <div className="w-full lg:w-56 shrink-0" style={{ overflow: "visible", padding: "0 8px" }}>
+              <div className="sf-chart-wrap w-full lg:w-56 shrink-0" style={{ overflow: "visible", padding: "0 8px" }}>
                 <ResponsiveContainer width="100%" height={240}>
                   <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
                     <Pie
@@ -1995,6 +1995,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           {barData.length === 0 ? (
             <div style={{ height: 192, display: "flex", alignItems: "center", justifyContent: "center", color: "#8A9BB5", fontSize: "0.875rem" }}>No data</div>
           ) : (
+            <div className="sf-chart-wrap">
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={barData} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 8 }}>
                 <defs>
@@ -2015,6 +2016,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
                 <Bar dataKey="income"  name="Income"  fill="#00D4A0" radius={[0, 6, 6, 0]} maxBarSize={16} isAnimationActive={demoMode ? chartsTriggered : true} animationDuration={800} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
       </div>

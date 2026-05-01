@@ -662,7 +662,7 @@ function CombinedInner() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', alignItems: 'stretch', gap: 16, marginBottom: 28 }}>
+      <div className="sf-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', alignItems: 'stretch', gap: 16, marginBottom: 28 }}>
         <KPICard label="Total Money In"     accentColor="#10B981" icon={KPIIcons.in}  value={fmt(kpis.totalIn)}  sub={`${statements.length} statement${statements.length !== 1 ? 's' : ''}`}/>
         <KPICard label="Total Money Out"    accentColor="#EF4444" icon={KPIIcons.out} value={fmt(kpis.totalOut)} sub="excluding internals"/>
         <KPICard label="Total Transactions" accentColor="#F59E0B" icon={KPIIcons.txn} value={kpis.txnCount}      sub="across all banks"/>
@@ -673,6 +673,7 @@ function CombinedInner() {
       {bankSpendData.length > 0 && (
         <div style={{ ...CARD_STYLE, marginBottom: 24 }}>
           <SectionTitle title="Spending by Bank" sub="Total spend per bank across all uploaded statements"/>
+          <div className="sf-combined-chart">
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={bankSpendData} barCategoryGap="35%" style={{ background: 'transparent' }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false}/>
@@ -692,18 +693,19 @@ function CombinedInner() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       {/* Spending Breakdown + Bank Breakdown */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16, marginBottom: 24 }}>
+      <div className="sf-bank-breakdown" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16, marginBottom: 24 }}>
 
         {/* Donut */}
         <div style={CARD_STYLE}>
           <SectionTitle title="Spending Breakdown" sub="Combined across all statements"/>
           {categoryBreakdown.length > 0 ? (
             <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ flexShrink: 0 }}>
+              <div className="sf-combined-chart" style={{ flexShrink: 0 }}>
                 <ResponsiveContainer width={220} height={220}>
                   <PieChart>
                     <Pie data={categoryBreakdown} dataKey="value" cx="50%" cy="50%" innerRadius={62} outerRadius={100} paddingAngle={2}>
@@ -779,7 +781,7 @@ function CombinedInner() {
       <div style={{ ...CARD_STYLE, marginBottom: 24 }}>
         <SectionTitle title="Top Merchants" sub="Highest spending merchants across all statements"/>
         {topMerchants.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+          <div className="sf-merchants-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
             {topMerchants.map((m, i) => (
               <MerchantCard key={i} merchant={m} rank={i + 1}/>
             ))}

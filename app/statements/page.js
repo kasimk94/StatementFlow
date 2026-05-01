@@ -329,7 +329,7 @@ export default function StatementsPage() {
 
       {/* Loading skeletons */}
       {loading && (
-        <div style={{
+        <div className="sf-statements-grid" style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fill, minmax(440px, 1fr))",
           gap: 16,
@@ -473,7 +473,7 @@ export default function StatementsPage() {
 
       {/* Statements grid */}
       {!loading && statements.length > 0 && (session?.user?.plan || 'FREE') !== 'FREE' && (
-        <div style={{
+        <div className="sf-statements-grid" style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fill, minmax(440px, 1fr))",
           gap: 16,
@@ -530,7 +530,7 @@ export default function StatementsPage() {
                 </div>
 
                 {/* Stats row */}
-                <div style={{
+                <div className="sf-stmt-stats" style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr 1fr 1fr",
                   gap: 8,
@@ -607,6 +607,7 @@ export default function StatementsPage() {
                   gap: 8,
                   alignItems: "center",
                   marginTop: 4,
+                  flexWrap: "wrap",
                 }}>
                   {/* View Dashboard */}
                   <Link

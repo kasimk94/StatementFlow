@@ -758,6 +758,87 @@ img, video { max-width: 100%; height: auto; }
   }
 }
 
+/* ── Dashboard mobile responsiveness ───────────────────────────────────────── */
+
+/* Chart wrapper: cap height on mobile */
+.sf-chart-wrap { width: 100%; }
+
+/* Transaction table: always scrollable */
+.sf-tx-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Statements grid: single column on mobile */
+.sf-statements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+  gap: 16px;
+}
+
+/* Combined dashboard KPI grid */
+.sf-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+  align-items: stretch;
+}
+
+/* Combined dashboard top merchants grid */
+.sf-merchants-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 767px) {
+  /* Cap chart heights on mobile */
+  .sf-chart-wrap .recharts-responsive-container,
+  .sf-chart-wrap > div {
+    max-height: 220px !important;
+  }
+
+  /* AI insight cards: already stacks via md:grid-cols-2; ensure no side-by-side */
+  .sf-insight-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Statements grid: 1 column */
+  .sf-statements-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Combined: KPI cards → 2 columns */
+  .sf-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Combined: bank breakdown → 1 column (already stacked, just ensure) */
+  .sf-bank-breakdown {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Combined: top merchants → 2 columns */
+  .sf-merchants-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Combined: charts height cap */
+  .sf-combined-chart .recharts-responsive-container,
+  .sf-combined-chart > div {
+    max-height: 220px !important;
+  }
+
+  /* Upload: file row text overflow protection */
+  .sf-file-row {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  /* Statement card stats: 2x2 grid on mobile */
+  .sf-stmt-stats {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
 /* ── Global table row hover — prevent white flash from Tailwind base ── */
 tr:hover {
   background: rgba(201,168,76,0.06) !important;

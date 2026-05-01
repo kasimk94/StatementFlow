@@ -26,7 +26,7 @@ function FileRow({ file, status, onRemove, isProcessing }) {
   }[status] || { label: 'Waiting', color: '#8A9BB5', dot: '#1E2A3A' };
 
   return (
-    <div style={{
+    <div className="sf-file-row" style={{
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '11px 14px',
       background: status === 'processing' ? 'rgba(201,168,76,0.05)' : 'rgba(13,17,23,0.8)',
