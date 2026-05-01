@@ -243,7 +243,7 @@ function MonthBanner({ onDismiss }) {
           Haven't uploaded this month yet — add your latest statement to keep your insights up to date
         </p>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      <div className="sf-banner-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         <Link
           href="/upload"
           style={{

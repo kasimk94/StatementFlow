@@ -775,6 +775,14 @@ img, video { max-width: 100%; height: auto; }
   }
 }
 
+/* ── Upload reminder banner: centre actions on mobile ───────────────────────── */
+@media (max-width: 767px) {
+  .sf-banner-actions {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* ── Dashboard mobile responsiveness ───────────────────────────────────────── */
 
 /* Chart wrapper: cap height on mobile */

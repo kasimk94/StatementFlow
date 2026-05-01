@@ -210,9 +210,10 @@ export default function DashboardLayout({ children, title }) {
             <Link
               href="/account"
               style={{
-                width: 36,
-                height: 36,
-                minWidth: 36,
+                width: '36px',
+                height: '36px',
+                minWidth: '36px',
+                minHeight: '36px',
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
                 display: 'flex',
