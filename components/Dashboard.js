@@ -1782,20 +1782,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
         </div>
       )}
 
-      {/* ── STATEMENT HEADING ── */}
-      <div style={{ marginBottom: 12 }}>
-        <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: "#F5F0E8", letterSpacing: "-0.02em" }}>
-          {demoMode ? "Example Statement" : "Your Statement"}
-        </h2>
-        <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "#8A9BB5" }}>
-          {dateRange ?? ""}
-          {(bank && bank !== "ai-parsed") ? ` · ${bank}` : bankName ? ` · ${bankName}` : ""}
-          {!demoMode && validation && typeof validation.confidence === "number" && (
-            <span style={{ marginLeft: 6, color: "#4A5568" }}>· Parsed with {validation.confidence}% confidence</span>
-          )}
-        </p>
-      </div>
-
       {/* ── STAT CARDS ── */}
       <div ref={demoRef} className="stat-cards grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-5">
         <StatCard

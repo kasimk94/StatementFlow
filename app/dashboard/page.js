@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Bell } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Dashboard from '@/components/Dashboard';
 
@@ -226,28 +227,43 @@ function getBannerDismissKey() {
 // ─── Monthly upload reminder banner ───────────────────────────────────────────
 
 function MonthBanner({ onDismiss }) {
+  const [btnHover, setBtnHover] = useState(false);
+  const [xHover, setXHover] = useState(false);
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       flexWrap: 'wrap', gap: 10,
-      background: 'rgba(201,168,76,0.07)',
-      border: '1px solid rgba(201,168,76,0.25)',
+      background: 'rgba(245,158,11,0.08)',
+      border: '1px solid rgba(245,158,11,0.2)',
       borderRadius: 12, padding: '12px 16px', marginBottom: 20,
     }}>
-      <p style={{ margin: 0, color: '#C9A84C', fontSize: '0.875rem', fontWeight: 500 }}>
-        📅 Haven't uploaded this month yet — add your latest statement to keep your insights up to date
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Bell size={16} color="#F59E0B" style={{ flexShrink: 0 }} />
+        <p style={{ margin: 0, color: '#D1D5DB', fontSize: '14px', fontWeight: 400 }}>
+          Haven't uploaded this month yet — add your latest statement to keep your insights up to date
+        </p>
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <Link href="/upload" style={{
-          background: 'linear-gradient(135deg,#C9A84C,#E8C97A)', color: '#080C14',
-          fontWeight: 700, fontSize: '0.78rem', padding: '6px 14px',
-          borderRadius: 999, textDecoration: 'none',
-        }}>
+        <Link
+          href="/upload"
+          style={{
+            background: btnHover ? 'rgba(245,158,11,0.1)' : 'transparent',
+            color: '#F59E0B',
+            border: '1px solid #F59E0B',
+            fontWeight: 600, fontSize: '13px', padding: '6px 16px',
+            borderRadius: 8, textDecoration: 'none',
+            transition: 'background 150ms',
+          }}
+          onMouseEnter={() => setBtnHover(true)}
+          onMouseLeave={() => setBtnHover(false)}
+        >
           Upload Now
         </Link>
         <button
           onClick={onDismiss}
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#8A9BB5', padding: 4, display: 'flex', alignItems: 'center' }}
+          onMouseEnter={() => setXHover(true)}
+          onMouseLeave={() => setXHover(false)}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: xHover ? '#9CA3AF' : '#6B7280', padding: 4, display: 'flex', alignItems: 'center', transition: 'color 150ms' }}
           aria-label="Dismiss"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
