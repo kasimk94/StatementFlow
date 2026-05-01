@@ -254,7 +254,7 @@ function StatCard({ label, value, sub, numColor, icon, loaded, delay, countTarge
         )}
       </div>
       <div>
-        <div style={{ color: numColor || "#F5F0E8", fontSize: "28px", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+        <div style={{ color: numColor || "#F5F0E8", fontSize: "1.75rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
           {displayValue}
         </div>
         {sub && <div style={{ color: "#6B7280", fontSize: "0.73rem", marginTop: 6 }}>{sub}</div>}
@@ -1795,9 +1795,6 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           )}
         </p>
       </div>
-
-      {/* ── EXPORT TOOLBAR ── */}
-      <ExportToolbar downloading={downloading} onDownload={handleDownload} downloadError={downloadError} isGuest={!session} />
 
       {/* ── STAT CARDS ── */}
       <div ref={demoRef} className="stat-cards grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-5">
