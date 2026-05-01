@@ -3,7 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import AuthSessionProvider from "@/components/SessionProvider";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -237,7 +237,18 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <AuthSessionProvider>{children}</AuthSessionProvider>
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+          `}
+        </Script>
       </body>
     </html>
   );
