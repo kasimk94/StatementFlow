@@ -290,8 +290,9 @@ export default function StatementsPage() {
           </p>
         </div>
 
-        {/* Right — scroll to inline upload */}
+        {/* Right — scroll to inline upload (hidden on mobile: drop zone is immediately visible) */}
         <button
+          className="hide-mobile"
           onClick={() => document.getElementById('inline-upload')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
           style={{
             background: "linear-gradient(135deg, #C9A84C, #E8C97A)",

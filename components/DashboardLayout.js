@@ -40,9 +40,11 @@ function injectStyles() {
       .sf-sidebar-desktop-spacer { display: none !important; }
       .sf-topbar-hamburger { display: flex !important; }
       .sf-main-content { padding: 16px !important; }
+      .sf-mobile-logo { display: flex !important; }
     }
     @media (min-width: 768px) {
       .sf-topbar-hamburger { display: none !important; }
+      .sf-mobile-logo { display: none !important; }
     }
   `;
   document.head.appendChild(style);
@@ -104,6 +106,7 @@ export default function DashboardLayout({ children, title }) {
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
+          position: 'relative',
         }}>
 
           {/* Left side */}
@@ -147,6 +150,37 @@ export default function DashboardLayout({ children, title }) {
             )}
           </div>
 
+          {/* Mobile-only centred logo */}
+          <div
+            className="sf-mobile-logo"
+            style={{
+              display: 'none', // shown on mobile via injected CSS
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              alignItems: 'center',
+              gap: 8,
+              pointerEvents: 'none',
+            }}
+          >
+            <div style={{
+              width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+              background: 'linear-gradient(135deg, #C9A84C 0%, #E8C97A 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 18 18" fill="none">
+                <rect x="1"  y="11" width="3" height="6"  rx="1" fill="#080C14" fillOpacity="0.55"/>
+                <rect x="6"  y="7"  width="3" height="10" rx="1" fill="#080C14" fillOpacity="0.75"/>
+                <rect x="11" y="3"  width="3" height="14" rx="1" fill="#080C14"/>
+                <path d="M2.5 10.5 C5.5 6 9 6.5 12.5 2.5" stroke="#080C14" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
+                <path d="M10.5 1.5 L13 2.5 L12 5" stroke="#080C14" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+            </div>
+            <span style={{ color: '#F5F0E8', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '-0.02em' }}>
+              StatementFlow
+            </span>
+          </div>
+
           {/* Right side */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             {/* Bell button */}
@@ -176,8 +210,9 @@ export default function DashboardLayout({ children, title }) {
             <Link
               href="/account"
               style={{
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
+                minWidth: 36,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
                 display: 'flex',
@@ -193,9 +228,9 @@ export default function DashboardLayout({ children, title }) {
                 <img
                   src={userImage}
                   alt={userName}
-                  width={32}
-                  height={32}
-                  style={{ borderRadius: '50%', objectFit: 'cover' }}
+                  width={36}
+                  height={36}
+                  style={{ borderRadius: '50%', objectFit: 'cover', width: 36, height: 36 }}
                 />
               ) : (
                 <span style={{
