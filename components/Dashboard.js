@@ -226,11 +226,11 @@ function StatCard({ label, value, sub, numColor, icon, loaded, delay, countTarge
   return (
     <div
       style={{
-        background: "linear-gradient(135deg, #1A1A2E, #16213E)",
+        background: "#16161E",
         borderTop: `3px solid ${numColor || "#C9A84C"}`,
-        borderLeft: "1px solid rgba(255,255,255,0.06)",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderLeft: "1px solid rgba(255,255,255,0.07)",
+        borderRight: "1px solid rgba(255,255,255,0.07)",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
         borderRadius: 16,
         padding: "18px 20px",
         minHeight: 120,
@@ -1813,7 +1813,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           countTarget={income}
           countTriggered={demoMode ? demoTriggered : loaded}
           countFormat={(v) => fmt(v)}
-          cardStyle={{ borderTop: '3px solid #10B981', borderLeft: '1px solid rgba(255,255,255,0.06)', borderRight: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(135deg, #1A1A2E, #16213E)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
+          cardStyle={{ borderTop: '3px solid #10B981', borderLeft: '1px solid rgba(255,255,255,0.07)', borderRight: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)', background: '#16161E', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
         />
         <StatCard
           label="Total Money Out"
@@ -1830,7 +1830,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           countTarget={expenses}
           countTriggered={demoMode ? demoTriggered : loaded}
           countFormat={(v) => fmt(v)}
-          cardStyle={{ borderTop: '3px solid #EF4444', borderLeft: '1px solid rgba(255,255,255,0.06)', borderRight: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(135deg, #1A1A2E, #16213E)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
+          cardStyle={{ borderTop: '3px solid #EF4444', borderLeft: '1px solid rgba(255,255,255,0.07)', borderRight: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)', background: '#16161E', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
         />
         <StatCard
           label="Transactions"
@@ -1843,7 +1843,7 @@ export default function Dashboard({ transactions, demoMode = false, confidence, 
           countTarget={transactions.length}
           countTriggered={demoMode ? demoTriggered : loaded}
           countFormat={(v) => Math.round(v).toString()}
-          cardStyle={{ borderTop: '3px solid #F59E0B', borderLeft: '1px solid rgba(255,255,255,0.06)', borderRight: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(135deg, #1A1A2E, #16213E)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
+          cardStyle={{ borderTop: '3px solid #F59E0B', borderLeft: '1px solid rgba(255,255,255,0.07)', borderRight: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)', background: '#16161E', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
         />
       </div>
 
