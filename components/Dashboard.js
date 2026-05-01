@@ -242,7 +242,7 @@ function StatCard({ label, value, sub, numColor, icon, loaded, delay, countTarge
         transform:  loaded ? "translateY(0)" : "translateY(24px)",
         transition: `opacity 0.5s ease-out ${delay}ms, transform 0.5s ease-out ${delay}ms`,
         ...cardStyle,
-        borderTop: '6px solid red',
+        borderTop: `3px solid ${numColor || "#C9A84C"}`,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
