@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Bell } from 'lucide-react';
+import { Bell, Upload } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Dashboard from '@/components/Dashboard';
 
@@ -55,52 +55,88 @@ function Skeleton() {
 
 function EmptyState() {
   return (
-    <div style={{
-      paddingTop: 80, textAlign: 'center',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
-    }}>
-      {/* Gold document icon */}
-      <svg width={56} height={56} viewBox="0 0 24 24" fill="none"
-        stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14,2 14,8 20,8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <line x1="10" y1="9" x2="8" y2="9" />
-      </svg>
-
-      <h2 style={{
-        color: '#F5F0E8', fontSize: '1.3rem', fontWeight: 700,
-        margin: '20px 0 10px', letterSpacing: '-0.02em',
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {/* Main card */}
+      <div style={{
+        maxWidth: 480, width: '100%',
+        padding: '48px 32px',
+        background: '#16161E',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 20,
+        margin: '40px auto 0',
+        textAlign: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
       }}>
-        No statement loaded
-      </h2>
+        <Upload size={40} color="#F59E0B" strokeWidth={1.5} />
 
-      <p style={{
-        color: '#8A9BB5', fontSize: '0.9rem', maxWidth: 360,
-        lineHeight: 1.6, margin: '0 0 32px',
-      }}>
-        Upload a bank statement or select one from your history to view your dashboard
-      </p>
-
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Link href="/upload" style={{
-          padding: '11px 24px',
-          background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
-          color: '#080C14', fontWeight: 700, fontSize: '0.875rem',
-          borderRadius: 10, textDecoration: 'none',
+        <h2 style={{
+          fontSize: 22, fontWeight: 700, color: '#F5F0E8',
+          marginTop: 16, marginBottom: 0, letterSpacing: '-0.02em',
         }}>
-          Upload New Statement
-        </Link>
+          Ready when you are
+        </h2>
+
+        <p style={{
+          fontSize: 14, color: '#6B7280', lineHeight: 1.6,
+          marginTop: 8, marginBottom: 0, maxWidth: 360,
+        }}>
+          Upload your bank statement PDF and get instant clarity on your spending — no bank login, no waiting.
+        </p>
+
         <Link href="/statements" style={{
-          padding: '11px 24px',
-          background: 'transparent',
-          border: '1px solid rgba(201,168,76,0.35)',
-          color: '#C9A84C', fontWeight: 600, fontSize: '0.875rem',
-          borderRadius: 10, textDecoration: 'none',
+          display: 'block', width: '100%',
+          padding: '14px', marginTop: 24,
+          background: 'linear-gradient(135deg, #C9A84C, #E8C97A)',
+          color: '#080C14', fontWeight: 600, fontSize: 15,
+          borderRadius: 12, textDecoration: 'none', textAlign: 'center',
+          boxShadow: '0 4px 16px rgba(201,168,76,0.25)',
+          boxSizing: 'border-box',
         }}>
-          View My Statements
+          Upload Your First Statement →
         </Link>
+
+        {/* Trust micro-statements */}
+        <div style={{
+          display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap',
+          marginTop: 16, fontSize: 12, color: '#4B5563',
+        }}>
+          <span>🔒 No bank login</span>
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
+          <span>⚡ Ready in 60s</span>
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
+          <span>🗑️ Files never stored</span>
+        </div>
+
+        {/* Demo link */}
+        <Link href="/" style={{
+          display: 'inline-block', marginTop: 20,
+          fontSize: 13, color: '#F59E0B', textDecoration: 'none', opacity: 0.75,
+          transition: 'opacity 0.15s ease',
+        }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '0.75'}
+        >
+          Or view a demo →
+        </Link>
+      </div>
+
+      {/* Supported banks row */}
+      <div style={{
+        display: 'flex', gap: 8, flexWrap: 'wrap',
+        justifyContent: 'center', alignItems: 'center',
+        marginTop: 24, fontSize: 12, color: '#6B7280',
+      }}>
+        <span style={{ marginRight: 2 }}>Works with:</span>
+        {['Barclays', 'HSBC', 'Monzo', 'Starling', 'Lloyds', 'NatWest', 'Santander'].map(bank => (
+          <span key={bank} style={{
+            padding: '3px 10px', borderRadius: 999,
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.03)',
+            color: '#6B7280', fontSize: 11,
+          }}>
+            {bank}
+          </span>
+        ))}
       </div>
     </div>
   );
