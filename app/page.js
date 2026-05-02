@@ -333,7 +333,7 @@ export default function Home() {
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(245,158,11,0.08) 0%, transparent 70%), #080C14", position: "relative", overflow: "hidden",
-        padding: "140px 24px 80px",
+        padding: "80px 24px 60px",
       }}>
         {/* Radial gold glow — centred behind headline text */}
         <div style={{
@@ -359,7 +359,7 @@ export default function Home() {
             padding: "8px 20px", borderRadius: 999, marginBottom: 40,
             letterSpacing: "0.04em",
           }}>
-            <span style={{ width: 6, height: 6, background: "#C9A84C", borderRadius: "50%", boxShadow: "0 0 6px #C9A84C" }} />
+            <span style={{ width: 6, height: 6, background: "#F59E0B", borderRadius: "50%", boxShadow: "0 0 6px #F59E0B" }} />
             Structured data — not another finance app
           </div>
 
@@ -554,7 +554,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           4. HOW IT WORKS
       ══════════════════════════════════════════════════════════════ */}
-      <section id="how-it-works" className="hp-section" style={{ background: "#0D1117", scrollMarginTop: "80px" }}>
+      <section id="how-it-works" className="hp-section" style={{ background: "#0D1117", scrollMarginTop: "80px", paddingBottom: 60 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 56 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#C9A84C", textTransform: "uppercase", marginBottom: 12 }}>How It Works</p>
@@ -1320,8 +1320,8 @@ export default function Home() {
           <div ref={faqRef} style={{ borderRadius: 16, border: "1px solid #1E2A3A", overflow: "hidden" }}>
             {FAQS.map(({ q, a }, i) => (
               <div key={i} className="faq-item" style={{
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-                borderLeft: openFaq === i ? "3px solid rgba(245,158,11,0.4)" : "3px solid transparent",
+                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                borderLeft: openFaq === i ? "3px solid #F59E0B" : "3px solid transparent",
                 opacity:    faqVisible ? 1 : 0,
                 transform:  faqVisible ? "translateX(0)" : "translateX(-20px)",
                 transition: `opacity 0.45s ease-out ${i * 0.08}s, transform 0.45s ease-out ${i * 0.08}s, border-left-color 0.2s ease`,
@@ -1335,13 +1335,14 @@ export default function Home() {
                   <span style={{ fontSize: "0.9rem", fontWeight: 600, color: openFaq === i ? "#F59E0B" : "#F5F0E8", transition: "color 0.2s ease" }}>{q}</span>
                   <span style={{
                     flexShrink: 0, width: 28, height: 28, borderRadius: "50%",
-                    border: "1px solid rgba(201,168,76,0.4)",
+                    border: openFaq === i ? "1px solid #F59E0B" : "1px solid rgba(201,168,76,0.4)",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#C9A84C", fontSize: "1.2rem", fontWeight: 300,
-                    transition: "transform 0.2s ease, background 0.2s ease",
-                    transform: openFaq === i ? "rotate(45deg)" : "rotate(0deg)",
-                    background: openFaq === i ? "rgba(201,168,76,0.12)" : "transparent",
-                  }}>+</span>
+                    color: openFaq === i ? "#F59E0B" : "#C9A84C",
+                    fontSize: openFaq === i ? "1.4rem" : "1.2rem", fontWeight: 300,
+                    transition: "all 0.2s ease",
+                    background: openFaq === i ? "rgba(245,158,11,0.1)" : "transparent",
+                    lineHeight: 1,
+                  }}>{openFaq === i ? "−" : "+"}</span>
                 </button>
                 {openFaq === i && (
                   <div style={{ padding: "0 24px 20px 24px", paddingTop: 0, fontSize: "0.875rem", color: "#8A9BB5", lineHeight: 1.75, borderTop: "1px solid #1E2A3A" }}>{a}</div>
@@ -1412,6 +1413,7 @@ export default function Home() {
         background: "linear-gradient(135deg, #0D1117 0%, #111820 50%, #0D1117 100%)",
         borderTop: "1px solid rgba(201,168,76,0.2)",
         position: "relative", overflow: "hidden",
+        paddingTop: 80, paddingBottom: 80,
       }}>
         {/* Gold radial glow */}
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 400, background: "radial-gradient(ellipse, rgba(201,168,76,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />

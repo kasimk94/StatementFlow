@@ -7,24 +7,24 @@ import { useSession, signOut } from "next-auth/react";
 // ── Injected CSS (link hover + mobile only) ───────────────────────────────────
 const NAVBAR_CSS = `
   .nlink {
-    font-size: 0.85rem;
+    font-size: 14px;
     font-weight: 500;
     text-decoration: none;
     padding: 7px 13px;
     border-radius: 20px;
     white-space: nowrap;
-    color: rgba(255,255,255,0.6);
+    color: #9CA3AF;
     transition: all 0.2s ease;
     display: inline-block;
     cursor: pointer;
   }
-  .nlink:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  .nlink:hover { color: #F5F0E8; background: rgba(255,255,255,0.06); }
   .nlink.active { color: #C9A84C; background: rgba(201,168,76,0.08); }
 
   .ntry {
     background: linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%);
     color: #080C14;
-    font-size: 0.85rem;
+    font-size: 14px;
     font-weight: 600;
     padding: 8px 20px;
     border-radius: 50px;
@@ -115,7 +115,6 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
   const [menuOpen,      setMenuOpen]      = useState(false);
   const [scrolled,      setScrolled]      = useState(false);
   const [mounted,       setMounted]       = useState(false);
-  const [avatarOpen,    setAvatarOpen]    = useState(false);
   const wrapperRef = useRef(null);
 
   // ── CSS injection ────────────────────────────────────────────────────────
@@ -218,49 +217,15 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
             {label}
           </a>
         ))}
-        {/* Log in / avatar */}
+        {/* Session link */}
         {session ? (
-          <div
-            style={{ position: "relative" }}
-            onMouseEnter={() => setAvatarOpen(true)}
-            onMouseLeave={() => setAvatarOpen(false)}
-          >
-            <div style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", flexShrink: 0,
-              fontSize: "13px", fontWeight: 700, color: "#080C14",
-              userSelect: "none",
-            }}>
-              {(session.user?.name?.[0] || session.user?.email?.[0] || "?").toUpperCase()}
-            </div>
-            {avatarOpen && (
-              <div style={{
-                position: "absolute", top: "calc(100% + 8px)", right: "-8px",
-                background: "rgba(8,12,20,0.95)",
-                backdropFilter: "blur(20px)",
-                WebkitBackdropFilter: "blur(20px)",
-                border: "1px solid rgba(201,168,76,0.2)",
-                borderRadius: 12, padding: "6px",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
-                minWidth: 140, zIndex: 100,
-              }}>
-                <Link href="/dashboard"
-                  style={{ display: "block", padding: "9px 14px", borderRadius: 8, color: "rgba(255,255,255,0.8)", textDecoration: "none", fontSize: "0.85rem", fontWeight: 500, transition: "background 0.15s ease" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                >Dashboard</Link>
-                <button onClick={() => signOut({ callbackUrl: "/" })}
-                  style={{ display: "block", width: "100%", padding: "9px 14px", borderRadius: 8, color: "rgba(255,255,255,0.8)", background: "transparent", border: "none", cursor: "pointer", fontSize: "0.85rem", fontWeight: 500, textAlign: "left", transition: "background 0.15s ease" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                >Sign Out</button>
-              </div>
-            )}
-          </div>
+          <Link href="/dashboard" style={{ fontSize: "14px", fontWeight: 600, color: "#F59E0B", textDecoration: "none", whiteSpace: "nowrap", padding: "7px 4px" }}>
+            My Dashboard →
+          </Link>
         ) : (
-          <Link href="/login" className="nlink">Log in</Link>
+          <Link href="/login" style={{ fontSize: "14px", fontWeight: 400, color: "#9CA3AF", textDecoration: "none", whiteSpace: "nowrap", padding: "7px 4px" }}>
+            Sign In
+          </Link>
         )}
       </nav>
 
@@ -318,11 +283,11 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
           ))}
           {session ? (
             <>
-              <Link href="/account" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>My Account</Link>
-              <button className="nav-mobile-link" onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}>Sign out</button>
+              <Link href="/dashboard" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>My Dashboard →</Link>
+              <button className="nav-mobile-link" onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}>Sign Out</button>
             </>
           ) : (
-            <Link href="/login" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>Log in</Link>
+            <Link href="/login" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>Sign In</Link>
           )}
           <div style={{ padding: "8px 6px 0" }}>
             {onUploadAnother ? (
