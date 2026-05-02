@@ -366,17 +366,17 @@ export default function Home() {
           {/* Headline */}
           <h1 className="animate-fade-up-delay hero-headline" style={{
             fontSize: "clamp(2.8rem, 5.5vw, 4.8rem)", fontWeight: 800,
-            lineHeight: 1.05, color: "#F5F0E8",
+            lineHeight: 1.1, color: "#F5F0E8",
             marginBottom: 28, letterSpacing: "-0.03em",
           }}>
-            Every finance app wants<br />
-            your bank login.<br />
+            Upload your statement.<br />
+            Understand your money.<br />
             <span style={{
-              background: "linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-              textShadow: "none", filter: "drop-shadow(0 0 40px rgba(201,168,76,0.4))",
+              color: "#F59E0B",
+              fontSize: "1.2em",
+              filter: "drop-shadow(0 0 40px rgba(245,158,11,0.4))",
             }}>
-              StatementFlow just needs a PDF.
+              Done.
             </span>
           </h1>
 
@@ -385,8 +385,7 @@ export default function Home() {
             color: "#8A9BB5", fontSize: "1.2rem", lineHeight: 1.7,
             maxWidth: 560, margin: "0 auto 40px",
           }}>
-            Finally understand your money — upload your statement, get instant clarity.
-            No bank login. No data stored.
+            No bank login. No account required. Just upload your PDF and get instant clarity on where your money went.
           </p>
 
           {/* CTA buttons */}
@@ -424,10 +423,15 @@ export default function Home() {
           </div>
 
           {/* Trust bar */}
-          <div className="hero-trust-bar animate-fade-up-delay-3">
-            {["No bank connections", "Files deleted instantly", "Your data is never sold", "UK banks supported"].map(text => (
-              <div key={text} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.82rem", color: "#8A9BB5" }}>
-                <span style={{ color: "#C9A84C", fontWeight: 700, fontSize: "1rem", lineHeight: 1 }}>✓</span>
+          <div className="hero-trust-bar animate-fade-up-delay-3" style={{ padding: "16px 0" }}>
+            {[
+              ["🔒", "No bank connections. Ever."],
+              ["📄", "Upload a file, get your data."],
+              ["🗑️", "Files deleted automatically."],
+              ["🔐", "Your data is never sold."],
+            ].map(([icon, text]) => (
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", color: "#6B7280" }}>
+                <span>{icon}</span>
                 {text}
               </div>
             ))}
@@ -565,7 +569,7 @@ export default function Home() {
             {[
               { num: "01", title: "Upload your PDF", desc: "Download your statement from your bank app and drop it here. We support all major UK banks including Barclays, HSBC, Lloyds, Monzo, Starling and more." },
               { num: "02", title: "We structure it instantly", desc: "Our engine reads every transaction, categorises your spending, detects patterns, and builds your complete financial picture — in under 60 seconds." },
-              { num: "03", title: "You get clarity", desc: "A live spending dashboard, downloadable Excel report, and CSV — ready for budgeting, tracking, or sending straight to your accountant." },
+              { num: "03", title: "You get clarity", desc: "A live spending dashboard, downloadable Excel report, and CSV — ready for understanding, tracking, or sending straight to your accountant." },
             ].map(({ num, title, desc }, i) => (
               <div key={num} className="scroll-animate" style={{
                 background: "#111820", border: "1px solid #1E2A3A",
@@ -626,10 +630,10 @@ export default function Home() {
               <h3 style={{ fontWeight: 800, fontSize: "1.2rem", color: "#F5F0E8", margin: "0 0 4px" }}>Take control of your money</h3>
               <p style={{ color: "#C9A84C", fontWeight: 600, fontSize: "0.8rem", margin: 0 }}>For individuals &amp; families</p>
               <p style={{ color: "#8A9BB5", fontSize: "0.9rem", lineHeight: 1.7, marginTop: 16, marginBottom: 20 }}>
-                Upload your bank statement and finally see exactly where your money goes. Build your own budget tracker using data you trust — not estimates, not guesses.
+                Upload your bank statement and finally see exactly where your money goes. Get a clear picture of every penny — no estimates, no guesses.
               </p>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                {["Spending breakdown by category","Monthly dashboard with insights","Budget tracker ready to use","Your data never stored or shared"].map(t => (
+                {["Spending breakdown by category","Monthly dashboard with insights","Spending clarity, ready instantly","Your data never stored or shared"].map(t => (
                   <li key={t} style={{ display: "flex", alignItems: "center", gap: 10, color: "#8A9BB5", fontSize: "0.875rem" }}>
                     <span style={{ color: "#C9A84C", fontWeight: 700, flexShrink: 0 }}>✓</span> {t}
                   </li>
@@ -1156,7 +1160,7 @@ export default function Home() {
                     { feature: "Instant dashboard",     sf: true,   emma: true,  snoop: true,  docu: false,     isPrice: false },
                     { feature: "Excel & CSV export",    sf: true,   emma: false, snoop: false, docu: true,      isPrice: false },
                     { feature: "VAT & audit view",      sf: true,   emma: false, snoop: false, docu: false,     isPrice: false },
-                    { feature: "Budget tracking",       sf: true,   emma: true,  snoop: true,  docu: false,     isPrice: false },
+                    { feature: "Spending insights",      sf: true,   emma: true,  snoop: true,  docu: false,     isPrice: false },
                     { feature: "Statement history",     sf: true,   emma: true,  snoop: true,  docu: false,     isPrice: false },
                     { feature: "UK banks supported",    sf: true,   emma: true,  snoop: true,  docu: "partial", isPrice: false },
                     { feature: "Price from",            sf: "Free", emma: "£4.99/mo", snoop: "Free", docu: "$39/mo", isPrice: true },
