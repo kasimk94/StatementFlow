@@ -332,7 +332,7 @@ export default function Home() {
       <section id="hero" style={{
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
-        background: "#080C14", position: "relative", overflow: "hidden",
+        background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(245,158,11,0.08) 0%, transparent 70%), #080C14", position: "relative", overflow: "hidden",
         padding: "140px 24px 80px",
       }}>
         {/* Radial gold glow — centred behind headline text */}
@@ -493,7 +493,7 @@ export default function Home() {
             ["40+",       "UK Banks Supported"],
             ["< 60s",     "Processing Time"],
             ["100%",      "Private & Secure"],
-            ["Excel",     "Export Ready"],
+            ["12+",       "Spending Categories"],
           ].map(([stat, label], i) => (
             <div key={label} style={{
               textAlign: "center", padding: "8px 16px",
@@ -822,18 +822,19 @@ export default function Home() {
                 className="anim-scale"
                 style={{
                   transitionDelay: `${idx * 0.1}s`,
-                  background: "linear-gradient(135deg, #0D1117 0%, #111820 100%)", border: "1px solid #1E2A3A",
+                  background: idx === 0 ? "rgba(245,158,11,0.04)" : "linear-gradient(135deg, #0D1117 0%, #111820 100%)",
+                  border: idx === 0 ? "1px solid rgba(245,158,11,0.3)" : "1px solid #1E2A3A",
                   borderRadius: 16, padding: 28,
                   transition: "border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease",
                   cursor: "default",
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.4), 0 0 30px rgba(201,168,76,0.08)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#1E2A3A"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = idx === 0 ? "rgba(245,158,11,0.3)" : "#1E2A3A"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
                 <div style={{ width: 48, height: 48, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", marginBottom: 18 }}>
                   {icon}
                 </div>
-                <h3 style={{ fontWeight: 700, fontSize: "1rem", color: "#F5F0E8", marginBottom: 8 }}>{title}</h3>
+                <h3 style={{ fontWeight: 700, fontSize: idx === 0 ? "1.125rem" : "1rem", color: "#F5F0E8", marginBottom: 8 }}>{title}</h3>
                 <p style={{ fontSize: "0.875rem", lineHeight: 1.65, color: "#8A9BB5", margin: 0 }}>{desc}</p>
               </div>
             ))}
@@ -1309,7 +1310,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           12. FAQ
       ══════════════════════════════════════════════════════════════ */}
-      <section id="faq" aria-label="Frequently Asked Questions" className="hp-section" style={{ background: "#080C14" }}>
+      <section id="faq" aria-label="Frequently Asked Questions" className="hp-section" style={{ background: "#080C14", paddingTop: 80, paddingBottom: 80 }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
             <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>FAQ</p>
@@ -1319,10 +1320,11 @@ export default function Home() {
           <div ref={faqRef} style={{ borderRadius: 16, border: "1px solid #1E2A3A", overflow: "hidden" }}>
             {FAQS.map(({ q, a }, i) => (
               <div key={i} className="faq-item" style={{
-                borderBottom: i < FAQS.length - 1 ? "1px solid #1E2A3A" : "none",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                borderLeft: openFaq === i ? "3px solid rgba(245,158,11,0.4)" : "3px solid transparent",
                 opacity:    faqVisible ? 1 : 0,
                 transform:  faqVisible ? "translateX(0)" : "translateX(-20px)",
-                transition: `opacity 0.45s ease-out ${i * 0.08}s, transform 0.45s ease-out ${i * 0.08}s`,
+                transition: `opacity 0.45s ease-out ${i * 0.08}s, transform 0.45s ease-out ${i * 0.08}s, border-left-color 0.2s ease`,
               }}>
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -1330,7 +1332,7 @@ export default function Home() {
                   onMouseEnter={e => e.currentTarget.style.background = "#0D1117"}
                   onMouseLeave={e => e.currentTarget.style.background = "none"}
                 >
-                  <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "#F5F0E8" }}>{q}</span>
+                  <span style={{ fontSize: "0.9rem", fontWeight: 600, color: openFaq === i ? "#F59E0B" : "#F5F0E8", transition: "color 0.2s ease" }}>{q}</span>
                   <span style={{
                     flexShrink: 0, width: 28, height: 28, borderRadius: "50%",
                     border: "1px solid rgba(201,168,76,0.4)",
