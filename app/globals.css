@@ -441,10 +441,11 @@ img, video { max-width: 100%; height: auto; }
 /* ── Hero trust bar ─────────────────────────────────────────────── */
 .hero-trust-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
-  gap: 6px 24px;
+  gap: 6px 20px;
+  font-size: 12px;
 }
 
 /* ── Comparison table ───────────────────────────────────────────── */
@@ -538,8 +539,9 @@ img, video { max-width: 100%; height: auto; }
   .hero-trust-bar {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px 12px;
-    text-align: left;
+    gap: 8px 16px;
+    justify-items: center;
+    font-size: 12px;
   }
 
   /* ── Before/After: stack vertically ── */
@@ -763,8 +765,8 @@ img, video { max-width: 100%; height: auto; }
     padding: 40px 12px !important;
   }
   .hero-trust-bar {
-    grid-template-columns: 1fr;
-    gap: 6px;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
   }
   /* Hero animated font: smaller floor on very small screens */
   .hero-animated-line span {

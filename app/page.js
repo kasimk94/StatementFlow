@@ -430,7 +430,7 @@ export default function Home() {
               ["🗑️", "Files deleted automatically."],
               ["🔐", "Your data is never sold."],
             ].map(([icon, text]) => (
-              <div key={text} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", color: "#6B7280" }}>
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: 6, color: "#6B7280" }}>
                 <span>{icon}</span>
                 {text}
               </div>
