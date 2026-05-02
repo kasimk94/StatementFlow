@@ -356,7 +356,7 @@ export default function Home() {
             display: "inline-flex", alignItems: "center", gap: 8,
             background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)",
             color: "#C9A84C", fontSize: "0.78rem", fontWeight: 600,
-            padding: "8px 20px", borderRadius: 999, marginBottom: 40,
+            padding: "8px 20px", borderRadius: 999, marginTop: 48, marginBottom: 32,
             letterSpacing: "0.04em",
           }}>
             <span style={{ width: 6, height: 6, background: "#F59E0B", borderRadius: "50%", boxShadow: "0 0 6px #F59E0B" }} />
