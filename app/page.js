@@ -369,14 +369,12 @@ export default function Home() {
             lineHeight: 1.1, color: "#F5F0E8",
             marginBottom: 28, letterSpacing: "-0.03em",
           }}>
-            Upload your statement.<br />
-            Understand your money.<br />
+            Your money,<br />
             <span style={{
               color: "#F59E0B",
-              fontSize: "1.2em",
               filter: "drop-shadow(0 0 40px rgba(245,158,11,0.4))",
             }}>
-              Done.
+              finally explained.
             </span>
           </h1>
 
@@ -385,7 +383,7 @@ export default function Home() {
             color: "#8A9BB5", fontSize: "1.2rem", lineHeight: 1.7,
             maxWidth: 560, margin: "0 auto 40px",
           }}>
-            No bank login. No account required. Just upload your PDF and get instant clarity on where your money went.
+            Upload your PDF. Get instant clarity on where your money went. No bank login. No account required.
           </p>
 
           {/* CTA buttons */}
