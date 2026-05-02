@@ -369,12 +369,12 @@ export default function Home() {
             lineHeight: 1.1, color: "#F5F0E8",
             marginBottom: 28, letterSpacing: "-0.03em",
           }}>
-            Your money,<br />
+            Your Money,<br />
             <span style={{
               color: "#F59E0B",
               filter: "drop-shadow(0 0 40px rgba(245,158,11,0.4))",
             }}>
-              finally explained.
+              Finally Explained.
             </span>
           </h1>
 
