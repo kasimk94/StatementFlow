@@ -163,19 +163,9 @@ export default function DashboardLayout({ children, title }) {
               pointerEvents: 'none',
             }}
           >
-            <div style={{
-              width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 2px 6px rgba(16,185,129,0.35)',
-            }}>
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                <polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span style={{ display: 'flex', alignItems: 'baseline', gap: 1, lineHeight: 1 }}>
-              <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 700, fontSize: '0.9rem', color: '#F5F0E8', letterSpacing: '-0.01em' }}>Money</span>
-              <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 400, fontSize: '0.9rem', color: '#C9A84C', letterSpacing: '-0.01em' }}>Sorted</span>
+            <span style={{ display: 'flex', alignItems: 'baseline', gap: 0, lineHeight: 1 }}>
+              <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 700, fontSize: '1.05rem', color: '#fff', letterSpacing: '-0.02em' }}>Money</span>
+              <span style={{ fontFamily: 'var(--font-inter)', fontWeight: 300, fontSize: '1.05rem', color: 'rgba(255,255,255,0.75)', letterSpacing: '-0.01em' }}>Sorted</span>
             </span>
           </div>
 

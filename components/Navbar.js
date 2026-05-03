@@ -81,21 +81,6 @@ const NAVBAR_CSS = `
   }
 `;
 
-// ── Brand mark ───────────────────────────────────────────────────────────────
-function BrandMark({ size = 20 }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      boxShadow: "0 2px 8px rgba(16,185,129,0.35)",
-    }}>
-      <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 12 12" fill="none">
-        <polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </div>
-  );
-}
 
 // 3 nav links only — clean & focused
 const NAV_LINKS = [
@@ -198,10 +183,9 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}
       >
-        <BrandMark size={22} />
-        <span style={{ display: "flex", alignItems: "baseline", gap: 1, lineHeight: 1 }}>
-          <span style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1rem", color: "#F5F0E8", letterSpacing: "-0.01em" }}>Money</span>
-          <span style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "1rem", color: "#C9A84C", letterSpacing: "-0.01em" }}>Sorted</span>
+        <span style={{ display: "flex", alignItems: "baseline", gap: 0, lineHeight: 1 }}>
+          <span style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.15rem", color: "#fff", letterSpacing: "-0.02em" }}>Money</span>
+          <span style={{ fontFamily: "var(--font-inter)", fontWeight: 300, fontSize: "1.15rem", color: "rgba(255,255,255,0.75)", letterSpacing: "-0.01em" }}>Sorted</span>
         </span>
       </Link>
 
