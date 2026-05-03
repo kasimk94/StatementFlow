@@ -183,9 +183,8 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}
       >
-        <span style={{ display: "flex", alignItems: "baseline", gap: 0, lineHeight: 1 }}>
-          <span style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "22px", color: "#F5F0E8" }}>Money</span>
-          <span style={{ fontFamily: "inherit", fontWeight: 300, fontSize: "22px", color: "#C9A84C", letterSpacing: "0.05em" }}>Sorted</span>
+        <span style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "22px", color: "#F5F0E8", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>
+          Money<span style={{ fontFamily: "var(--font-inter, sans-serif)", fontWeight: 300, color: "#C9A84C", letterSpacing: "normal" }}>Sorted</span>
         </span>
       </Link>
 
