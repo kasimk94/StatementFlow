@@ -26,22 +26,16 @@ function computeStreak(statements) {
 
 // ─── Logo Icon ───────────────────────────────────────────────────────────────
 
-function LogoIcon({ size = 26 }) {
-  const r = Math.round(size * 0.25);
-  const s = Math.round(size * 0.56);
+function BrandMark({ size = 22 }) {
   return (
     <div style={{
-      width: size, height: size, borderRadius: r, flexShrink: 0,
-      background: 'linear-gradient(135deg, #C9A84C 0%, #E8C97A 100%)',
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      boxShadow: '0 2px 8px rgba(201,168,76,0.35)',
+      boxShadow: '0 2px 8px rgba(16,185,129,0.35)',
     }}>
-      <svg width={s} height={s} viewBox="0 0 18 18" fill="none">
-        <rect x="1"  y="11" width="3" height="6"  rx="1" fill="#080C14" fillOpacity="0.55"/>
-        <rect x="6"  y="7"  width="3" height="10" rx="1" fill="#080C14" fillOpacity="0.75"/>
-        <rect x="11" y="3"  width="3" height="14" rx="1" fill="#080C14"/>
-        <path d="M2.5 10.5 C5.5 6 9 6.5 12.5 2.5" stroke="#080C14" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
-        <path d="M10.5 1.5 L13 2.5 L12 5" stroke="#080C14" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 12 12" fill="none">
+        <polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     </div>
   );
@@ -306,14 +300,10 @@ function SidebarContent({ isOpen, onClose }) {
             textDecoration: 'none',
           }}
         >
-          <LogoIcon size={26} />
-          <span style={{
-            color: '#F5F0E8',
-            fontWeight: 700,
-            fontSize: '0.9rem',
-            letterSpacing: '-0.02em',
-          }}>
-            StatementFlow
+          <BrandMark size={22} />
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 1, lineHeight: 1 }}>
+            <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 700, fontSize: '0.9rem', color: '#F5F0E8', letterSpacing: '-0.01em' }}>Money</span>
+            <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 400, fontSize: '0.9rem', color: '#C9A84C', letterSpacing: '-0.01em' }}>Sorted</span>
           </span>
         </Link>
       </div>

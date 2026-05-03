@@ -98,7 +98,7 @@ function fmtDate(d) {
 function toDateStr(ds) { const d = parseDate(ds); return d ? fmtDate(d) : String(ds || ""); }
 
 // ─── Reusable: write identical 4-row title header on any sheet ───────────────
-// Row 1: "StatementFlow" title  Row 2: tab subtitle (italic)
+// Row 1: "MoneySorted" title  Row 2: tab subtitle (italic)
 // Row 3: generated line + thin purple bottom border  Row 4: blank spacer
 function writeTitleHeader(sheet, colSpan, title, subtitle, generatedLine) {
   const cols = colSpan;
@@ -208,10 +208,10 @@ export async function POST(request) {
   const todayStr     = fmtDate(now);
   const fileDate     = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   const dateRangeStr = minDate && maxDate ? `${fmtDate(minDate)} – ${fmtDate(maxDate)}` : "—";
-  const generatedSub = `StatementFlow · Generated ${todayStr}`;
+  const generatedSub = `MoneySorted · Generated ${todayStr}`;
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = "StatementFlow";
+  wb.creator = "MoneySorted";
   wb.views   = [{ activeTab: 0 }];
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -234,7 +234,7 @@ export async function POST(request) {
   ];
 
   // ── Rows 1–4: Shared title header ───────────────────────────────────────
-  writeTitleHeader(dash, "H", "StatementFlow", "Bank Statement Analysis Report", `Generated: ${todayStr}   ·   ${transactions.length} transactions`);
+  writeTitleHeader(dash, "H", "MoneySorted", "Bank Statement Analysis Report", `Generated: ${todayStr}   ·   ${transactions.length} transactions`);
 
   // ── KPI Boxes (rows 5–11) ────────────────────────────────────────────────
   // Structure per box: top-pad / label / value / subtitle / bottom-pad
@@ -629,7 +629,7 @@ export async function POST(request) {
     status: 200,
     headers: {
       "Content-Type":        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="StatementFlow_${fileDate}.xlsx"`,
+      "Content-Disposition": `attachment; filename="MoneySorted_${fileDate}.xlsx"`,
       "Content-Length":      String(buffer.byteLength),
     },
   });

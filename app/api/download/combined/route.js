@@ -34,7 +34,7 @@ function fmtDateStr(d) {
 function writeSheetHeader(sheet, cols, bankName, subtitle) {
   sheet.mergeCells(`A1:${cols}1`);
   const r1 = sheet.getCell("A1");
-  r1.value = `StatementFlow — ${bankName}`;
+  r1.value = `MoneySorted — ${bankName}`;
   r1.font  = { name: "Calibri", bold: true, size: 16, color: { argb: GOLD } };
   r1.fill  = solidFill(DARK); r1.alignment = { vertical: "middle", indent: 1 }; r1.border = noB();
   sheet.getRow(1).height = 34;
@@ -139,7 +139,7 @@ export async function GET(req) {
   }
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = "StatementFlow";
+  wb.creator = "MoneySorted";
   wb.created = new Date();
 
   // ── Summary sheet ──────────────────────────────────────────────────────────
@@ -293,7 +293,7 @@ export async function GET(req) {
 
   // ── Return workbook ────────────────────────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();
-  const filename = `StatementFlow-Combined-${new Date().toISOString().slice(0,10)}.xlsx`;
+  const filename = `MoneySorted-Combined-${new Date().toISOString().slice(0,10)}.xlsx`;
 
   return new NextResponse(buffer, {
     headers: {

@@ -21,15 +21,15 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "StatementFlow – Free Bank Statement Converter | PDF to Excel UK",
+  title: "MoneySorted — Understand Your Money",
   description:
-    "Convert any UK bank statement PDF to Excel instantly. Works with Barclays, HSBC, Lloyds, NatWest, Monzo, Starling & more. Free bank statement analyser with spending dashboard. No sign-up required.",
+    "Upload your PDF bank statement and get instant clarity on where your money went. Works with Barclays, HSBC, Lloyds, NatWest, Monzo, Starling & more. No bank login, no account required.",
   keywords: [
     "bank statement converter",
     "bank statement analyser",
     "PDF to Excel converter UK",
     "spending tracker UK",
-    "budget tracker UK",
+    "MoneySorted",
     "Barclays statement converter",
     "HSBC statement converter",
     "Lloyds statement converter",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     "free bank statement tool",
     "bank statement to spreadsheet",
   ],
-  authors: [{ name: "StatementFlow" }],
+  authors: [{ name: "MoneySorted" }],
   robots: {
     index: true,
     follow: true,
@@ -59,26 +59,26 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "https://statementflow.app",
-    title: "StatementFlow – Free Bank Statement Converter UK",
+    title: "MoneySorted — Understand Your Money",
     description:
-      "Upload your PDF bank statement and instantly get a beautiful Excel report and spending dashboard. Works with all major UK banks. Free, private, no sign-up.",
-    siteName: "StatementFlow",
+      "Upload your PDF bank statement and get instant clarity on your spending. Works with all major UK banks. Free, private, no bank login.",
+    siteName: "MoneySorted",
     locale: "en_GB",
     images: [
       {
         url: "https://statementflow.app/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "StatementFlow – Free UK Bank Statement Converter",
+        alt: "MoneySorted — Understand Your Money",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@statementflow",
-    title: "StatementFlow – Free Bank Statement Converter UK",
+    site: "@moneysorted",
+    title: "MoneySorted — Understand Your Money",
     description:
-      "Convert your PDF bank statement to Excel instantly. Free, secure, works with all UK banks.",
+      "Upload your PDF bank statement and get instant clarity on where your money went. Free, secure, works with all UK banks.",
     images: ["https://statementflow.app/og-image.svg"],
   },
   other: {
@@ -94,10 +94,10 @@ export const metadata: Metadata = {
 const webAppSchema = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: "StatementFlow",
+  name: "MoneySorted",
   url: "https://statementflow.app",
   description:
-    "Free UK bank statement converter. Convert PDF bank statements to Excel reports and spending dashboards instantly.",
+    "Upload your PDF bank statement and get instant clarity on where your money went. Works with all major UK banks.",
   applicationCategory: "FinanceApplication",
   operatingSystem: "Web Browser",
   browserRequirements: "Requires JavaScript",
@@ -142,10 +142,10 @@ const webAppSchema = {
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "StatementFlow",
+  name: "MoneySorted",
   url: "https://statementflow.app",
   logo: "https://statementflow.app/og-image.svg",
-  description: "StatementFlow provides free UK bank statement conversion tools",
+  description: "MoneySorted helps you understand your money by analysing your bank statements instantly.",
   areaServed: "GB",
   foundingDate: "2026",
 };
@@ -153,7 +153,7 @@ const organizationSchema = {
 const softwareAppSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "StatementFlow",
+  name: "MoneySorted",
   operatingSystem: "Web",
   applicationCategory: "FinanceApplication",
   offers: {
@@ -172,7 +172,7 @@ const faqSchema = {
       name: "Which banks are supported?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "StatementFlow supports all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo, Starling, and Halifax.",
+        text: "MoneySorted supports all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo, Starling, and Halifax.",
       },
     },
     {
@@ -188,12 +188,12 @@ const faqSchema = {
       name: "How do I convert my bank statement to Excel?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Simply upload your PDF bank statement to StatementFlow, and within seconds you will receive a formatted Excel report with spending categories, transaction history and a summary dashboard.",
+        text: "Simply upload your PDF bank statement to MoneySorted, and within seconds you will receive a formatted Excel report with spending categories, transaction history and a summary dashboard.",
       },
     },
     {
       "@type": "Question",
-      name: "Is StatementFlow really free?",
+      name: "Is MoneySorted really free?",
       acceptedAnswer: {
         "@type": "Answer",
         text: "Yes, the free plan allows 3 PDF uploads per month with no sign-up or credit card required.",
@@ -204,7 +204,7 @@ const faqSchema = {
       name: "What file types are supported?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "StatementFlow currently supports PDF bank statements from all major UK banks.",
+        text: "MoneySorted currently supports PDF bank statements from all major UK banks.",
       },
     },
   ],

@@ -161,7 +161,7 @@ function AdminSidebar({ active, onNav }) {
           ⚙ Admin
         </div>
         <div style={{ color: '#8A9BB5', fontSize: '0.7rem', marginTop: 2 }}>
-          StatementFlow
+          MoneySorted
         </div>
       </div>
 

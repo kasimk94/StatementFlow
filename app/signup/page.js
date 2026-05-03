@@ -172,7 +172,7 @@ function RightPanel() {
           Everything in one place
         </h2>
         <p style={{ color: T.textSec, fontSize: "0.9rem", margin: "0 0 40px 0" }}>
-          Join thousands of UK users who trust StatementFlow
+          Join thousands of UK users who trust MoneySorted
         </p>
 
         {features.map((f) => (
@@ -301,7 +301,7 @@ export default function SignupPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <LogoIcon size={32} />
             <span style={{ color: "#fff", fontSize: "1rem", fontWeight: 700 }}>
-              StatementFlow
+              MoneySorted
             </span>
           </div>
 

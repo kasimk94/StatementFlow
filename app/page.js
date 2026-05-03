@@ -155,7 +155,7 @@ export default function Home() {
 
   const FAQS = [
     { q: "Which banks are supported?",
-      a: "StatementFlow works with all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo, and Starling. If your bank produces a standard PDF statement, it will very likely work — even if your bank isn't listed here." },
+      a: "MoneySorted works with all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo, and Starling. If your bank produces a standard PDF statement, it will very likely work — even if your bank isn't listed here." },
     { q: "Is my data secure?",
       a: "Completely. Your PDF is processed entirely in-memory on our server and is never written to disk or stored in a database. Once your transactions are extracted, your data is discarded immediately. We never see, store, or share your financial information." },
     { q: "How accurate is the categorisation?",
@@ -163,7 +163,7 @@ export default function Home() {
     { q: "Can accountants or bookkeepers use this?",
       a: "Absolutely. The exported Excel workbook includes a clean transaction sheet, a monthly summary tab, and a spending dashboard — perfect for bookkeeping reviews and tax preparation. Many accountants use it to quickly understand a client's spending patterns." },
     { q: "Is it really free?",
-      a: "Yes, completely free with no strings attached. No account, no credit card, no usage limits. We built StatementFlow because we needed it ourselves and wanted to share it." },
+      a: "Yes, completely free with no strings attached. No account, no credit card, no usage limits. We built MoneySorted because we needed it ourselves and wanted to share it." },
     { q: "What file types are supported?",
       a: "PDF only at the moment. We're working on support for OFX/QIF files and CSV bank exports in a future update. Make sure you download your statement as a PDF from your online banking portal." },
   ];
@@ -324,7 +324,7 @@ export default function Home() {
       <Navbar onScrollToUpload={scrollToUpload} showReviewsLink={hasReviews} />
 
       {/* SEO hidden text */}
-      <p className="visually-hidden">StatementFlow is a free UK bank statement converter that transforms PDF bank statements into Excel reports and spending dashboards. Supporting all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo and Starling.</p>
+      <p className="visually-hidden">MoneySorted is a free UK bank statement converter that transforms PDF bank statements into Excel reports and spending dashboards. Supporting all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo and Starling.</p>
 
       {/* ══════════════════════════════════════════════════════════════
           1. HERO
@@ -522,9 +522,9 @@ export default function Home() {
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 16, textAlign: "left" }}>
             {[
-              { icon: "💸", heading: '"Where did my money go this month?"', body: "You check your balance and it's lower than expected. You scroll through transactions and still have no idea. StatementFlow turns that chaos into a clear spending breakdown.", color: "#EF4444" },
+              { icon: "💸", heading: '"Where did my money go this month?"', body: "You check your balance and it's lower than expected. You scroll through transactions and still have no idea. MoneySorted turns that chaos into a clear spending breakdown.", color: "#EF4444" },
               { icon: "⏱️", heading: '"Copy-pasting statements takes forever."', body: "If you're an accountant or business owner, you know the pain of manually cleaning bank data for every client. Upload once, get structured data instantly.", color: "#C9A84C" },
-              { icon: "🔐", heading: '"Open Banking feels risky."', body: "You shouldn't need to hand over your login credentials just to understand your own finances. StatementFlow never connects to your bank — ever.", color: "#00D4A0" },
+              { icon: "🔐", heading: '"Open Banking feels risky."', body: "You shouldn't need to hand over your login credentials just to understand your own finances. MoneySorted never connects to your bank — ever.", color: "#00D4A0" },
             ].map(({ icon, heading, body, color }, i) => (
               <div key={i} className="scroll-animate" style={{
                 display: "flex", gap: 20, alignItems: "flex-start",
@@ -733,11 +733,11 @@ export default function Home() {
                 background: "linear-gradient(135deg,#C9A84C,#E8C97A)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               }}>→</div>
-              <div style={{ fontSize: "0.6rem", color: "#C9A84C", fontWeight: 700, letterSpacing: "0.06em", marginTop: 6, textTransform: "uppercase" }}>StatementFlow</div>
+              <div style={{ fontSize: "0.6rem", color: "#C9A84C", fontWeight: 700, letterSpacing: "0.06em", marginTop: 6, textTransform: "uppercase" }}>MoneySorted</div>
             </div>
             <div className="before-after-arrow-v" style={{ textAlign: "center", padding: "12px 0" }}>
               <div style={{ fontSize: "2rem", color: "#C9A84C", fontWeight: 900 }}>↓</div>
-              <div style={{ fontSize: "0.6rem", color: "#C9A84C", fontWeight: 700, letterSpacing: "0.06em", marginTop: 6 }}>StatementFlow</div>
+              <div style={{ fontSize: "0.6rem", color: "#C9A84C", fontWeight: 700, letterSpacing: "0.06em", marginTop: 6 }}>MoneySorted</div>
             </div>
 
             {/* After */}
@@ -1056,7 +1056,7 @@ export default function Home() {
           {/* Header */}
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 16 }}>
-              Why StatementFlow
+              Why MoneySorted
             </p>
             <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", fontWeight: 800, color: "#F5F0E8", margin: "0 0 16px", letterSpacing: "-0.02em" }}>
               The smarter way to handle your statement
@@ -1092,7 +1092,7 @@ export default function Home() {
                       Feature
                     </th>
 
-                    {/* StatementFlow — highlighted */}
+                    {/* MoneySorted — highlighted */}
                     <th style={{
                       padding: "20px 16px",
                       background: "linear-gradient(180deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05))",
@@ -1117,7 +1117,7 @@ export default function Home() {
                         fontSize: "0.95rem", fontWeight: 800,
                         letterSpacing: "-0.01em",
                       }}>
-                        StatementFlow
+                        MoneySorted
                       </div>
                     </th>
 
@@ -1302,7 +1302,7 @@ export default function Home() {
               onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 8px 36px rgba(201,168,76,0.55)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 4px 24px rgba(201,168,76,0.35)"; }}
             >
-              Try StatementFlow Free →
+              Try MoneySorted Free →
             </a>
           </div>
 
@@ -1425,7 +1425,7 @@ export default function Home() {
           </h2>
           <p className="scroll-animate" style={{ color: "#8A9BB5", fontSize: "1.1rem", lineHeight: 1.75, marginBottom: 40, transitionDelay: "0.05s", maxWidth: 520, margin: "0 auto 40px" }}>
             Every month you pay for things you&apos;ve forgotten. Every month you wonder where it all went.
-            StatementFlow gives you the answer in seconds — completely free.
+            MoneySorted gives you the answer in seconds — completely free.
           </p>
           <div className="hero-cta-group scroll-animate" style={{ transitionDelay: "0.1s", justifyContent: "center" }}>
             <button
@@ -1467,7 +1467,7 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2.5 mb-4">
                 <LogoIcon size={36} />
-                <span style={{ color: "#F5F0E8", fontWeight: 700, fontSize: "1.125rem", letterSpacing: "-0.02em" }}>StatementFlow</span>
+                <span style={{ color: "#F5F0E8", fontWeight: 700, fontSize: "1.125rem", letterSpacing: "-0.02em" }}>MoneySorted</span>
               </div>
               <p style={{ color: "#4A5568", fontSize: "0.875rem", lineHeight: 1.65, maxWidth: 240, marginBottom: 16 }}>
                 Built for UK bank statements. Free forever.
@@ -1516,7 +1516,7 @@ export default function Home() {
             {/* Right */}
             <div className="md:text-right footer-col-right">
               <p style={{ fontSize: "0.875rem", color: "#F5F0E8", fontWeight: 500, marginBottom: 8 }}>Made with care in the UK 🇬🇧</p>
-              <p style={{ fontSize: "0.75rem", color: "#4A5568" }}>© 2026 StatementFlow · Free, private, secure.</p>
+              <p style={{ fontSize: "0.75rem", color: "#4A5568" }}>© 2026 MoneySorted · Free, private, secure.</p>
             </div>
           </div>
 

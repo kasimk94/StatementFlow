@@ -112,7 +112,7 @@ export default function OnboardingPage() {
               margin: '0 0 8px 0',
             }}
           >
-            What brings you to StatementFlow?
+            What brings you to MoneySorted?
           </h1>
           <p
             style={{

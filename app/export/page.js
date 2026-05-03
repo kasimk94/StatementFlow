@@ -232,7 +232,7 @@ export default function ExportPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `StatementFlow_${statement.bankName || 'Statement'}_${statement.dateFrom || 'export'}.xlsx`;
+      a.download = `MoneySorted_${statement.bankName || 'Statement'}_${statement.dateFrom || 'export'}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -264,7 +264,7 @@ export default function ExportPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `StatementFlow_${statement.bankName || 'Statement'}_${statement.dateFrom || 'export'}.csv`;
+      a.download = `MoneySorted_${statement.bankName || 'Statement'}_${statement.dateFrom || 'export'}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {

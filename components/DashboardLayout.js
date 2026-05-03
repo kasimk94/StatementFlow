@@ -164,20 +164,18 @@ export default function DashboardLayout({ children, title }) {
             }}
           >
             <div style={{
-              width: 22, height: 22, borderRadius: 5, flexShrink: 0,
-              background: 'linear-gradient(135deg, #C9A84C 0%, #E8C97A 100%)',
+              width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(16,185,129,0.35)',
             }}>
-              <svg width="13" height="13" viewBox="0 0 18 18" fill="none">
-                <rect x="1"  y="11" width="3" height="6"  rx="1" fill="#080C14" fillOpacity="0.55"/>
-                <rect x="6"  y="7"  width="3" height="10" rx="1" fill="#080C14" fillOpacity="0.75"/>
-                <rect x="11" y="3"  width="3" height="14" rx="1" fill="#080C14"/>
-                <path d="M2.5 10.5 C5.5 6 9 6.5 12.5 2.5" stroke="#080C14" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
-                <path d="M10.5 1.5 L13 2.5 L12 5" stroke="#080C14" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                <polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <span style={{ color: '#F5F0E8', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '-0.02em' }}>
-              StatementFlow
+            <span style={{ display: 'flex', alignItems: 'baseline', gap: 1, lineHeight: 1 }}>
+              <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 700, fontSize: '0.9rem', color: '#F5F0E8', letterSpacing: '-0.01em' }}>Money</span>
+              <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 400, fontSize: '0.9rem', color: '#C9A84C', letterSpacing: '-0.01em' }}>Sorted</span>
             </span>
           </div>
 

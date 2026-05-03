@@ -68,7 +68,7 @@ export default function FeedbackPopup({ onClose }) {
                   How was your experience? 🌟
                 </p>
                 <p style={{ margin: "3px 0 0", fontSize: "0.77rem", color: "#94a3b8", lineHeight: 1.4 }}>
-                  Your feedback helps us improve StatementFlow
+                  Your feedback helps us improve MoneySorted
                 </p>
               </div>
               <button
