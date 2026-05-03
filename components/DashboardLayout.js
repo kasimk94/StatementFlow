@@ -164,8 +164,8 @@ export default function DashboardLayout({ children, title }) {
             }}
           >
             <span style={{ display: 'flex', alignItems: 'baseline', gap: 0, lineHeight: 1 }}>
-              <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 700, fontSize: '1.05rem', color: '#fff', letterSpacing: '-0.02em' }}>Money</span>
-              <span style={{ fontFamily: 'var(--font-inter)', fontWeight: 300, fontSize: '1.05rem', color: 'rgba(255,255,255,0.75)', letterSpacing: '-0.01em' }}>Sorted</span>
+              <span style={{ fontFamily: 'var(--font-playfair)', fontWeight: 700, fontSize: '22px', color: '#F5F0E8' }}>Money</span>
+              <span style={{ fontFamily: 'inherit', fontWeight: 300, fontSize: '22px', color: '#C9A84C', letterSpacing: '0.05em' }}>Sorted</span>
             </span>
           </div>
 
