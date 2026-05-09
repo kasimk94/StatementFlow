@@ -1,0 +1,38 @@
+# MoneySorted
+> Free UK bank statement analyser for individuals and accountants
+
+## What it does
+MoneySorted lets UK users upload bank statement PDFs and get instant spending analysis, transaction categorisation, and CSV/Excel export. No bank login required. Results in under 60 seconds.
+
+## Who it's for
+- UK individuals who want to understand where their money goes
+- Accountants and bookkeepers processing client bank statements
+- Small business owners tracking cash flow
+- Anyone who wants to see their spending without connecting their bank
+
+## Supported banks
+Works with all major UK banks: Barclays, HSBC, Lloyds, NatWest, Halifax, Santander, Monzo, Starling Bank, TSB, and more.
+
+## Key features
+- AI-powered transaction categorisation
+- Spending personality insights
+- Subscription and recurring payment detection
+- Money in vs money out breakdown
+- CSV and Excel export
+- Accountant mode for professional use
+- Zero data retention — files deleted immediately after analysis
+- No account or bank login required
+
+## Pricing
+- Free: upload and analyse, see spending breakdown
+- Pro: advanced insights, full export, spending trends
+- Business: bulk processing, client management, priority support
+
+## Privacy
+MoneySorted uses a zero-knowledge architecture. Bank statement files are processed and immediately deleted. No data is stored or sold.
+
+## URL
+https://www.getmoneysorted.co.uk
+
+## Contact
+getmoneysorted.co.uk
