@@ -154,18 +154,16 @@ export default function Home() {
   }
 
   const FAQS = [
-    { q: "Which banks are supported?",
-      a: "MoneySorted works with all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo, and Starling. If your bank produces a standard PDF statement, it will very likely work — even if your bank isn't listed here." },
-    { q: "Is my data secure?",
-      a: "Completely. Your PDF is processed entirely in-memory on our server and is never written to disk or stored in a database. Once your transactions are extracted, your data is discarded immediately. We never see, store, or share your financial information." },
-    { q: "How accurate is the categorisation?",
-      a: "Very accurate for well-known merchants and retailers. Our engine recognises thousands of UK businesses across 12+ spending categories. For unusual or generic transaction references, we flag them as 'Unknown' so you can review them manually." },
-    { q: "Can accountants or bookkeepers use this?",
-      a: "Absolutely. The exported Excel workbook includes a clean transaction sheet, a monthly summary tab, and a spending dashboard — perfect for bookkeeping reviews and tax preparation. Many accountants use it to quickly understand a client's spending patterns." },
-    { q: "Is it really free?",
-      a: "Yes, completely free with no strings attached. No account, no credit card, no usage limits. We built MoneySorted because we needed it ourselves and wanted to share it." },
-    { q: "What file types are supported?",
-      a: "PDF only at the moment. We're working on support for OFX/QIF files and CSV bank exports in a future update. Make sure you download your statement as a PDF from your online banking portal." },
+    { q: "Is MoneySorted free?",
+      a: "Yes. MoneySorted has a free tier — upload your bank statement and get a full spending breakdown with no account required. No credit card, no sign-up needed to get started." },
+    { q: "Which UK banks does MoneySorted support?",
+      a: "MoneySorted works with all major UK banks including Barclays, HSBC, Lloyds, NatWest, Halifax, Santander, Monzo, Starling Bank, and TSB. Export your statement as a PDF from your online banking and upload it." },
+    { q: "Is my bank statement data safe?",
+      a: "Yes. MoneySorted uses a zero-knowledge architecture — your file is analysed and immediately deleted after processing. We never store your banking data, never sell your information, and require no bank login or open banking connection." },
+    { q: "Do I need to connect my bank account?",
+      a: "No. MoneySorted works entirely from PDF uploads. There is no bank login, no open banking connection, and no account required to get started." },
+    { q: "Can accountants use MoneySorted for client statements?",
+      a: "Yes. MoneySorted has a dedicated Accountant Mode that presents data in a clean, structured format for processing client statements. The Business plan includes bulk processing and client management." },
   ];
 
   useEffect(() => { window.history.scrollRestoration = "manual"; }, []);
