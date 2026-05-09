@@ -154,13 +154,24 @@ const softwareAppSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "MoneySorted",
-  operatingSystem: "Web",
   applicationCategory: "FinanceApplication",
+  operatingSystem: "Web",
+  description: "Free UK bank statement analyser. Upload a PDF from any UK bank and instantly see spending categories, subscriptions, and money flow. No bank login required.",
+  url: "https://www.getmoneysorted.co.uk",
   offers: {
     "@type": "Offer",
     price: "0",
     priceCurrency: "GBP",
   },
+  featureList: [
+    "AI-powered transaction categorisation",
+    "Spending personality insights",
+    "Subscription detection",
+    "CSV and Excel export",
+    "Accountant mode",
+    "Zero data retention",
+  ],
+  screenshot: "https://www.getmoneysorted.co.uk/og-image.png",
 };
 
 const faqSchema = {
@@ -169,42 +180,42 @@ const faqSchema = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "Which banks are supported?",
+      name: "Is MoneySorted free?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "MoneySorted supports all major UK banks including Barclays, HSBC, Lloyds, NatWest, Santander, Monzo, Starling, and Halifax.",
+        text: "Yes, MoneySorted has a free tier that lets you upload and analyse your bank statement with no account required. You get a full spending breakdown, category analysis, and money flow instantly.",
       },
     },
     {
       "@type": "Question",
-      name: "Is my data secure?",
+      name: "Which UK banks does MoneySorted support?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Your files are processed entirely in your browser memory and never uploaded to any server. Data is deleted immediately after processing.",
+        text: "MoneySorted works with all major UK banks including Barclays, HSBC, Lloyds, NatWest, Halifax, Santander, Monzo, Starling Bank, and TSB. Simply export your statement as a PDF from your online banking and upload it.",
       },
     },
     {
       "@type": "Question",
-      name: "How do I convert my bank statement to Excel?",
+      name: "Is my bank statement data safe with MoneySorted?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Simply upload your PDF bank statement to MoneySorted, and within seconds you will receive a formatted Excel report with spending categories, transaction history and a summary dashboard.",
+        text: "Yes. MoneySorted uses a zero-knowledge architecture. Your bank statement is analysed and immediately deleted after processing. We never store your banking data, never sell your information, and require no bank login or open banking connection.",
       },
     },
     {
       "@type": "Question",
-      name: "Is MoneySorted really free?",
+      name: "Do I need to connect my bank account?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes, the free plan allows 3 PDF uploads per month with no sign-up or credit card required.",
+        text: "No. MoneySorted works entirely from PDF uploads. There is no bank login, no open banking connection, and no account required to get started.",
       },
     },
     {
       "@type": "Question",
-      name: "What file types are supported?",
+      name: "Can accountants use MoneySorted for client statements?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "MoneySorted currently supports PDF bank statements from all major UK banks.",
+        text: "Yes. MoneySorted has a dedicated Accountant Mode that presents data in a structured, professional format suitable for processing client bank statements. The Business plan includes bulk processing and client management features.",
       },
     },
   ],
