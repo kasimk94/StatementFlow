@@ -78,6 +78,15 @@ const NAVBAR_CSS = `
     .nav-desktop-right  { display: none !important; }
     .nav-hamburger      { display: flex !important; }
     .nav-mobile-menu    { display: block !important; }
+
+    /* Override inline pill styles: stretch edge-to-edge instead of
+       left:50% + transform, which can misfire on mobile browsers */
+    [data-navbar] {
+      left: 12px !important;
+      right: 12px !important;
+      transform: none !important;
+      width: auto !important;
+    }
   }
 `;
 

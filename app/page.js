@@ -870,7 +870,7 @@ export default function Home() {
               <p style={{ fontWeight: 800, fontSize: "1rem", color: "#C9A84C", margin: "0 0 4px 0", textAlign: "center" }}>Zero-Knowledge Architecture</p>
               <p style={{ fontSize: "0.75rem", color: "#8A9BB5", margin: "0 0 14px 0", textAlign: "center" }}>Verified Privacy Standard</p>
               <div style={{ width: "100%", height: 1, background: "#1E2A3A", margin: "0 0 12px 0" }} />
-              <p style={{ fontSize: "0.7rem", color: "#4A5568", margin: 0, textAlign: "center", letterSpacing: "0.06em" }}>STATEMENTFLOW · UK</p>
+              <p style={{ fontSize: "0.7rem", color: "#4A5568", margin: 0, textAlign: "center", letterSpacing: "0.06em" }}>MONEYSORTED · UK</p>
             </div>
           </div>
 
