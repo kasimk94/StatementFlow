@@ -85,6 +85,7 @@ const NAVBAR_CSS = `
 // 3 nav links only — clean & focused
 const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works", section: "how-it-works" },
+  { label: "Blog",         href: "/blog",         section: "blog"         },
   { label: "Pricing",      href: "#pricing",      section: "pricing"      },
 ];
 
