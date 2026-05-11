@@ -8,7 +8,8 @@
     "start": "next start",
     "dev": "next dev --turbopack",
     "migrate": "prisma db push",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-post": "node scripts/generateBlogPost.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
