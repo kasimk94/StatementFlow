@@ -165,7 +165,7 @@ export default function Navbar({ onScrollToUpload, onUploadAnother = null }) {
                            ? "1px solid rgba(201,168,76,0.4)"
                            : "1px solid rgba(201,168,76,0.2)",
     borderRadius:        50,
-    padding:             "10px 12px 10px 20px",
+    padding:             "10px 16px",
     display:             "flex",
     alignItems:          "center",
     gap:                 32,
