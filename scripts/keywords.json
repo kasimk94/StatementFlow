@@ -1,24 +1,86 @@
 {
   "keywords": [
-    { "keyword": "how to read a NatWest bank statement", "used": false },
-    { "keyword": "HSBC bank statement explained UK", "used": false },
-    { "keyword": "how to export Monzo bank statement", "used": false },
-    { "keyword": "Starling bank statement PDF download", "used": false },
-    { "keyword": "how to track spending UK", "used": false },
-    { "keyword": "best way to budget UK 2026", "used": false },
-    { "keyword": "how to find out where your money goes", "used": false },
-    { "keyword": "Lloyds bank statement categories", "used": false },
-    { "keyword": "how to analyse spending habits UK", "used": false },
-    { "keyword": "bank statement for mortgage UK", "used": false },
-    { "keyword": "how to read Halifax bank statement", "used": false },
-    { "keyword": "Santander bank statement download", "used": false },
-    { "keyword": "TSB bank statement PDF", "used": false },
-    { "keyword": "how to reduce monthly outgoings UK", "used": false },
-    { "keyword": "what are standing orders vs direct debits", "used": false },
-    { "keyword": "how to spot bank fraud UK", "used": false },
-    { "keyword": "first time buyer bank statement tips UK", "used": false },
-    { "keyword": "how to save money UK 2026", "used": false },
-    { "keyword": "cashflow analysis personal UK", "used": false },
-    { "keyword": "how to categorise bank transactions UK", "used": false }
+    {
+      "keyword": "how to read a NatWest bank statement",
+      "used": true,
+      "slug": "how-to-read-a-natwest-bank-statement-complete-guide",
+      "generatedAt": "2026-05-11"
+    },
+    {
+      "keyword": "HSBC bank statement explained UK",
+      "used": false
+    },
+    {
+      "keyword": "how to export Monzo bank statement",
+      "used": false
+    },
+    {
+      "keyword": "Starling bank statement PDF download",
+      "used": false
+    },
+    {
+      "keyword": "how to track spending UK",
+      "used": false
+    },
+    {
+      "keyword": "best way to budget UK 2026",
+      "used": false
+    },
+    {
+      "keyword": "how to find out where your money goes",
+      "used": false
+    },
+    {
+      "keyword": "Lloyds bank statement categories",
+      "used": false
+    },
+    {
+      "keyword": "how to analyse spending habits UK",
+      "used": false
+    },
+    {
+      "keyword": "bank statement for mortgage UK",
+      "used": false
+    },
+    {
+      "keyword": "how to read Halifax bank statement",
+      "used": false
+    },
+    {
+      "keyword": "Santander bank statement download",
+      "used": false
+    },
+    {
+      "keyword": "TSB bank statement PDF",
+      "used": false
+    },
+    {
+      "keyword": "how to reduce monthly outgoings UK",
+      "used": false
+    },
+    {
+      "keyword": "what are standing orders vs direct debits",
+      "used": false
+    },
+    {
+      "keyword": "how to spot bank fraud UK",
+      "used": false
+    },
+    {
+      "keyword": "first time buyer bank statement tips UK",
+      "used": false
+    },
+    {
+      "keyword": "how to save money UK 2026",
+      "used": false
+    },
+    {
+      "keyword": "cashflow analysis personal UK",
+      "used": false
+    },
+    {
+      "keyword": "how to categorise bank transactions UK",
+      "used": false
+    }
   ]
 }
