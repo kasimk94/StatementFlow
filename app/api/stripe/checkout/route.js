@@ -16,7 +16,15 @@ export async function POST(req) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { plan } = await req.json();
+    // Accept both JSON (fetch calls) and form-encoded (HTML form submissions)
+    const contentType = req.headers.get('content-type') || '';
+    let plan;
+    if (contentType.includes('application/json')) {
+      ({ plan } = await req.json());
+    } else {
+      const formData = await req.formData();
+      plan = formData.get('plan');
+    }
     const priceId = PRICE_IDS[plan];
 
     if (!priceId) {
