@@ -925,7 +925,7 @@ export default function Home() {
           {/* Security feature cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 security-grid-2col">
             {[
-              { icon: "🧠", title: "Local-First Processing",      desc: "Your PDF is processed entirely in your browser session. No data is sent to external servers for storage — ever." },
+              { icon: "🔐", title: "Secure Processing",             desc: "Your data is processed privately on our secure servers and permanently deleted after analysis. Never sold, never shared — ever." },
               { icon: "🔑", title: "Zero-Knowledge Architecture", desc: "We never see your transactions. Our system processes data in isolated memory that is wiped the moment your session ends." },
               { icon: "🇬🇧", title: "UK Privacy Compliant",       desc: "Built to exceed UK GDPR standards. No cookies tracking your financial behaviour, no third-party data sharing." },
               { icon: "✓",  title: "No Account Required",        desc: "We don't collect your name, email, or any personal information. Upload, analyse, download, done." },
