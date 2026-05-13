@@ -365,23 +365,32 @@ export default function Home() {
           <h1 className="animate-fade-up-delay hero-headline" style={{
             fontSize: "clamp(2.8rem, 5.5vw, 4.8rem)", fontWeight: 800,
             lineHeight: 1.15, color: "#F5F0E8",
-            marginBottom: 28, letterSpacing: "-0.03em",
+            marginBottom: 12, letterSpacing: "-0.03em",
           }}>
-            Your Money, Finally Easy to Understand<br />
+            Your Messy Bank Statements,<br />
             <span style={{
               color: "#C9A84C",
               filter: "drop-shadow(0 0 40px rgba(201,168,76,0.4))",
             }}>
-              No Bank Login. No Nonsense.
+              Made Simple
             </span>
           </h1>
+
+          {/* Second line */}
+          <p className="animate-fade-up-delay" style={{
+            color: "#C9A84C", fontSize: "clamp(1rem, 2vw, 1.2rem)",
+            fontWeight: 600, letterSpacing: "0.01em",
+            margin: "0 auto 32px", opacity: 0.85,
+          }}>
+            Instant Insights. No Bank Login Required.
+          </p>
 
           {/* Subheadline */}
           <p className="animate-fade-up-delay-2 hero-subheadline" style={{
             color: "#8A9BB5", fontSize: "1.2rem", lineHeight: 1.7,
             maxWidth: 580, margin: "0 auto 40px",
           }}>
-            Just upload your bank statement and instantly see where every penny went — broken down by category, merchant and month. Private, secure, takes seconds.
+            Upload any UK bank statement PDF and instantly see where every penny went — spending categories, top merchants, monthly trends. Private, secure, takes seconds.
           </p>
 
           {/* CTA buttons */}
