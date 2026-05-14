@@ -27,6 +27,7 @@ export async function GET() {
     last30Users,
     recentUsers,
     recentStatements,
+    bankPopularity,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.statement.count(),
@@ -57,6 +58,13 @@ export async function GET() {
         user: { select: { email: true } },
       },
     }),
+    prisma.$queryRaw`
+      SELECT unnest(banks) AS bank, COUNT(*)::int AS count
+      FROM "User"
+      WHERE array_length(banks, 1) > 0
+      GROUP BY bank
+      ORDER BY count DESC
+    `,
   ]);
 
   // Build daily arrays for last 30 days
@@ -110,5 +118,6 @@ export async function GET() {
     dailySignups,
     recentUsers,
     recentStatements: recentStatementsClean,
+    bankPopularity,
   });
 }

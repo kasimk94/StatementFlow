@@ -19,6 +19,7 @@ model User {
   monthlyUploadsResetAt DateTime @default(now())
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
+  banks                String[]  @default([])
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 

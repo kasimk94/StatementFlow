@@ -391,6 +391,47 @@ function StatementsSection({ data }) {
   );
 }
 
+function BankPopularitySection({ data }) {
+  const banks = data.bankPopularity ?? [];
+  if (banks.length === 0) {
+    return (
+      <Card title="Bank Popularity">
+        <p style={{ padding: '20px', color: '#8A9BB5', fontSize: '0.875rem' }}>
+          No bank selection data yet — users who complete onboarding will appear here.
+        </p>
+      </Card>
+    );
+  }
+  const max = banks[0]?.count ?? 1;
+  return (
+    <Card title="Bank Popularity — Onboarding Selections">
+      <div style={{ padding: '16px 20px 20px' }}>
+        {banks.map(({ bank, count }) => (
+          <div key={bank} style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+              <span style={{ fontSize: '0.82rem', color: '#F5F0E8', fontWeight: 600, textTransform: 'capitalize' }}>
+                {bank}
+              </span>
+              <span style={{ fontSize: '0.82rem', color: '#C9A84C', fontWeight: 700 }}>
+                {count} user{count !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div style={{ height: 6, background: '#1E2A3A', borderRadius: 999 }}>
+              <div style={{
+                height: '100%',
+                width: `${(count / max) * 100}%`,
+                background: 'linear-gradient(90deg, #C9A84C, #E8C97A)',
+                borderRadius: 999,
+                transition: 'width 0.4s ease',
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 function RevenueSection({ data }) {
   const proPct      = data.totalUsers > 0 ? ((data.paidSubscribers / data.totalUsers) * 100).toFixed(1) : 0;
   const estMonthly  = data.paidSubscribers * 4.99;
@@ -462,7 +503,7 @@ export default function AdminPage() {
     }
     if (!adminData) return null;
 
-    if (activeNav === 'Dashboard')  return <DashboardSection data={adminData} />;
+    if (activeNav === 'Dashboard')  return <><DashboardSection data={adminData} /><BankPopularitySection data={adminData} /></>;
     if (activeNav === 'Users')      return <UsersSection     data={adminData} />;
     if (activeNav === 'Statements') return <StatementsSection data={adminData} />;
     if (activeNav === 'Revenue')    return <RevenueSection   data={adminData} />;
