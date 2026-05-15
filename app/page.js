@@ -949,6 +949,77 @@ export default function Home() {
 
 
       {/* ══════════════════════════════════════════════════════════════
+          INSTEAD OF COMPARISON
+      ══════════════════════════════════════════════════════════════ */}
+      <section className="hp-section" style={{ background: "#080C14" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto" }}>
+          <div className="text-center scroll-animate" style={{ marginBottom: 48 }}>
+            <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>A better way</p>
+            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.1rem)", fontWeight: 800, color: "#F5F0E8" }}>
+              The smarter way to understand your money
+            </h2>
+          </div>
+
+          <div style={{
+            background: "linear-gradient(135deg, #0D1117 0%, #111820 100%)",
+            border: "1px solid rgba(201,168,76,0.18)",
+            borderRadius: 20, overflow: "hidden",
+          }}>
+            {/* Header row */}
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 1fr",
+              background: "rgba(201,168,76,0.06)",
+              borderBottom: "1px solid rgba(201,168,76,0.15)",
+            }}>
+              <div style={{ padding: "14px 24px", fontSize: "0.72rem", fontWeight: 700, color: "#4A5568", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                Instead of
+              </div>
+              <div style={{
+                padding: "14px 24px", fontSize: "0.72rem", fontWeight: 700, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em",
+                borderLeft: "1px solid rgba(201,168,76,0.1)",
+              }}>
+                With MoneySorted
+              </div>
+            </div>
+
+            {/* Comparison rows */}
+            {[
+              ["Scrolling through confusing transactions",         "Clear spending breakdown by category"],
+              ["Manual copy-pasting into spreadsheets",            "Instant Excel & CSV export"],
+              ["Open Banking apps that need your login",           "Just upload a PDF — no login ever"],
+              ["Hours of manual categorising",                     "AI auto-categorisation in seconds"],
+              ["Not knowing where your money went",                "Full dashboard in under 60 seconds"],
+            ].map(([bad, good], i) => (
+              <div
+                key={i}
+                style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr",
+                  borderBottom: i < 4 ? "1px solid rgba(30,42,58,0.6)" : "none",
+                }}
+              >
+                <div style={{
+                  padding: "18px 24px", display: "flex", alignItems: "center", gap: 12,
+                  color: "#4A5568", fontSize: "0.9rem", lineHeight: 1.5,
+                }}>
+                  <span style={{ fontSize: "0.85rem", color: "#EF4444", opacity: 0.6, flexShrink: 0 }}>✗</span>
+                  {bad}
+                </div>
+                <div style={{
+                  padding: "18px 24px", display: "flex", alignItems: "center", gap: 12,
+                  color: "#C9A84C", fontSize: "0.9rem", lineHeight: 1.5, fontWeight: 500,
+                  borderLeft: "1px solid rgba(201,168,76,0.1)",
+                  background: "rgba(201,168,76,0.02)",
+                }}>
+                  <span style={{ fontSize: "0.85rem", color: "#00D4A0", flexShrink: 0 }}>✓</span>
+                  {good}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════
           10. PRICING
       ══════════════════════════════════════════════════════════════ */}
       <section id="pricing" className="hp-section" style={{ background: "#0D1117", scrollMarginTop: "80px" }}>
