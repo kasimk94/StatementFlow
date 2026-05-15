@@ -141,6 +141,7 @@ export default function Home() {
   const [openFaq,      setOpenFaq]      = useState(null);
   const [billing,      setBilling]      = useState("monthly");
   const [billingFade,  setBillingFade]  = useState(true);
+  const [activeTab,    setActiveTab]    = useState(0);
 
   const PRO_MONTHLY = 4.99;
   const BIZ_MONTHLY = 19.99;
@@ -513,6 +514,96 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* ══════════════════════════════════════════════════════════════
+          SCREENSHOTS SHOWCASE
+      ══════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const TABS = [
+          { label: "Overview",   img: "/screenshots/dashboard-overview.png"     },
+          { label: "Insights",   img: "/screenshots/dashboard-personality.png"  },
+          { label: "Breakdown",  img: "/screenshots/dashboard-breakdown.png"    },
+          { label: "Categories", img: "/screenshots/dashboard-categories.png"   },
+        ];
+        return (
+          <section className="hp-section" style={{ background: "#080C14" }}>
+            <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+
+              {/* Header */}
+              <div className="text-center scroll-animate" style={{ marginBottom: 40 }}>
+                <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>What You Get</p>
+                <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)", fontWeight: 800, color: "#F5F0E8", letterSpacing: "-0.02em", marginBottom: 12 }}>
+                  Your full financial picture — in seconds
+                </h2>
+                <p style={{ color: "#8A9BB5", fontSize: "1rem" }}>
+                  This is what appears the moment your statement is processed
+                </p>
+              </div>
+
+              {/* Tab bar — scrolls horizontally on mobile */}
+              <div style={{
+                display: "flex", gap: 8, marginBottom: 20,
+                overflowX: "auto", paddingBottom: 4,
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none",
+              }}>
+                {TABS.map((tab, i) => (
+                  <button
+                    key={tab.label}
+                    onClick={() => setActiveTab(i)}
+                    style={{
+                      flexShrink: 0,
+                      padding: "9px 22px",
+                      borderRadius: 50,
+                      border: activeTab === i ? "1px solid #C9A84C" : "1px solid rgba(201,168,76,0.2)",
+                      background: activeTab === i ? "rgba(201,168,76,0.12)" : "transparent",
+                      color: activeTab === i ? "#C9A84C" : "#4A5568",
+                      fontWeight: activeTab === i ? 700 : 500,
+                      fontSize: "0.875rem",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Screenshot frame */}
+              <div style={{
+                background: "#0D1117",
+                border: "1px solid rgba(201,168,76,0.2)",
+                borderRadius: 16,
+                padding: 12,
+                boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08)",
+              }}>
+                <img
+                  key={activeTab}
+                  src={TABS[activeTab].img}
+                  alt={`MoneySorted ${TABS[activeTab].label} dashboard`}
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: 10,
+                    display: "block",
+                  }}
+                />
+              </div>
+
+              {/* Caption */}
+              <p style={{
+                textAlign: "center", marginTop: 16,
+                fontSize: "0.78rem", color: "#4A5568",
+              }}>
+                <span style={{ color: "#00D4A0", marginRight: 6 }}>✓</span>
+                Real analysis from a Barclays statement · Processed in 47 seconds
+              </p>
+
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ══════════════════════════════════════════════════════════════
           3. PROBLEM SECTION
