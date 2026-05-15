@@ -114,6 +114,127 @@ function PricingFeature({ text, included, pro, comingSoon }) {
   );
 }
 
+// ── Screenshot Showcase ───────────────────────────────────────────────────────
+const SHOWCASE_TABS = [
+  { label: "Overview",   img: "/screenshots/dashboard-overview.png.webp"    },
+  { label: "Insights",   img: "/screenshots/dashboard-personality.png.png"  },
+  { label: "Breakdown",  img: "/screenshots/dashboard-breakdown.png.webp"   },
+  { label: "Categories", img: "/screenshots/dashboard-categories.png"       },
+];
+
+function ScreenshotShowcase() {
+  const [current,   setCurrent]   = useState(0);
+  const [prev,      setPrev]      = useState(null);
+  const [animating, setAnimating] = useState(false);
+
+  function handleTab(i) {
+    if (i === current || animating) return;
+    setPrev(current);
+    setCurrent(i);
+    setAnimating(true);
+    setTimeout(() => { setPrev(null); setAnimating(false); }, 320);
+  }
+
+  return (
+    <section className="hp-section" style={{ background: "#080C14" }}>
+      <style>{`
+        @keyframes sc-slide-in  { from { opacity:0; transform:translateX(36px) } to { opacity:1; transform:translateX(0) } }
+        @keyframes sc-slide-out { from { opacity:1; transform:translateX(0)    } to { opacity:0; transform:translateX(-36px) } }
+        .sc-tab-track::-webkit-scrollbar { display: none; }
+      `}</style>
+      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div className="text-center scroll-animate" style={{ marginBottom: 40 }}>
+          <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>What You Get</p>
+          <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)", fontWeight: 800, color: "#F5F0E8", letterSpacing: "-0.02em", marginBottom: 12 }}>
+            Your full financial picture — in seconds
+          </h2>
+          <p style={{ color: "#8A9BB5", fontSize: "1rem" }}>
+            This is what appears the moment your statement is processed
+          </p>
+        </div>
+
+        {/* Tab bar — outer div clips X, inner has padding so pill borders aren't clipped */}
+        <div style={{ overflowX: "auto", overflowY: "visible", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", marginBottom: 20 }}
+             className="sc-tab-track">
+          <div style={{ display: "flex", gap: 8, paddingTop: 6, paddingBottom: 6, width: "max-content" }}>
+            {SHOWCASE_TABS.map((tab, i) => (
+              <button
+                key={tab.label}
+                onClick={() => handleTab(i)}
+                style={{
+                  flexShrink: 0,
+                  padding: "9px 22px",
+                  borderRadius: 50,
+                  border: current === i ? "1px solid #C9A84C" : "1px solid rgba(201,168,76,0.2)",
+                  background: current === i ? "rgba(201,168,76,0.12)" : "transparent",
+                  color: current === i ? "#C9A84C" : "#4A5568",
+                  fontWeight: current === i ? 700 : 500,
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  letterSpacing: "-0.01em",
+                  boxShadow: current === i ? "0 0 0 3px rgba(201,168,76,0.15)" : "none",
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Screenshot frame */}
+        <div style={{
+          background: "#0D1117",
+          border: "1px solid rgba(201,168,76,0.2)",
+          borderRadius: 16,
+          padding: 12,
+          boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08)",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          {/* Outgoing image */}
+          {prev !== null && animating && (
+            <img
+              src={SHOWCASE_TABS[prev].img}
+              alt=""
+              aria-hidden="true"
+              style={{
+                position: "absolute", top: 12, left: 12, right: 12,
+                width: "calc(100% - 24px)",
+                borderRadius: 10,
+                animation: "sc-slide-out 300ms ease forwards",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+          {/* Incoming image */}
+          <img
+            key={current}
+            src={SHOWCASE_TABS[current].img}
+            alt={`MoneySorted ${SHOWCASE_TABS[current].label} dashboard`}
+            style={{
+              width: "100%",
+              height: "auto",
+              borderRadius: 10,
+              display: "block",
+              animation: animating ? "sc-slide-in 300ms ease forwards" : "none",
+            }}
+          />
+        </div>
+
+        {/* Caption */}
+        <p style={{ textAlign: "center", marginTop: 16, fontSize: "0.78rem", color: "#4A5568" }}>
+          <span style={{ color: "#00D4A0", marginRight: 6 }}>✓</span>
+          Real analysis from a Barclays statement · Processed in 47 seconds
+        </p>
+
+      </div>
+    </section>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [transactions,     setTransactions]     = useState(null);
@@ -141,7 +262,6 @@ export default function Home() {
   const [openFaq,      setOpenFaq]      = useState(null);
   const [billing,      setBilling]      = useState("monthly");
   const [billingFade,  setBillingFade]  = useState(true);
-  const [activeTab,    setActiveTab]    = useState(0);
 
   const PRO_MONTHLY = 4.99;
   const BIZ_MONTHLY = 19.99;
@@ -518,92 +638,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════
           SCREENSHOTS SHOWCASE
       ══════════════════════════════════════════════════════════════ */}
-      {(() => {
-        const TABS = [
-          { label: "Overview",   img: "/screenshots/dashboard-overview.png.webp"    },
-          { label: "Insights",   img: "/screenshots/dashboard-personality.png.png" },
-          { label: "Breakdown",  img: "/screenshots/dashboard-breakdown.png.webp"  },
-          { label: "Categories", img: "/screenshots/dashboard-categories.png"      },
-        ];
-        return (
-          <section className="hp-section" style={{ background: "#080C14" }}>
-            <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-
-              {/* Header */}
-              <div className="text-center scroll-animate" style={{ marginBottom: 40 }}>
-                <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>What You Get</p>
-                <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)", fontWeight: 800, color: "#F5F0E8", letterSpacing: "-0.02em", marginBottom: 12 }}>
-                  Your full financial picture — in seconds
-                </h2>
-                <p style={{ color: "#8A9BB5", fontSize: "1rem" }}>
-                  This is what appears the moment your statement is processed
-                </p>
-              </div>
-
-              {/* Tab bar — scrolls horizontally on mobile */}
-              <div style={{
-                display: "flex", gap: 8, marginBottom: 20,
-                overflowX: "auto", paddingBottom: 4,
-                WebkitOverflowScrolling: "touch",
-                scrollbarWidth: "none",
-              }}>
-                {TABS.map((tab, i) => (
-                  <button
-                    key={tab.label}
-                    onClick={() => setActiveTab(i)}
-                    style={{
-                      flexShrink: 0,
-                      padding: "9px 22px",
-                      borderRadius: 50,
-                      border: activeTab === i ? "1px solid #C9A84C" : "1px solid rgba(201,168,76,0.2)",
-                      background: activeTab === i ? "rgba(201,168,76,0.12)" : "transparent",
-                      color: activeTab === i ? "#C9A84C" : "#4A5568",
-                      fontWeight: activeTab === i ? 700 : 500,
-                      fontSize: "0.875rem",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Screenshot frame */}
-              <div style={{
-                background: "#0D1117",
-                border: "1px solid rgba(201,168,76,0.2)",
-                borderRadius: 16,
-                padding: 12,
-                boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08)",
-              }}>
-                <img
-                  key={activeTab}
-                  src={TABS[activeTab].img}
-                  alt={`MoneySorted ${TABS[activeTab].label} dashboard`}
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: 10,
-                    display: "block",
-                  }}
-                />
-              </div>
-
-              {/* Caption */}
-              <p style={{
-                textAlign: "center", marginTop: 16,
-                fontSize: "0.78rem", color: "#4A5568",
-              }}>
-                <span style={{ color: "#00D4A0", marginRight: 6 }}>✓</span>
-                Real analysis from a Barclays statement · Processed in 47 seconds
-              </p>
-
-            </div>
-          </section>
-        );
-      })()}
+      <ScreenshotShowcase />
 
       {/* ══════════════════════════════════════════════════════════════
           3. PROBLEM SECTION
