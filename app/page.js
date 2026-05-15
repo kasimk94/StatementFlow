@@ -155,33 +155,34 @@ function ScreenshotShowcase() {
           </p>
         </div>
 
-        {/* Tab bar — outer div clips X, inner has padding so pill borders aren't clipped */}
-        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", marginBottom: 20, marginLeft: 0, paddingLeft: 0 }}
-             className="sc-tab-track">
-          <div style={{ display: "flex", gap: 8, paddingTop: 6, paddingBottom: 6, paddingLeft: 0, marginLeft: 0 }}>
-            {SHOWCASE_TABS.map((tab, i) => (
-              <button
-                key={tab.label}
-                onClick={() => handleTab(i)}
-                style={{
-                  flexShrink: 0,
-                  padding: "9px 22px",
-                  borderRadius: 50,
-                  border: current === i ? "1px solid #C9A84C" : "1px solid rgba(201,168,76,0.2)",
-                  background: current === i ? "rgba(201,168,76,0.12)" : "transparent",
-                  color: current === i ? "#C9A84C" : "#4A5568",
-                  fontWeight: current === i ? 700 : 500,
-                  fontSize: "0.875rem",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  letterSpacing: "-0.01em",
-                  boxShadow: current === i ? "0 0 0 3px rgba(201,168,76,0.15)" : "none",
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* Tab bar */}
+        <div className="sc-tab-track" style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "8px 0",
+          overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
+          marginBottom: 20,
+        }}>
+          {SHOWCASE_TABS.map((tab, i) => (
+            <button
+              key={tab.label}
+              onClick={() => handleTab(i)}
+              style={{
+                flexShrink: 0,
+                padding: "9px 22px",
+                borderRadius: 50,
+                border: current === i ? "1px solid #C9A84C" : "1px solid rgba(201,168,76,0.2)",
+                background: current === i ? "rgba(201,168,76,0.12)" : "transparent",
+                color: current === i ? "#C9A84C" : "#4A5568",
+                fontWeight: current === i ? 700 : 500,
+                fontSize: "0.875rem",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                letterSpacing: "-0.01em",
+                boxShadow: current === i ? "0 0 0 3px rgba(201,168,76,0.15)" : "none",
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Screenshot frame */}
