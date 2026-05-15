@@ -156,9 +156,9 @@ function ScreenshotShowcase() {
         </div>
 
         {/* Tab bar — outer div clips X, inner has padding so pill borders aren't clipped */}
-        <div style={{ overflowX: "auto", overflowY: "visible", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", marginBottom: 20 }}
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", marginBottom: 20, marginLeft: 0, paddingLeft: 0 }}
              className="sc-tab-track">
-          <div style={{ display: "flex", gap: 8, paddingTop: 6, paddingBottom: 6, width: "max-content" }}>
+          <div style={{ display: "flex", gap: 8, paddingTop: 6, paddingBottom: 6, paddingLeft: 0, marginLeft: 0 }}>
             {SHOWCASE_TABS.map((tab, i) => (
               <button
                 key={tab.label}
@@ -562,54 +562,6 @@ export default function Home() {
             <span>🗑️ Files processed securely</span>
           </div>
 
-          {/* Dashboard mockup preview */}
-          <div className="animate-fade-up-delay-3" style={{ marginTop: 60, position: "relative" }}>
-            {/* Floating verified badge */}
-            <div style={{
-              position: "absolute", top: -14, right: "8%", zIndex: 10,
-              background: "#0D1117", border: "1px solid rgba(201,168,76,0.4)",
-              borderRadius: 999, padding: "7px 16px",
-              display: "flex", alignItems: "center", gap: 8,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-              fontSize: "0.78rem", fontWeight: 700, color: "#C9A84C",
-            }}>
-              <span style={{ width: 8, height: 8, background: "#00D4A0", borderRadius: "50%", boxShadow: "0 0 6px #00D4A0" }} />
-              ✓ Parsed in 47 seconds
-            </div>
-            <div style={{ filter: "drop-shadow(0 0 80px rgba(201,168,76,0.2)) drop-shadow(0 40px 80px rgba(0,0,0,0.6))", borderRadius: 16, overflow: "hidden" }}>
-              <div style={{ background: "#0D1117", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 16, padding: 24, maxWidth: 900, margin: "0 auto" }}>
-                {/* Mock dashboard header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                  <div>
-                    <div style={{ fontSize: "0.7rem", color: "#C9A84C", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>✓ ANALYSED · March 2026 · Barclays</div>
-                    <div style={{ fontSize: "1rem", fontWeight: 700, color: "#F5F0E8" }}>Spending Dashboard</div>
-                  </div>
-                  <div style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", color: "#C9A84C", fontSize: "0.72rem", fontWeight: 700, padding: "6px 14px", borderRadius: 999 }}>82 transactions</div>
-                </div>
-                {/* Mock KPI row */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-                  {[["Money In","£3,522","#00D4A0"],["Money Out","£3,608","#EF4444"]].map(([l,v,c]) => (
-                    <div key={l} style={{ background: "#111820", border: "1px solid #1E2A3A", borderRadius: 10, padding: "14px 16px" }}>
-                      <div style={{ fontSize: "0.68rem", color: "#8A9BB5", marginBottom: 4 }}>{l}</div>
-                      <div style={{ fontSize: "1.15rem", fontWeight: 800, color: c }}>{v}</div>
-                    </div>
-                  ))}
-                </div>
-                {/* Mock category bars */}
-                {[["Household Bills","£1,115",87],["Supermarkets","£225",30],["Online Shopping","£213",28],["Eating & Drinking","£74",10]].map(([label,amt,pct]) => (
-                  <div key={label} style={{ marginBottom: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                      <span style={{ fontSize: "0.78rem", color: "#8A9BB5" }}>{label}</span>
-                      <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#F5F0E8" }}>{amt}</span>
-                    </div>
-                    <div style={{ height: 5, background: "#1E2A3A", borderRadius: 999 }}>
-                      <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#C9A84C,#E8C97A)", borderRadius: 999 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
